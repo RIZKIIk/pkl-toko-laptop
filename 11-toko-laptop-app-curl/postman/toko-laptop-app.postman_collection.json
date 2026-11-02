@@ -1,0 +1,268 @@
+{
+  "info": {
+    "name": "Toko Laptop App - CRUD Laptop",
+    "description": "Coba registrasi akun, login untuk memperoleh session, lalu uji CRUD inventaris laptop.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:3001",
+      "type": "string"
+    },
+    {
+      "key": "laptopId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "testRunId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "adminUsername",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "adminPassword",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "registerUsername",
+      "value": "pengguna-baru",
+      "type": "string"
+    },
+    {
+      "key": "registerPassword",
+      "value": "password-lokal",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "00 - Register akun",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/auth/register",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"username\":\"{{registerUsername}}\",\"password\":\"{{registerPassword}}\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Registrasi berhasil atau username sudah terdaftar', () => pm.expect([201, 409]).to.include(pm.response.code));",
+              "if (pm.response.code === 201) {",
+              "  pm.test('Response registrasi menyertakan username', () => pm.expect(pm.response.json().data.username).to.eql(pm.collectionVariables.get('registerUsername')));",
+              "}",
+              "if (pm.response.code === 409) {",
+              "  pm.test('Username duplikat menghasilkan error', () => pm.expect(pm.response.json().status).to.eql('error'));",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "01 - Login admin",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/auth/login",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"username\":\"{{adminUsername}}\",\"password\":\"{{adminPassword}}\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Login berhasil dan session dibuat', () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 - Daftar laptop",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/laptops"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Daftar laptop berhasil', () => pm.response.to.have.status(200));",
+              "const rows = pm.response.json().data;",
+              "pm.test('Setiap laptop berbentuk array berindeks', () => pm.expect(rows).to.be.an('array').that.satisfies(items => items.every(row => Array.isArray(row) && row.length === 5)));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 - Tambah laptop",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/laptops",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"nama\":\"Postman Test {{testRunId}}\",\"merek\":\"Test\",\"harga\":1000000,\"stok\":2}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.collectionVariables.set('testRunId', String(Date.now()));"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Laptop berhasil ditambahkan', () => pm.response.to.have.status(201));",
+              "const data = pm.response.json();",
+              "if (pm.response.code === 201 && data.data && data.data.id) {",
+              "  pm.collectionVariables.set('laptopId', String(data.data.id));",
+              "  pm.test('Respons menyertakan ID laptop', () => pm.expect(data.data.id).to.be.a('number'));",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 - Detail laptop",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/laptops/{{laptopId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Detail laptop ditemukan', () => pm.response.to.have.status(200));",
+              "const laptop = pm.response.json().data;",
+              "pm.test('Detail berbentuk array berindeks', () => pm.expect(laptop).to.be.an('array').with.lengthOf(5));",
+              "pm.test('ID sesuai hasil tambah', () => pm.expect(String(laptop[0])).to.eql(pm.collectionVariables.get('laptopId')));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 - Ubah laptop",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/laptops/{{laptopId}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"nama\":\"Postman Test Updated {{testRunId}}\",\"harga\":1200000}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Laptop berhasil diperbarui', () => pm.response.to.have.status(200));",
+              "const updatedLaptop = pm.response.json().data;",
+              "pm.test('Response berbentuk array berindeks', () => pm.expect(updatedLaptop).to.be.an('array').with.lengthOf(5));",
+              "pm.test('Nama baru tersimpan', () => pm.expect(updatedLaptop[1]).to.include('Updated'));",
+              "pm.test('Harga baru tersimpan', () => pm.expect(updatedLaptop[3]).to.eql('Rp 1.200.000'));",
+              "pm.test('Field yang tidak dikirim tetap', () => {",
+              "  pm.expect(updatedLaptop[2]).to.eql('Test');",
+              "  pm.expect(updatedLaptop[4]).to.eql(2);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 - Hapus laptop",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": "{{baseUrl}}/api/laptops/{{laptopId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Laptop berhasil dihapus', () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
