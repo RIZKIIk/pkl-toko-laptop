@@ -21,7 +21,7 @@ fn main() {
     // Meminta nama pembeli
     println!("Nama:");
     let nama = input();
-    println!("Nama pembeli: {}", nama);
+    println!("Nama pembeli siapa?: {}", nama);
 
     // Menyimpan total harga
     let mut total = 0;
