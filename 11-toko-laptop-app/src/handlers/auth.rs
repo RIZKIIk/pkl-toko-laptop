@@ -93,7 +93,7 @@ pub async fn login(
             "username": username,
             "access_token": token,
             "token_type": "Bearer",
-            "expires_in": auth::jwt::TOKEN_TTL_SECONDS
+            "expires_in": auth::jwt::TOKEN_EXPIRED_SECONDS
         }
     }))
 }

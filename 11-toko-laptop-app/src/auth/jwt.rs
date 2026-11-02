@@ -9,8 +9,8 @@ use axum::http::{HeaderMap, header::AUTHORIZATION};
 use jsonwebtoken::{Algorithm, DecodingKey, EncodingKey, Header, Validation, decode, encode};
 use serde::{Deserialize, Serialize};
 
-// 60 detik × 60 menit = 3.600 detik, yaitu masa berlaku token selama satu jam.
-pub const TOKEN_TTL_SECONDS: u64 = 60 * 60;
+// 60 detik × 60 detik = 3.600 detik, yaitu masa berlaku token selama satu jam.
+pub const TOKEN_EXPIRED_SECONDS: u64 = 60 * 60;
 
 #[derive(Clone)]
 pub struct JwtService {
@@ -37,7 +37,7 @@ impl JwtService {
         let now = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
         let claims = Claims {
             sub: username.to_owned(),
-            exp: now + TOKEN_TTL_SECONDS,
+            exp: now + TOKEN_EXPIRED_SECONDS,
         };
         let key = EncodingKey::from_secret(self.secret.as_bytes());
 
