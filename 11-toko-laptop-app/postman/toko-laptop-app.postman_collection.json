@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Toko Laptop App - CRUD Laptop",
-    "description": "Coba registrasi akun, login untuk memperoleh session, lalu uji CRUD inventaris laptop.",
+    "description": "Coba registrasi akun, login untuk memperoleh session cookie dan JWT, lalu uji CRUD inventaris laptop.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -27,6 +27,11 @@
     },
     {
       "key": "adminPassword",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "jwtToken",
       "value": "",
       "type": "string"
     },
@@ -108,7 +113,12 @@
           "script": {
             "type": "text/javascript",
             "exec": [
-              "pm.test('Login berhasil dan session dibuat', () => pm.response.to.have.status(200));"
+              "pm.test('Login berhasil dan session serta JWT dibuat', () => pm.response.to.have.status(200));",
+              "if (pm.response.code === 200) {",
+              "  const token = pm.response.json().data.access_token;",
+              "  pm.collectionVariables.set('jwtToken', token);",
+              "  pm.test('JWT diterima dari response login', () => pm.expect(token).to.be.a('string').and.not.empty);",
+              "}"
             ]
           }
         }
@@ -118,7 +128,12 @@
       "name": "02 - Daftar laptop",
       "request": {
         "method": "GET",
-        "header": [],
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwtToken}}"
+          }
+        ],
         "url": "{{baseUrl}}/api/laptops"
       },
       "event": [
@@ -143,6 +158,10 @@
           {
             "key": "Content-Type",
             "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwtToken}}"
           }
         ],
         "url": "{{baseUrl}}/api/laptops",
@@ -186,7 +205,12 @@
       "name": "04 - Detail laptop",
       "request": {
         "method": "GET",
-        "header": [],
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwtToken}}"
+          }
+        ],
         "url": "{{baseUrl}}/api/laptops/{{laptopId}}"
       },
       "event": [
@@ -212,6 +236,10 @@
           {
             "key": "Content-Type",
             "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwtToken}}"
           }
         ],
         "url": "{{baseUrl}}/api/laptops/{{laptopId}}",
@@ -249,7 +277,12 @@
       "name": "06 - Hapus laptop",
       "request": {
         "method": "DELETE",
-        "header": [],
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwtToken}}"
+          }
+        ],
         "url": "{{baseUrl}}/api/laptops/{{laptopId}}"
       },
       "event": [

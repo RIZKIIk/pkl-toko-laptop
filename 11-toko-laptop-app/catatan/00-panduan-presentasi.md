@@ -9,7 +9,7 @@ ditautkan di bawah.
 ## Ringkasan satu kalimat
 
 Toko Laptop App adalah REST API Rust untuk mengelola inventaris laptop, dengan
-registrasi akun dan login berbasis cookie session, PostgreSQL sebagai database,
+registrasi akun, login cookie session/JWT HS256, PostgreSQL sebagai database,
 dan validasi input sebelum query dijalankan.
 
 ## Urutan presentasi yang disarankan
@@ -30,8 +30,9 @@ dan validasi input sebelum query dijalankan.
    [repository](rust/repositories/laptop-repository.md), lalu diformat oleh
    [presenter](rust/presenters/laptop-response.md).
 6. Jelaskan login memakai [handler auth](rust/handlers/auth.md) dan
-   [middleware session](rust/auth/session.md). Session disimpan di memori,
-   sehingga logout atau restart server membuat session tidak dapat dipakai.
+   [middleware autentikasi](rust/auth/session.md). Session disimpan di memori,
+   sementara JWT HS256 berlaku satu jam; logout menghapus session tetapi tidak
+   membatalkan JWT yang sudah diterbitkan.
 7. Akhiri dengan [endpoint](../endpoin.md), collection Postman, dan test yang
    dijalankan dengan `cargo test --all-targets`.
 
@@ -39,7 +40,7 @@ dan validasi input sebelum query dijalankan.
 
 ```text
 main.rs -> config.rs -> PostgreSQL + migration
-        -> routes.rs -> middleware session -> handler
+        -> routes.rs -> middleware session/JWT -> handler
                                            -> validation -> repository -> presenter -> JSON
 ```
 
@@ -50,5 +51,5 @@ main.rs -> config.rs -> PostgreSQL + migration
   ini bukan rancangan untuk produksi.
 - Harga disimpan sebagai angka Rupiah utuh di database, kemudian diubah menjadi
   teks seperti `Rp 12.500.000` ketika dikirim sebagai response.
-- Endpoint laptop, pemeriksaan session, dan logout membutuhkan cookie hasil
-  login; `/health` dan login sendiri bersifat publik.
+- Endpoint laptop, pemeriksaan identitas, dan logout menerima session cookie
+  atau JWT bearer; `/health` dan login sendiri bersifat publik.

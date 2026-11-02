@@ -1,6 +1,7 @@
-//! Layanan autentikasi: seed akun, verifikasi password, dan otorisasi session.
+//! Layanan autentikasi: seed akun, verifikasi password, session, dan JWT.
 //! [Catatan modul auth](file:///home/rizki/projects/Rust/tugas/PKL/11-toko-laptop-app-lengkap/catatan/rust/auth/mod.md)
 pub mod http;
+pub mod jwt;
 pub mod session;
 
 use std::error::Error;

@@ -8,12 +8,13 @@
 
 Modul `auth` mengatur layanan autentikasi: menyiapkan akun admin, mendaftarkan akun, memeriksa username dan password, serta menyediakan middleware untuk melindungi request.
 
-Modul ini tidak menangani query SQL secara langsung. Operasi tabel `users` diteruskan ke [user repository](../repositories/user-repository.md). Pembuatan response HTTP auth berada di [`http.rs`](http.md), sedangkan pengelolaan session berada di [`session.rs`](session.md).
+Modul ini tidak menangani query SQL secara langsung. Operasi tabel `users` diteruskan ke [user repository](../repositories/user-repository.md). Pembuatan response HTTP auth berada di [`http.rs`](http.md), pengelolaan session berada di [`session.rs`](session.md), dan JWT HS256 berada di [`jwt.rs`](jwt.md).
 
 ```text
 src/auth/
 ├── mod.rs      # Layanan akun dan pemeriksaan kredensial
 ├── http.rs     # Pembentuk response JSON auth
+├── jwt.rs      # Penerbitan dan verifikasi JWT HS256
 └── session.rs  # Helper session dan middleware autentikasi
 ```
 
@@ -23,14 +24,16 @@ Di awal file:
 
 ```rust
 pub mod http;
+pub mod jwt;
 pub mod session;
 ```
 
 - `mod http;` memberi tahu Rust bahwa isi modul `http` ada di file `http.rs`.
+- `mod jwt;` memberi tahu Rust bahwa penerbitan dan verifikasi token ada di `jwt.rs`.
 - `mod session;` memberi tahu Rust bahwa isi modul `session` ada di file `session.rs`.
 - `pub` membuat nama modul dapat diakses melalui jalur publik, misalnya `auth::http`.
 
-Kedua modul tersebut memiliki tanggung jawab berbeda. Lihat [catatan `http.rs`](http.md) untuk pembentukan response JSON dan [catatan `session.rs`](session.md) untuk session serta pemeriksaan login.
+Setiap modul memiliki tanggung jawab berbeda. Lihat [catatan `http.rs`](http.md) untuk response JSON, [catatan `jwt.rs`](jwt.md) untuk access token, dan [catatan `session.rs`](session.md) untuk session serta pemeriksaan login.
 
 ## 2. Import dan re-export
 

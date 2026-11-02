@@ -11,6 +11,8 @@ pub struct AppConfig {
     pub app_port: u16,
     /// Apakah cookie session hanya dikirim melalui HTTPS.
     pub session_cookie_secure: bool,
+    /// Secret HMAC JWT; wajib sedikitnya 32 byte dan tidak boleh dicatat ke log.
+    pub jwt_secret: String,
     /// Host server PostgreSQL.
     db_host: String,
     /// Port server PostgreSQL.
@@ -29,19 +31,24 @@ pub struct AppConfig {
 
 impl AppConfig {
     /// Membaca pengaturan dari environment variable.
-    /// Hanya `APP_HOST` yang memiliki default; port aplikasi dan semua pengaturan
-    /// database wajib tersedia dan harus dapat diparse ke tipe yang sesuai.
+    /// Hanya `APP_HOST` dan `SESSION_COOKIE_SECURE` memiliki default; port,
+    /// database, akun admin, dan secret JWT wajib tersedia dan valid.
     pub fn from_env() -> Result<Self, Box<dyn Error + Send + Sync>> {
         let session_cookie_secure = match env::var("SESSION_COOKIE_SECURE") {
             Ok(value) => value.parse()?,
             Err(env::VarError::NotPresent) => false,
             Err(error) => return Err(error.into()),
         };
+        let jwt_secret = required_non_empty_env("JWT_SECRET")?;
+        if jwt_secret.len() < 32 {
+            return Err("JWT_SECRET harus memiliki panjang minimal 32 byte".into());
+        }
 
         Ok(Self {
             app_host: env::var("APP_HOST").unwrap_or_else(|_| "127.0.0.1".into()),
             app_port: env::var("APP_PORT")?.parse()?,
             session_cookie_secure,
+            jwt_secret,
             db_host: env::var("DB_HOST")?,
             db_port: env::var("DB_PORT")?.parse()?,
             db_name: env::var("DB_NAME")?,

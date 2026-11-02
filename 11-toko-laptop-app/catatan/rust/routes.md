@@ -6,7 +6,7 @@
 
 ## Tanggung jawab file
 
-File ini menjadi peta URL API. Ia menentukan method HTTP mana yang memanggil fungsi handler mana, memasang `PgPool` sebagai state, dan melindungi route admin dengan session.
+File ini menjadi peta URL API. Ia menentukan method HTTP mana yang memanggil fungsi handler mana, memasang `PgPool` dan verifikator JWT, dan melindungi route admin dengan session cookie atau bearer JWT.
 
 Tidak ada validasi, SQL, atau format response di sini. Pemisahan ini membuat daftar endpoint mudah dilihat dari satu file.
 
@@ -22,19 +22,20 @@ Tidak ada validasi, SQL, atau format response di sini. Pemisahan ini membuat daf
 
 ## Fungsi `create_router(...)`
 
-Signature lengkapnya adalah `pub fn create_router(pool: PgPool, session_cookie_secure: bool) -> Router`.
+Signature lengkapnya adalah `pub fn create_router(pool: PgPool, session_cookie_secure: bool, jwt_secret: String) -> Router`.
 
 - `pub` membuat fungsi dapat dipanggil oleh `main.rs` melalui `routes::create_router`.
 - `pool: PgPool` menerima pool yang sudah dibuat di `config.rs`.
 - `session_cookie_secure` menentukan apakah cookie wajib menggunakan HTTPS.
+- `jwt_secret` adalah kunci HMAC HS256 untuk menerbitkan dan memeriksa JWT.
 - `-> Router` berarti hasil fungsi adalah router yang siap diberikan ke `axum::serve`.
 - Fungsi tidak `async` karena ia hanya menyusun konfigurasi route; tidak ada operasi jaringan yang ditunggu.
 
 ## Uraian kode berurutan
 
-1. Router publik mendaftarkan `GET /health`, `POST /api/auth/register`, dan `POST /api/auth/login`. Registrasi membuat akun; login memeriksa tabel user dan membuat session baru saat password cocok.
+1. Router publik mendaftarkan `GET /health`, `POST /api/auth/register`, dan `POST /api/auth/login`. Registrasi membuat akun; login memeriksa tabel user, membuat session baru, dan menerbitkan JWT saat password cocok.
 2. `protected_routes` mendaftarkan route `/api/auth/session`, `/api/auth/logout`, dan operasi laptop.
-3. `.route_layer(middleware::from_fn(auth::require_auth))` memanggil middleware dari [`auth/session.rs`](auth/session.md) sebelum request mencapai handler pada grup protected.
+3. `.route_layer(middleware::from_fn(auth::require_auth))` memanggil middleware dari [`auth/session.rs`](auth/session.md) sebelum request mencapai handler pada grup protected. Middleware memverifikasi bearer JWT lebih dulu, lalu memakai session sebagai alternatif.
 4. Route `"/api/laptops"` memakai satu URL untuk dua method:
    - `get(handlers::list_laptops)` untuk mengambil daftar.
    - `.post(handlers::create_laptop)` untuk menambah data.
@@ -42,8 +43,9 @@ Signature lengkapnya adalah `pub fn create_router(pool: PgPool, session_cookie_s
    - `get(handlers::get_laptop)` untuk detail.
    - `.patch(handlers::update_laptop)` untuk perubahan parsial.
    - `.delete(handlers::delete_laptop)` untuk penghapusan.
-6. `SessionManagerLayer` menggunakan `MemoryStore` untuk menyimpan session server-side. Cookie Secure diaktifkan sesuai konfigurasi; cookie tetap dikelola middleware session.
-7. `.with_state(pool)` memindahkan pool ke router sebagai state. Setiap request kemudian dapat meminta `State<PgPool>` tanpa membuat koneksi baru.
+6. `Extension<JwtService>` menyediakan konfigurasi JWT kepada middleware dan handler login.
+7. `SessionManagerLayer` menggunakan `MemoryStore` untuk menyimpan session server-side. Cookie Secure diaktifkan sesuai konfigurasi; cookie tetap dikelola middleware session.
+8. `.with_state(pool)` memindahkan pool ke router sebagai state. Setiap request kemudian dapat meminta `State<PgPool>` tanpa membuat koneksi baru.
 
 Method yang tidak didaftarkan pada URL tersebut tidak akan menuju handler ini. Contoh, `POST /health` bukan route yang dibuat file ini.
 
@@ -53,9 +55,9 @@ Method yang tidak didaftarkan pada URL tersebut tidak akan menuju handler ini. C
 | --- | --- | --- | --- |
 | GET | `/health` | `health` | Tidak ada. |
 | POST | `/api/auth/register` | `register` | `State(pool)`, JSON username/password; publik dan tidak membuat session. |
-| POST | `/api/auth/login` | `login` | `State(pool)`, JSON username/password; membuat session bila cocok dengan tabel users. |
-| GET | `/api/auth/session` | `current_user` | Session aktif (wajib login). |
-| POST | `/api/auth/logout` | `logout` | Session aktif (wajib login). |
+| POST | `/api/auth/login` | `login` | `State(pool)`, `JwtService`, JSON username/password; membuat session dan token bila cocok dengan tabel users. |
+| GET | `/api/auth/session` | `current_user` | Session aktif atau JWT bearer valid (wajib login). |
+| POST | `/api/auth/logout` | `logout` | Session aktif atau JWT bearer valid (wajib login); token tidak dicabut. |
 | GET | `/api/laptops` | `list_laptops` | `State(pool)`. |
 | POST | `/api/laptops` | `create_laptop` | `State(pool)` dan `Json<CreateLaptopPayload>`. |
 | GET | `/api/laptops/{id}` | `get_laptop` | `State(pool)` dan `Path<i64>`. |

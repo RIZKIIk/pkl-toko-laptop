@@ -29,7 +29,11 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!("Database: {}", config.database_name());
 
     // Bangun router API dengan pool database dan opsi keamanan cookie session.
-    let app = routes::create_router(pool, config.session_cookie_secure);
+    let app = routes::create_router(
+        pool,
+        config.session_cookie_secure,
+        config.jwt_secret.clone(),
+    );
     // Bentuk alamat listener dari host dan port pada konfigurasi.
     let address = (config.app_host.as_str(), config.app_port);
     // Buka port TCP; error akan dikembalikan apabila alamat tidak dapat dipakai.

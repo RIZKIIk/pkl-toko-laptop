@@ -28,6 +28,7 @@
 | `serde` | fitur `derive` | Membuat derive `Deserialize` pada payload JSON. |
 | `serde_json = "1"` | Versi major 1 | `Value` dan macro `json!` untuk response API. |
 | `tower-sessions = "0.15.0"` | Store memory dan middleware Axum | Cookie session serta penyimpanan session server-side. |
+| `jsonwebtoken = "9.3.1"` | JWT dengan dukungan HMAC | Menerbitkan dan memverifikasi access token HS256. |
 | `tower` | dev dependency, fitur `util` | `ServiceExt::oneshot` untuk tes router HTTP. |
 
 ### Mengapa fitur SQLx ditulis khusus
@@ -40,4 +41,4 @@
 - `macros`: mengaktifkan macro/derive SQLx, termasuk `FromRow` yang dipakai model.
 - `migrate`: mengaktifkan macro migrasi yang menerapkan file di `database/migrations/` saat startup.
 
-Autentikasi menggunakan session cookie, bukan JWT. Password disimpan plaintext hanya untuk latihan lokal. `tower` hanya diperlukan untuk tes. `Cargo.lock` di root menyimpan versi tepat dependency yang akhirnya dipilih Cargo.
+Autentikasi menerima session cookie atau JWT bearer HS256. Password disimpan plaintext hanya untuk latihan lokal. `tower` hanya diperlukan untuk tes. `Cargo.lock` di root menyimpan versi tepat dependency yang akhirnya dipilih Cargo.

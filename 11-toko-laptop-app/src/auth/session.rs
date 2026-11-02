@@ -1,9 +1,14 @@
-//! Middleware untuk mengizinkan request yang memiliki session login.
+//! Middleware untuk mengizinkan request dengan session login atau JWT valid.
 //! [Catatan middleware session](file:///home/rizki/projects/Rust/tugas/PKL/11-toko-laptop-app-lengkap/catatan/rust/auth/session.md)
-use axum::{extract::Request, http::StatusCode, middleware::Next, response::Response};
+use axum::{
+    extract::{Extension, Request},
+    http::StatusCode,
+    middleware::Next,
+    response::Response,
+};
 use tower_sessions::Session;
 
-use super::http::error_response;
+use super::{http::error_response, jwt::JwtService};
 
 pub(crate) const SESSION_USERNAME_KEY: &str = "username";
 
@@ -28,8 +33,17 @@ pub async fn clear_session(session: &Session) -> Result<(), tower_sessions::sess
     session.flush().await
 }
 
-/// Memastikan request memiliki session login sebelum melanjutkan ke handler.
-pub async fn require_auth(session: Session, request: Request, next: Next) -> Response {
+/// Memastikan request memiliki session atau JWT valid sebelum ke handler.
+pub async fn require_auth(
+    Extension(jwt): Extension<JwtService>,
+    session: Session,
+    request: Request,
+    next: Next,
+) -> Response {
+    if super::jwt::username_from_headers(request.headers(), &jwt).is_some() {
+        return next.run(request).await;
+    }
+
     match session_username(&session).await {
         Ok(Some(_)) => next.run(request).await,
         Ok(None) => error_response(StatusCode::UNAUTHORIZED, "Login diperlukan"),

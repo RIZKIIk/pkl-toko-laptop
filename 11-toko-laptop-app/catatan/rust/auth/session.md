@@ -6,11 +6,11 @@
 
 ## Gambaran singkat
 
-File ini menyimpan helper session dan middleware untuk route yang memerlukan login.
+File ini menyimpan helper session dan middleware untuk route yang memerlukan login. Middleware menerima session cookie maupun bearer JWT yang diverifikasi oleh [`jwt.rs`](../../../src/auth/jwt.rs).
 
 ```text
-login berhasil -> start_session menyimpan username
-request protected -> require_auth membaca username
+login berhasil -> start_session menyimpan username dan JWT diterbitkan
+request protected -> require_auth memeriksa bearer JWT atau username session
 logout -> clear_session menghapus session
 ```
 
@@ -114,6 +114,7 @@ pub async fn require_auth(session: Session, request: Request, next: Next) -> Res
 
 ### Parameter dan hasil
 
+- `Extension<JwtService>` menyediakan verifikator JWT yang dibuat dari `JWT_SECRET`.
 - `session: Session` adalah session request saat ini.
 - `request: Request` adalah request yang akan diteruskan jika pengguna sudah login.
 - `next: Next` adalah jalur untuk melanjutkan ke handler berikutnya.
@@ -121,7 +122,7 @@ pub async fn require_auth(session: Session, request: Request, next: Next) -> Res
 
 ### Cara membaca `match`
 
-`match` memilih tindakan berdasarkan hasil `session_username(...).await`:
+Middleware memeriksa JWT bearer lebih dulu. Jika token tidak ada atau tidak valid, ia memeriksa session cookie:
 
 | Pola | Arti | Tindakan |
 | --- | --- | --- |

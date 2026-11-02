@@ -6,7 +6,7 @@
 
 Alamat server mengikuti `APP_HOST` dan `APP_PORT` di `.env` pada root proyek. Pada konfigurasi yang sedang berjalan, server tersedia di [http://127.0.0.1:3001](http://127.0.0.1:3001). Jika port atau host berubah, sesuaikan URL request dan variabel `baseUrl` di environment Postman. `APP_HOST` default-nya `127.0.0.1`, sedangkan `APP_PORT` wajib diatur.
 
-Endpoint laptop memerlukan login terlebih dahulu. Gunakan akun yang didaftarkan atau akun admin dari environment; login mengirim cookie session untuk request selanjutnya. Contoh URL di bawah memakai server lokal pada port `3001`.
+Endpoint laptop memerlukan login terlebih dahulu. Gunakan akun yang didaftarkan atau akun admin dari environment; login mengirim cookie session dan JWT untuk request selanjutnya. Route terlindungi menerima cookie session atau header `Authorization: Bearer <token>`. Contoh URL di bawah memakai server lokal pada port `3001`.
 
 Untuk seluruh contoh perintah terminal dan penjelasan opsi seperti `-X`, `-d`, `-b`, dan `-c`, lihat [panduan curl](catatan/curl.md).
 
@@ -19,8 +19,8 @@ Untuk seluruh contoh perintah terminal dan penjelasan opsi seperti `-X`, `-d`, `
 | --- | --- | --- | --- |
 | `GET` | [`/health`](http://127.0.0.1:3001/health) | Memeriksa apakah server merespons | Publik | `200 OK` |
 | `POST` | `/api/auth/register` | Membuat akun baru | Publik | `201 Created` |
-| `POST` | `/api/auth/login` | Login dan membuat session | Publik | `200 OK` |
-| `GET` | `/api/auth/session` | Melihat pengguna pada session aktif | Wajib login | `200 OK` |
+| `POST` | `/api/auth/login` | Login, membuat session, dan menerbitkan JWT | Publik | `200 OK` |
+| `GET` | `/api/auth/session` | Melihat pengguna pada session atau JWT aktif | Wajib login | `200 OK` |
 | `POST` | `/api/auth/logout` | Menghapus session | Wajib login | `200 OK` |
 | `GET` | [`/api/laptops`](http://127.0.0.1:3001/api/laptops) | Melihat semua laptop | Wajib login | `200 OK` |
 | `POST` | `/api/laptops` | Menambah laptop | Wajib login | `201 Created` |
@@ -37,12 +37,12 @@ Untuk seluruh contoh perintah terminal dan penjelasan opsi seperti `-X`, `-d`, `
 ```text
 /health
   -> register/login
-  -> set cookie session
+  -> cookie session dan/atau JWT bearer
   -> GET/POST/PATCH/DELETE /api/laptops
   -> logout
 ```
 
-## Login dan Session
+## Login, Session, dan JWT
 
 ### Registrasi — `POST /api/auth/register`
 
@@ -66,7 +66,9 @@ curl -i -c cookies.txt \
   http://127.0.0.1:3001/api/auth/login
 ```
 
-Response sukses mengembalikan nama pengguna dan header `Set-Cookie` untuk session. Cookie bersifat `HttpOnly`; pada HTTPS produksi juga atur `SESSION_COOKIE_SECURE=true`. Gunakan cookie jar yang sama saat mengirim request:
+Response sukses mengembalikan nama pengguna, header `Set-Cookie` untuk session, dan `data.access_token` berupa JWT HMAC-SHA256. Token berlaku satu jam (`expires_in: 3600`) dan dapat dipakai pada header `Authorization: Bearer <token>`. Cookie bersifat `HttpOnly`; pada HTTPS juga atur `SESSION_COOKIE_SECURE=true`.
+
+Untuk autentikasi cookie, gunakan cookie jar yang sama:
 
 ```bash
 curl -i -b cookies.txt http://127.0.0.1:3001/api/laptops
@@ -74,7 +76,15 @@ curl -i -b cookies.txt http://127.0.0.1:3001/api/auth/session
 curl -i -b cookies.txt -X POST http://127.0.0.1:3001/api/auth/logout
 ```
 
-Kredensial salah atau request laptop tanpa session menghasilkan `401 Unauthorized`. Jangan membagikan atau commit file cookie. Session disimpan dalam memori server dan otomatis hilang saat server dimulai ulang.
+Untuk autentikasi JWT, salin token dari response login dan kirim header bearer:
+
+```bash
+TOKEN='SALIN_ACCESS_TOKEN_DARI_RESPONSE_LOGIN'
+curl -i -H "Authorization: Bearer $TOKEN" http://127.0.0.1:3001/api/laptops
+curl -i -H "Authorization: Bearer $TOKEN" http://127.0.0.1:3001/api/auth/session
+```
+
+Kredensial salah, token tidak valid/kedaluwarsa, atau request terlindungi tanpa session maupun JWT menghasilkan `401 Unauthorized`. Jangan membagikan atau commit file cookie maupun token. Session disimpan dalam memori server dan otomatis hilang saat server dimulai ulang. Logout menghapus session cookie, tetapi tidak dapat membatalkan JWT yang sudah diterbitkan; token tetap berlaku sampai satu jam dan harus dihapus dari client.
 
 ## Pemeriksaan Layanan
 
@@ -211,7 +221,7 @@ Status error aplikasi yang umum:
 | `400 Bad Request` | ID tidak positif, teks tidak valid, nilai negatif, atau body PATCH tidak berisi field yang dapat diubah |
 | `404 Not Found` | Laptop dengan ID tersebut tidak ditemukan |
 | `409 Conflict` | Username registrasi sudah digunakan |
-| `401 Unauthorized` | Kredensial login salah atau request memerlukan session aktif |
+| `401 Unauthorized` | Kredensial login salah atau request memerlukan session/JWT valid |
 | `500 Internal Server Error` | Query atau koneksi database gagal; detail internal tidak dikirim ke client |
 
 Request dengan JSON yang tidak valid, tipe konten yang salah, atau ID path yang tidak dapat dibaca sebagai angka dapat ditolak oleh Axum sebelum handler dijalankan. Bentuk response untuk penolakan tersebut mengikuti format bawaan Axum dan tidak selalu memakai JSON error aplikasi di atas.

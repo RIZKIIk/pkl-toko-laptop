@@ -1,8 +1,9 @@
-//! Handler untuk login, pemeriksaan, dan logout session admin.
+//! Handler untuk login, pemeriksaan identitas, dan logout session/JWT admin.
 //! [Catatan handler auth](file:///home/rizki/projects/Rust/tugas/PKL/11-toko-laptop-app-lengkap/catatan/rust/handlers/auth.md)
 use axum::{
     Json,
-    extract::State,
+    extract::{Extension, State},
+    http::HeaderMap,
     http::StatusCode,
     response::{IntoResponse, Response},
 };
@@ -11,7 +12,7 @@ use serde_json::json;
 use sqlx::PgPool;
 use tower_sessions::Session;
 
-use crate::auth::{self, http, session};
+use crate::auth::{self, http, jwt::JwtService, session};
 
 fn validate_username(username: &str) -> Result<&str, &'static str> {
     let username = username.trim();
@@ -35,9 +36,10 @@ pub struct LoginPayload {
     password: String,
 }
 
-/// Memeriksa kredensial admin dan membuat session baru.
+/// Memeriksa kredensial lalu membuat session baru dan access token JWT.
 pub async fn login(
     State(pool): State<PgPool>,
+    Extension(jwt): Extension<JwtService>,
     session: Session,
     Json(payload): Json<LoginPayload>,
 ) -> Response {
@@ -65,7 +67,18 @@ pub async fn login(
         return http::error_response(StatusCode::UNAUTHORIZED, "Username atau password salah");
     }
 
-    if let Err(error) = session::start_session(&session, &payload.username).await {
+    let token = match jwt.issue_token(username) {
+        Ok(token) => token,
+        Err(error) => {
+            eprintln!("Gagal membuat JWT saat login: {error}");
+            return http::error_response(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Terjadi kesalahan saat membuat token login",
+            );
+        }
+    };
+
+    if let Err(error) = session::start_session(&session, username).await {
         eprintln!("Gagal membuat session login: {error}");
         return http::error_response(
             StatusCode::INTERNAL_SERVER_ERROR,
@@ -76,7 +89,12 @@ pub async fn login(
     http::success_response(json!({
         "status": "success",
         "message": "Login berhasil",
-        "data": { "username": username }
+        "data": {
+            "username": username,
+            "access_token": token,
+            "token_type": "Bearer",
+            "expires_in": auth::jwt::TOKEN_TTL_SECONDS
+        }
     }))
 }
 
@@ -111,8 +129,19 @@ pub async fn register(State(pool): State<PgPool>, Json(payload): Json<LoginPaylo
     }
 }
 
-/// Mengembalikan identitas dari session aktif.
-pub async fn current_user(session: Session) -> Response {
+/// Mengembalikan identitas dari JWT bearer atau session aktif.
+pub async fn current_user(
+    Extension(jwt): Extension<JwtService>,
+    headers: HeaderMap,
+    session: Session,
+) -> Response {
+    if let Some(username) = auth::jwt::username_from_headers(&headers, &jwt) {
+        return http::success_response(json!({
+            "status": "success",
+            "data": { "username": username }
+        }));
+    }
+
     match auth::session::session_username(&session).await {
         Ok(Some(username)) => http::success_response(json!({
             "status": "success",
@@ -129,7 +158,7 @@ pub async fn current_user(session: Session) -> Response {
     }
 }
 
-/// Menghapus session aktif agar cookie tidak dapat digunakan lagi.
+/// Menghapus session aktif; JWT yang diterbitkan tetap berlaku sampai expiry.
 pub async fn logout(session: Session) -> Response {
     if let Err(error) = auth::session::clear_session(&session).await {
         eprintln!("Gagal menghapus session saat logout: {error}");

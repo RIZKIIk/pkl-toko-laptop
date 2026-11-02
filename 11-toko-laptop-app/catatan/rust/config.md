@@ -29,6 +29,7 @@ File ini menjadi satu tempat untuk membaca konfigurasi server dan PostgreSQL. `m
 | `app_host` | `String` | `APP_HOST` | Alamat yang dipakai listener HTTP, misalnya `127.0.0.1`. Bersifat `pub` karena dibaca `main.rs`. |
 | `app_port` | `u16` | `APP_PORT` | Port server, misalnya `3000`. `u16` cocok karena port selalu bilangan positif dalam rentang kecil. Bersifat `pub`. |
 | `session_cookie_secure` | `bool` | `SESSION_COOKIE_SECURE` | Mengaktifkan atribut `Secure` pada cookie; default `false` untuk HTTP lokal, wajib `true` bila memakai HTTPS. |
+| `jwt_secret` | `String` | `JWT_SECRET` | Secret HMAC JWT; wajib minimal 32 byte dan tidak boleh dicatat ke log. |
 | `db_host` | `String` | `DB_HOST` | Host PostgreSQL. Privat agar detail koneksi tetap dikelola file ini. |
 | `db_port` | `u16` | `DB_PORT` | Port PostgreSQL. |
 | `db_name` | `String` | `DB_NAME` | Nama database. |
@@ -47,24 +48,26 @@ File ini menjadi satu tempat untuk membaca konfigurasi server dan PostgreSQL. `m
 4. `impl AppConfig` mengelompokkan fungsi yang bekerja untuk `AppConfig`.
 5. `from_env() -> Result<Self, Box<dyn Error + Send + Sync>>` tidak menerima `self` karena ia membuat konfigurasi baru. `Self` pada hasil berarti `AppConfig`.
 6. `SESSION_COOKIE_SECURE` dibaca sebagai boolean. Bila tidak ada, nilainya `false` agar cookie dapat dipakai selama pengembangan melalui HTTP lokal.
-7. `ADMIN_USERNAME` dan `ADMIN_PASSWORD` wajib tersedia serta tidak boleh kosong. Keduanya dipakai hanya saat seed akun awal; login selanjutnya memverifikasi data pada tabel users.
-8. `env::var("APP_PORT")?.parse()?` membaca port sebagai teks, lalu mengubahnya ke `u16`. `?` pertama mengembalikan error bila variabel tidak ada; `?` kedua mengembalikan error bila isinya bukan angka port yang valid.
-9. Pemanggilan `env::var` berikutnya membaca konfigurasi database. Tidak ada default, jadi aplikasi berhenti saat salah satunya tidak tersedia.
-10. `initialize_admin_user()` mendelegasikan sinkronisasi username dan password akun latihan kepada modul auth setelah migration dijalankan oleh `main.rs`.
-11. `connect_database(&self)` meminjam konfigurasi, sehingga isi `AppConfig` tetap dapat dipakai sesudah pool dibuat. Karena membuka koneksi jaringan, fungsi ini `async`.
-12. `PgConnectOptions::new()` membuat opsi PostgreSQL kosong. Rangkaian `.host`, `.port`, `.database`, `.username`, dan `.password` mengisi nilai dari field privat.
-13. `PgPoolOptions::new()` memulai pengaturan pool. `.max_connections(5)` membatasi maksimal lima koneksi database aktif. `.acquire_timeout(Duration::from_secs(10))` membuat request gagal bila menunggu koneksi pool lebih dari 10 detik.
-14. `.connect_with(options).await` mencoba tersambung lalu mengembalikan `PgPool`. Jika gagal, hasilnya `Err(sqlx::Error)` untuk diteruskan ke `main.rs`.
-15. `database_name(&self) -> &str` mengembalikan referensi ke teks `db_name`, bukan membuat salinan `String`. Fungsinya hanya dipakai untuk log.
+7. `JWT_SECRET` wajib memiliki minimal 32 byte agar kunci HMAC tidak memakai nilai pendek atau default yang diketahui.
+8. `ADMIN_USERNAME` dan `ADMIN_PASSWORD` wajib tersedia serta tidak boleh kosong. Keduanya dipakai hanya saat seed akun awal; login selanjutnya memverifikasi data pada tabel users.
+9. `env::var("APP_PORT")?.parse()?` membaca port sebagai teks, lalu mengubahnya ke `u16`. `?` pertama mengembalikan error bila variabel tidak ada; `?` kedua mengembalikan error bila isinya bukan angka port yang valid.
+10. Pemanggilan `env::var` berikutnya membaca konfigurasi database. Tidak ada default, jadi aplikasi berhenti saat salah satunya tidak tersedia.
+11. `initialize_admin_user()` mendelegasikan sinkronisasi username dan password akun latihan kepada modul auth setelah migration dijalankan oleh `main.rs`.
+12. `connect_database(&self)` meminjam konfigurasi, sehingga isi `AppConfig` tetap dapat dipakai sesudah pool dibuat. Karena membuka koneksi jaringan, fungsi ini `async`.
+13. `PgConnectOptions::new()` membuat opsi PostgreSQL kosong. Rangkaian `.host`, `.port`, `.database`, `.username`, dan `.password` mengisi nilai dari field privat.
+14. `PgPoolOptions::new()` memulai pengaturan pool. `.max_connections(5)` membatasi maksimal lima koneksi database aktif. `.acquire_timeout(Duration::from_secs(10))` membuat request gagal bila menunggu koneksi pool lebih dari 10 detik.
+15. `.connect_with(options).await` mencoba tersambung lalu mengembalikan `PgPool`. Jika gagal, hasilnya `Err(sqlx::Error)` untuk diteruskan ke `main.rs`.
+16. `database_name(&self) -> &str` mengembalikan referensi ke teks `db_name`, bukan membuat salinan `String`. Fungsinya hanya dipakai untuk log.
 
 ## Bentuk error yang mungkin
 
 - Environment variable wajib tidak ada → `from_env` mengembalikan error.
 - `ADMIN_USERNAME` atau `ADMIN_PASSWORD` kosong → konfigurasi ditolak.
 - `SESSION_COOKIE_SECURE` bukan boolean → konfigurasi ditolak.
+- `JWT_SECRET` tidak tersedia atau kurang dari 32 byte → konfigurasi ditolak.
 - `APP_PORT` atau `DB_PORT` bukan angka/di luar rentang `u16` → `.parse()` gagal.
 - Host, port, kredensial, atau database PostgreSQL salah → `connect_database` mengembalikan `sqlx::Error`.
 
 ## Hubungan dengan file lain
 
-`main.rs` memanggil `AppConfig::from_env()`, `connect_database()`, dan `initialize_admin_user()`. Pool diberikan ke router; handler login membaca tabel users dan middleware session memeriksa login sebelum handler laptop. Detail endpoint ada di [routes](routes.md), [auth handler](handlers/auth.md), dan [handlers](handlers.md).
+`main.rs` memanggil `AppConfig::from_env()`, `connect_database()`, dan `initialize_admin_user()`. Pool dan secret JWT diberikan ke router; handler login membaca tabel users dan middleware memeriksa session atau JWT sebelum handler laptop. Detail endpoint ada di [routes](routes.md), [auth handler](handlers/auth.md), dan [handlers](handlers.md).

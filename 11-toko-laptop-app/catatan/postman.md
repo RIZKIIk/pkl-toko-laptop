@@ -23,6 +23,7 @@ Folder ini tidak dijalankan oleh Rust. Isinya adalah konfigurasi Postman untuk m
 | --- | --- | --- |
 | `baseUrl` | `http://127.0.0.1:3001` | Awalan seluruh URL request. |
 | `laptopId` | String kosong | Menyimpan ID hasil POST untuk detail, PATCH, dan DELETE. |
+| `jwtToken` | String kosong | Diisi otomatis setelah login dan dipakai sebagai bearer token. |
 | `testRunId` | String kosong | Membuat nama laptop uji berbeda pada setiap run. |
 | `adminUsername` | String kosong | Username yang sama dengan `ADMIN_USERNAME` server. |
 | `adminPassword` | String kosong | Password yang sama dengan `ADMIN_PASSWORD` server; isi pada environment lokal dan jangan dibagikan. |
@@ -37,11 +38,11 @@ Request publik memakai `POST {{baseUrl}}/api/auth/register` dengan body JSON ber
 
 ### Request 01 — Login admin
 
-Request memakai `POST {{baseUrl}}/api/auth/login` dengan body JSON berisi `adminUsername` dan `adminPassword`. Jalankan request ini terlebih dahulu. Postman menyimpan cookie dari response di cookie jar untuk base URL tersebut dan mengirimkannya otomatis pada request berikutnya. Login yang salah mengembalikan 401.
+Request memakai `POST {{baseUrl}}/api/auth/login` dengan body JSON berisi `adminUsername` dan `adminPassword`. Jalankan request ini terlebih dahulu. Postman menyimpan cookie dari response dan script test menyimpan `data.access_token` ke `jwtToken`; request protected mengirim kedua kredensial, dan middleware menerima JWT maupun session cookie. Login yang salah mengembalikan 401.
 
 ### Request 02 — Daftar laptop
 
-Request memakai `GET {{baseUrl}}/api/laptops` tanpa body dan memakai session cookie hasil login.
+Request memakai `GET {{baseUrl}}/api/laptops` tanpa body dan memakai bearer JWT hasil login.
 
 Script `test` berisi tiga langkah:
 

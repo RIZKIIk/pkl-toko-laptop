@@ -39,7 +39,7 @@ untuk membuka detail file saat ada istilah atau langkah yang belum jelas.
 2. [Gambaran proyek](01-gambaran-proyek.md) memperkenalkan teknologi dan lapisan aplikasi.
 3. [Alur kerja aplikasi](02-alur-kerja-aplikasi.md) mengikuti startup dan request sampai database.
 4. [Startup server](rust/main.md), [config](rust/config.md), dan [lib](rust/lib.md) menjelaskan persiapan aplikasi.
-5. [Routes](rust/routes.md) menunjukkan pemetaan URL ke handler dan middleware session.
+5. [Routes](rust/routes.md) menunjukkan pemetaan URL ke handler dan middleware session/JWT.
 6. [Handlers](rust/handlers.md) menjelaskan alur request dengan tautan ke catatan tiap operasi.
 7. Pelajari [autentikasi modular](rust/auth/mod.md), [models](rust/models.md), [validation](rust/validation.md), [repositories](rust/repositories.md), dan [presenters](rust/presenters.md).
 8. Lihat [error API](rust/error.md), seluruh [migration database](rust/database/0001-create-laptops.md), dan [dependensi](rust/cargo-toml.md).
@@ -50,7 +50,7 @@ untuk membuka detail file saat ada istilah atau langkah yang belum jelas.
 - **Model:** [entity](rust/models/laptop/entity.md), [payload create](rust/models/laptop/create-payload.md), dan [payload update](rust/models/laptop/update-payload.md).
 - **Validation:** [ID](rust/validation/id.md), [teks](rust/validation/text.md), [create](rust/validation/create.md), dan [update](rust/validation/update.md).
 - **Repository:** [modul repository](rust/repositories/mod.md), [query laptop](rust/repositories/laptop-repository.md), dan [query user](rust/repositories/user-repository.md).
-- **Autentikasi:** [modul auth](rust/auth/mod.md), [session](rust/auth/session.md), [response auth](rust/auth/http.md), dan [query user](rust/repositories/user-repository.md).
+- **Autentikasi:** [modul auth](rust/auth/mod.md), [session](rust/auth/session.md), [JWT](rust/auth/jwt.md), [response auth](rust/auth/http.md), dan [query user](rust/repositories/user-repository.md).
 - **Database:** [migration laptop](rust/database/0001-create-laptops.md), [skema awal users](rust/database/0002-create-users.md), dan [skema password latihan](rust/database/0003-plaintext-password.md).
 - **Presenter:** [response laptop](rust/presenters/laptop-response.md) dan [format Rupiah](rust/presenters/rupiah.md).
 

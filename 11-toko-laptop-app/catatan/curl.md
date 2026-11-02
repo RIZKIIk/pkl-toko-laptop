@@ -6,7 +6,7 @@ Panduan ini berisi contoh untuk semua endpoint API toko laptop. Contoh memakai B
 
 ## Urutan pemakaian
 
-Endpoint laptop dan endpoint session aktif/logout memerlukan login terlebih dahulu. Buat akun lewat registrasi atau gunakan akun admin dari environment, lalu login untuk mendapat cookie session yang disimpan di `cookies.txt`; kirim cookie yang sama untuk request selanjutnya.
+Endpoint laptop dan endpoint session aktif/logout memerlukan login terlebih dahulu. Buat akun lewat registrasi atau gunakan akun admin dari environment, lalu login untuk mendapat cookie session dan JWT HMAC. Route terlindungi menerima cookie seperti sebelumnya atau JWT pada header `Authorization`.
 
 Contoh login di bawah memakai placeholder. Ganti nilainya dengan `ADMIN_USERNAME` dan `ADMIN_PASSWORD` yang ada di `.env` lokal. Jangan menaruh password asli dalam dokumentasi, source code, atau file yang akan dibagikan. File cookie adalah kredensial aktif; jangan dibagikan atau di-commit.
 
@@ -18,7 +18,7 @@ curl -i \
   "http://127.0.0.1:3001/api/auth/login"
 ```
 
-Response sukses login berstatus `200 OK` dan mengatur cookie session. Setelah request lain, cek session dengan `GET /api/auth/session`. Jalankan logout paling akhir karena session tidak berlaku setelah itu.
+Response sukses login berstatus `200 OK`, mengatur cookie session, dan mengembalikan JWT pada `data.access_token` yang berlaku satu jam. Setelah request lain, cek identitas dengan `GET /api/auth/session`. Logout menghapus session, tetapi token JWT tetap berlaku sampai kedaluwarsa.
 
 ## Semua endpoint
 
@@ -67,15 +67,20 @@ Contoh response sukses `200 OK`:
 {
   "status": "success",
   "message": "Login berhasil",
-  "data": {"username": "admin"}
+  "data": {
+    "username": "admin",
+    "access_token": "<JWT>",
+    "token_type": "Bearer",
+    "expires_in": 3600
+  }
 }
 ```
 
-Login gagal mengembalikan `401 Unauthorized`. Login tidak memakai `-X POST`: opsi `-d` (`--data`) membuat curl otomatis memakai metode `POST`.
+Login gagal mengembalikan `401 Unauthorized`. Simpan/copy `access_token` dari response untuk request bearer. Login tidak memakai `-X POST`: opsi `-d` (`--data`) membuat curl otomatis memakai metode `POST`.
 
 ### 4. Daftar laptop — `GET /api/laptops`
 
-Wajib login. `-b cookies.txt` mengirim cookie yang sebelumnya disimpan saat login. Tidak perlu `-X GET`: tanpa opsi metode atau body, curl memakai `GET` secara default.
+Wajib login. `-b cookies.txt` mengirim cookie yang sebelumnya disimpan saat login. Jika memilih JWT, ganti cookie dengan header `Authorization: Bearer $TOKEN`. Tidak perlu `-X GET`: tanpa opsi metode atau body, curl memakai `GET` secara default.
 
 ```bash
 curl -i -b cookies.txt "http://127.0.0.1:3001/api/laptops"

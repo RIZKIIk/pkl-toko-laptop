@@ -7,16 +7,16 @@ Halaman ini menghubungkan file-file backend. Penjelasan isi setiap fungsi ada di
 ## Saat server dinyalakan
 
 1. [main.rs](rust/main.md) mencoba memuat `.env` dengan `dotenvy::dotenv().ok()`.
-2. `AppConfig::from_env()` di [config.rs](rust/config.md) membaca host, port, kredensial PostgreSQL, dan kredensial admin.
+2. `AppConfig::from_env()` di [config.rs](rust/config.md) membaca host, port, kredensial PostgreSQL/admin, dan secret JWT.
 3. `connect_database().await` membuat `PgPool`. Bila langkah ini gagal, server belum mulai menerima request.
 4. SQLx menjalankan seluruh migration dan mencatat migration yang sudah diaplikasikan di `_sqlx_migrations`.
 5. `initialize_admin_user()` menyimpan akun latihan dari environment. Password disimpan langsung untuk memudahkan materi session; jangan gunakan cara ini untuk produksi.
-6. `routes::create_router(...)` di [routes.rs](rust/routes.md) memasang endpoint, middleware session, dan pool sebagai state router.
+6. `routes::create_router(...)` di [routes.rs](rust/routes.md) memasang endpoint, middleware session/JWT, dan pool sebagai state router.
 7. Tokio membuat `TcpListener` pada `APP_HOST:APP_PORT`.
 8. `axum::serve(listener, app).await` menunggu koneksi HTTP.
 
 ```text
-.env / environment -> AppConfig -> PgPool -> SQLx migrations -> users table + seed akun latihan -> Router + session store -> TcpListener -> Axum
+.env / environment -> AppConfig -> PgPool -> SQLx migrations -> users table + seed akun latihan -> Router + session store + JWT secret -> TcpListener -> Axum
 ```
 
 ## Perjalanan umum request
@@ -26,7 +26,7 @@ Postman / client
         ↓ HTTP method + URL + body
 routes.rs memilih handler
         ↓
-middleware session melindungi endpoint laptop dan endpoint session/logout
+middleware menerima session cookie atau JWT bearer untuk endpoint laptop dan endpoint session/logout
         ↓
 handlers/{auth,system,laptops} mengambil Session / State / Path / Json
         ├─ validation/{id,create,update,text} (bila ada input)
@@ -54,11 +54,11 @@ POST /api/auth/register + username/password
 POST /api/auth/login + username/password
   -> handler login memeriksa input
   -> auth service mencari password username di users
-  -> password cocok: buat session baru dan simpan username
+  -> password cocok: buat session baru dan JWT HS256 (berlaku satu jam)
   -> SessionManagerLayer mengirim cookie session ke client
-  -> client mengirim cookie pada request berikutnya
-  -> middleware require_auth membaca session sebelum handler protected dijalankan
-  -> logout menghapus session dari store
+  -> client mengirim cookie session atau Authorization: Bearer <JWT>
+  -> middleware require_auth memverifikasi JWT atau membaca session
+  -> logout menghapus session; JWT tetap berlaku sampai kedaluwarsa
 ```
 
 Password di database berupa teks biasa hanya untuk latihan lokal session. Server-side session berarti browser atau `curl` membawa cookie sebagai penunjuk session; username disimpan di session store, bukan dipercayakan dari body request pada setiap endpoint.
