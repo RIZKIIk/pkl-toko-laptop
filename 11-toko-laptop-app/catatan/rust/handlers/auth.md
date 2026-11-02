@@ -2,11 +2,23 @@
 
 > **Navigasi:** [Indeks catatan](../../README.md) · [README proyek](../../../README.md) · [Endpoint API](../../../endpoin.md)
 
+![Ilustrasi: Login: cek akun lalu terbitkan akses](../../ilustrasi/halaman/17-auth.svg "Login: cek akun lalu terbitkan akses")
+
+
 [Buka kode sumber `auth.rs`](../../../src/handlers/auth.rs)
 
 ## Tanggung jawab
 
 Handler ini memproses registrasi dan login, menampilkan identitas dari session/JWT, dan menghapus session saat logout. Akses database user, pemeriksaan password latihan, pembuatan JWT, response HTTP, dan middleware dipisahkan ke [modul auth](../auth/mod.md).
+
+## Peta alur auth
+
+```text
+register → users table → 201 / 409
+login → verify credentials → session cookie + JWT
+protected request → identity from JWT or session
+logout → clear session (JWT stays valid until expiry)
+```
 
 ## Payload login
 

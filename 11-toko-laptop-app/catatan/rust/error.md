@@ -2,6 +2,9 @@
 
 > **Navigasi:** [Indeks catatan](../README.md) · [README proyek](../../README.md) · [Endpoint API](../../endpoin.md)
 
+![Ilustrasi: Error internal menjadi status HTTP](../ilustrasi/halaman/16-error.svg "Error internal menjadi status HTTP")
+
+
 [Buka kode sumber `error.rs`](../../src/error.rs)
 
 ## Tanggung jawab file
@@ -60,3 +63,12 @@ Saat `validate_laptop_id(0)` mengembalikan `ApiError::BadRequest`, Axum menjalan
 - [Validation](validation.md) menghasilkan `BadRequest`.
 - [Handlers](handlers.md) menghasilkan `NotFound` dan meneruskan error query dengan `?`.
 - Axum memakai `IntoResponse` agar `ApiError` dapat menjadi response HTTP otomatis.
+
+## Ilustrasi pemetaan error
+
+```text
+ApiError
+├── BadRequest(message) → 400 + pesan input
+├── NotFound(message)   → 404 + pesan resource
+└── Database(error)     → log server + 500 + pesan umum
+```

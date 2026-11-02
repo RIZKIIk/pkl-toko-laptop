@@ -2,11 +2,24 @@
 
 > **Navigasi:** [Indeks catatan](../../README.md) · [README proyek](../../../README.md) · [Endpoint API](../../../endpoin.md)
 
+![Ilustrasi: Bentuk tabel laptops](../../ilustrasi/halaman/13-0001-create-laptops.svg "Bentuk tabel laptops")
+
+
 [Buka file migration SQL](../../../database/migrations/0001_create_laptops.sql)
 
 ## Tanggung jawab file
 
 Migration ini membuat tabel `public.laptops`, yaitu tabel yang dipakai semua query di [repositories](../repositories.md). File ini mendefinisikan bentuk data dan batasan terakhir di level PostgreSQL; validasi Rust tetap dilakukan lebih dulu agar client mendapat pesan error yang lebih jelas.
+
+## Peta data
+
+```text
+laptops
+├── id          → identitas baris
+├── nama/merek  → teks wajib dengan batas panjang
+├── harga/stok  → angka nol atau lebih
+└── created_at / updated_at → waktu pencatatan
+```
 
 ## Uraian SQL berurutan
 

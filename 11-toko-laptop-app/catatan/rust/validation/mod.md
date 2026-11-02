@@ -2,6 +2,9 @@
 
 > **Navigasi:** [Indeks catatan](../../README.md) · [README proyek](../../../README.md) · [Endpoint API](../../../endpoin.md)
 
+![Ilustrasi: Gerbang validator per operasi](../../ilustrasi/halaman/45-mod.svg "Gerbang validator per operasi")
+
+
 [Buka source `validation/mod.rs`](../../../src/validation/mod.rs)
 
 ## Tujuan
@@ -57,3 +60,13 @@ Jika fungsi validasi menghasilkan `Err(ApiError)`, handler umumnya memakai opera
 - [Teks](text.md): trim, penolakan teks kosong, dan batas karakter.
 - [Create](create.md): validasi seluruh field laptop baru.
 - [Update](update.md): validasi field yang dikirim untuk perubahan parsial.
+
+## Peta fungsi yang diekspor
+
+| Fungsi pada `crate::validation` | Modul implementasi | Dipakai oleh |
+| --- | --- | --- |
+| `validate_laptop_id` | `id.rs` | Handler detail, update, dan delete. |
+| `validate_create_laptop` | `create.rs` | Handler `POST /api/laptops`. |
+| `validate_update_laptop` | `update.rs` | Handler `PATCH /api/laptops/{id}`. |
+
+Helper `validate_text` sengaja tetap internal. Validator create dan update memakainya agar aturan trim dan batas panjang tidak berbeda.

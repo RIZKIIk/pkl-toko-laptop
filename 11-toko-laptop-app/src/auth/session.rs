@@ -1,5 +1,5 @@
 //! Middleware untuk mengizinkan request dengan session login atau JWT valid.
-//! [Catatan middleware session](file:///home/rizki/projects/Rust/tugas/PKL/11-toko-laptop-app-lengkap/catatan/rust/auth/session.md)
+//! Catatan: [Buka penjelasan](file:///home/rizki/projects/Rust/tugas/PKL/11-toko-laptop-app/catatan/rust/auth/session.md)
 use axum::{
     extract::{Extension, Request},
     http::StatusCode,
@@ -10,6 +10,7 @@ use tower_sessions::Session;
 
 use super::{http::error_response, jwt::JwtService};
 
+/// Nama key yang menyimpan username di dalam session server-side.
 pub(crate) const SESSION_USERNAME_KEY: &str = "username";
 
 /// Ganti ID session setelah login lalu simpan identitas pengguna.
@@ -17,6 +18,7 @@ pub async fn start_session(
     session: &Session,
     username: &str,
 ) -> Result<(), tower_sessions::session::Error> {
+    // Mengganti ID mencegah session pra-login dipakai ulang setelah autentikasi.
     session.cycle_id().await?;
     session.insert(SESSION_USERNAME_KEY, username).await
 }
@@ -40,6 +42,7 @@ pub async fn require_auth(
     request: Request,
     next: Next,
 ) -> Response {
+    // Token bearer yang sah cukup untuk melanjutkan request tanpa membaca session.
     if super::jwt::username_from_headers(request.headers(), &jwt).is_some() {
         return next.run(request).await;
     }

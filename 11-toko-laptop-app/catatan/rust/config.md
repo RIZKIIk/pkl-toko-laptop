@@ -2,11 +2,30 @@
 
 > **Navigasi:** [Indeks catatan](../README.md) · [README proyek](../../README.md) · [Endpoint API](../../endpoin.md)
 
+![Ilustrasi: Konfigurasi melewati gerbang](../ilustrasi/halaman/12-config.svg "Konfigurasi melewati gerbang")
+
+
 [Buka kode sumber `config.rs`](../../src/config.rs)
 
 ## Tanggung jawab file
 
 File ini menjadi satu tempat untuk membaca konfigurasi server dan PostgreSQL. `main.rs` tidak perlu mengetahui cara menyusun opsi SQLx atau nama setiap environment variable; ia cukup meminta `AppConfig` membaca konfigurasi dan membuka pool.
+
+## Peta konfigurasi
+
+```text
+environment / .env
+        ↓ from_env()
+    AppConfig
+      ├─ APP_HOST + APP_PORT → listener HTTP
+      ├─ DB_* → PgPool → repositories
+      ├─ ADMIN_* → users table saat startup
+      └─ JWT_SECRET → JwtService pada router
+```
+
+## Di halaman ini
+
+[Field konfigurasi](#struct-appconfig) · [Pembacaan berurutan](#uraian-kode-berurutan) · [Error konfigurasi](#bentuk-error-yang-mungkin) · [Hubungan file](#hubungan-dengan-file-lain)
 
 ## Bagian kode dan kegunaannya
 

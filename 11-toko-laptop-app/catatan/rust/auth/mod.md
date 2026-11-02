@@ -2,6 +2,9 @@
 
 > **Navigasi:** [Indeks catatan](../../README.md) · [README proyek](../../../README.md) · [Endpoint API](../../../endpoin.md)
 
+![Ilustrasi: Auth dirangkai dari komponen](../../ilustrasi/halaman/09-mod.svg "Auth dirangkai dari komponen")
+
+
 [Buka source](../../../src/auth/mod.rs)
 
 ## Gambaran singkat
@@ -17,6 +20,10 @@ src/auth/
 ├── jwt.rs      # Penerbitan dan verifikasi JWT HS256
 └── session.rs  # Helper session dan middleware autentikasi
 ```
+
+## Di halaman ini
+
+[Modul](#1-deklarasi-modul) · [Re-export](#2-import-dan-re-export) · [Seed akun](#3-initialize_admin_user) · [Registrasi](#4-register_user) · [Verifikasi](#5-verify_credentials) · [Perbandingan password](#6-password_matches) · [Alur ringkas](#ringkasan-alur)
 
 ## 1. Deklarasi modul
 

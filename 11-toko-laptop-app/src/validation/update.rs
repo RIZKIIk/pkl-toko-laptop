@@ -1,5 +1,5 @@
 //! Validasi payload parsial untuk perubahan laptop.
-//! Dokumentasi: file:///home/rizki/projects/Rust/tugas/PKL/11-toko-laptop-app-lengkap/catatan/rust/validation/update.md
+//! Catatan: [Buka penjelasan](file:///home/rizki/projects/Rust/tugas/PKL/11-toko-laptop-app/catatan/rust/validation/update.md)
 use crate::{error::ApiError, models::UpdateLaptopPayload};
 
 use super::text::validate_text;
@@ -8,6 +8,7 @@ use super::text::validate_text;
 pub fn validate_update_laptop(
     mut payload: UpdateLaptopPayload,
 ) -> Result<UpdateLaptopPayload, ApiError> {
+    // `take()` memungkinkan teks dinormalisasi lalu dikembalikan ke field opsional.
     if let Some(nama) = payload.nama.take() {
         payload.nama = Some(validate_text(nama, "Nama laptop", 150)?);
     }

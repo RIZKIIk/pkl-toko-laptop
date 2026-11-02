@@ -2,6 +2,9 @@
 
 > **Navigasi:** [Indeks catatan](../../../README.md) · [README proyek](../../../../README.md) · [Endpoint API](../../../../endpoin.md)
 
+![Ilustrasi: Baris database menjadi entity](../../../ilustrasi/halaman/29-entity.svg "Baris database menjadi entity")
+
+
 [Buka source `entity.rs`](../../../../src/models/laptop/entity.rs)
 
 ## Tujuan
@@ -49,3 +52,13 @@ Timestamp yang ada pada tabel belum dimasukkan ke struct ini karena tidak dibutu
 ## Hubungan dengan tipe lain
 
 `Laptop` adalah bentuk data hasil database, berbeda dengan [CreateLaptopPayload](create-payload.md) dan [UpdateLaptopPayload](update-payload.md) yang membaca request JSON. [Presenter laptop](../../presenters/laptop-response.md) mengubah `Laptop` ke bentuk response yang digunakan API.
+
+## Ilustrasi pemetaan baris
+
+```text
+SELECT id, nama, merek, harga, stok
+              ↓ FromRow
+Laptop { id, nama, merek, harga, stok }
+              ↓ presenter
+        JSON response
+```

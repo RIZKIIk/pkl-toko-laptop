@@ -1,5 +1,5 @@
 //! Memformat angka harga menjadi teks Rupiah untuk response API.
-//! Dokumentasi: file:///home/rizki/projects/Rust/tugas/PKL/11-toko-laptop-app-lengkap/catatan/rust/presenters/rupiah.md
+//! Catatan: [Buka penjelasan](file:///home/rizki/projects/Rust/tugas/PKL/11-toko-laptop-app/catatan/rust/presenters/rupiah.md)
 /// Memformat Rupiah dengan pemisah ribuan titik.
 pub(super) fn formatkan_rupiah(nilai: i64) -> String {
     let tanda = if nilai < 0 { "-" } else { "" };
@@ -7,6 +7,7 @@ pub(super) fn formatkan_rupiah(nilai: i64) -> String {
 }
 
 /// Menyisipkan titik setiap tiga digit, dihitung dari kanan.
+/// Menyisipkan titik antar kelompok tiga digit dari kanan.
 fn kelompokkan_ribuan(nilai: u64) -> String {
     let mut angka = nilai.to_string();
     let mut posisi = angka.len();

@@ -2,6 +2,9 @@
 
 > **Navigasi:** [Indeks catatan](../README.md) · [README proyek](../../README.md) · [Endpoint API](../../endpoin.md)
 
+![Ilustrasi: Perjalanan tipe data](../ilustrasi/halaman/33-models.svg "Perjalanan tipe data")
+
+
 [Buka modul model](../../src/models/mod.rs)
 
 ## Tanggung jawab

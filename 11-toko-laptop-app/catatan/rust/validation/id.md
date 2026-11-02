@@ -2,6 +2,9 @@
 
 > **Navigasi:** [Indeks catatan](../../README.md) · [README proyek](../../../README.md) · [Endpoint API](../../../endpoin.md)
 
+![Ilustrasi: ID path jadi bilangan aman](../../ilustrasi/halaman/44-id.svg "ID path jadi bilangan aman")
+
+
 [Buka source `id.rs`](../../../src/validation/id.rs)
 
 ## Tujuan
@@ -82,3 +85,11 @@ mod tests {
 - `.is_ok()` dan `.is_err()` memeriksa varian hasil `Result`.
 
 Test mencakup ID positif, nol, dan negatif agar aturan batasnya jelas.
+
+## Ilustrasi keputusan
+
+```text
+ID dari URL
+├── id <= 0 → 400 Bad Request
+└── id > 0  → query dapat berjalan (ID belum tentu ada di database)
+```

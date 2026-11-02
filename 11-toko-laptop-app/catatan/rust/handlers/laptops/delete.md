@@ -2,6 +2,9 @@
 
 > **Navigasi:** [Indeks catatan](../../../README.md) · [README proyek](../../../../README.md) · [Endpoint API](../../../../endpoin.md)
 
+![Ilustrasi: DELETE bercabang pada hasil query](../../../ilustrasi/halaman/19-delete.svg "DELETE bercabang pada hasil query")
+
+
 [Buka source `delete.rs`](../../../../src/handlers/laptops/delete.rs)
 
 ## Tujuan
@@ -71,3 +74,21 @@ pub async fn delete_laptop(
 - Query database gagal: error diteruskan ke penanganan [`ApiError`](../../error.md).
 
 Tidak ada presenter di handler ini karena response hanya membutuhkan ID dan pesan, bukan seluruh data laptop.
+
+## Ringkasan hasil
+
+| Keadaan | Hasil repository | Response client |
+| --- | --- | --- |
+| ID valid dan baris dihapus | `Ok(true)` | `200 OK` dengan pesan dan ID. |
+| ID positif tidak ada | `Ok(false)` | `404 Not Found`. |
+| ID nol atau negatif | Belum menjalankan query. | `400 Bad Request`. |
+| Query database gagal | `Err(sqlx::Error)` | `500 Internal Server Error` melalui `ApiError`. |
+
+## Ilustrasi alur hapus
+
+```text
+DELETE /api/laptops/{id}
+  → validasi ID
+  → DELETE ... WHERE id = $1
+  → rows_affected > 0 ? 200 : 404
+```

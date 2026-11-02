@@ -2,6 +2,9 @@
 
 > **Navigasi:** [Indeks catatan](../../README.md) · [README proyek](../../../README.md) · [Endpoint API](../../../endpoin.md)
 
+![Ilustrasi: Aturan teks: trim lalu cek](../../ilustrasi/halaman/46-text.svg "Aturan teks: trim lalu cek")
+
+
 [Buka source `text.rs`](../../../src/validation/text.rs)
 
 ## Tujuan
@@ -81,3 +84,10 @@ Modul test di source memeriksa tiga perilaku helper:
 3. Karakter Unicode dihitung sebagai karakter, bukan byte.
 
 Pada test, `.into()` mengubah string literal menjadi `String` sesuai tipe parameter, `matches!(...)` mencocokkan pola hasil `Result`, dan `assert!(...)` menggagalkan test bila kondisinya salah.
+
+## Ilustrasi normalisasi
+
+```text
+teks dengan spasi → trim → cek kosong → cek panjang → Ok(String)
+teks berisi spasi saja → trim → kosong → BadRequest
+```

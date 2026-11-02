@@ -16,7 +16,7 @@ Untuk seluruh contoh perintah terminal dan penjelasan opsi seperti `-X`, `-d`, `
 ## Ringkasan Endpoint
 
 | Method | Endpoint | Kegunaan | Akses | Sukses |
-| --- | --- | --- | --- |
+| --- | --- | --- | --- | --- |
 | `GET` | [`/health`](http://127.0.0.1:3001/health) | Memeriksa apakah server merespons | Publik | `200 OK` |
 | `POST` | `/api/auth/register` | Membuat akun baru | Publik | `201 Created` |
 | `POST` | `/api/auth/login` | Login, membuat session, dan menerbitkan JWT | Publik | `200 OK` |

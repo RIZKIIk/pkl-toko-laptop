@@ -2,6 +2,9 @@
 
 > **Navigasi:** [Indeks catatan](../../README.md) · [README proyek](../../../README.md) · [Endpoint API](../../../endpoin.md)
 
+![Ilustrasi: Modul model mengumpulkan tipe](../../ilustrasi/halaman/32-mod.svg "Modul model mengumpulkan tipe")
+
+
 [Buka source `models/mod.rs`](../../../src/models/mod.rs)
 
 ## Tujuan
@@ -51,3 +54,11 @@ Re-export tidak membuat salinan tipe dan tidak mengubah perilakunya; hanya menye
 | `UpdateLaptopPayload` | Data perubahan parsial untuk laptop. |
 
 Penjelasan field dan derive tiap tipe ada di modul [laptop](laptop/mod.md).
+
+## Ilustrasi jalur tipe
+
+```text
+models/mod.rs → laptop/mod.rs → entity + payload POST + payload PATCH
+                       ↓ re-export
+            crate::models::{Laptop, CreateLaptopPayload, UpdateLaptopPayload}
+```

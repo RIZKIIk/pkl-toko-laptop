@@ -1,5 +1,5 @@
 //! Deklarasi endpoint API inventaris.
-//! [Buka catatan `routes.rs`](file:///home/rizki/projects/Rust/tugas/PKL/11-toko-laptop-app-lengkap/catatan/rust/routes.md)
+//! Catatan: [Buka penjelasan](file:///home/rizki/projects/Rust/tugas/PKL/11-toko-laptop-app/catatan/rust/routes.md)
 use axum::{
     Extension, Router, middleware,
     routing::{get, post},
@@ -13,7 +13,6 @@ use crate::{auth, handlers};
 pub fn create_router(pool: PgPool, session_cookie_secure: bool, jwt_secret: String) -> Router {
     let jwt = auth::jwt::JwtService::new(jwt_secret);
 
-    // Semua route di grup ini harus melewati middleware `require_auth`.
     let protected_routes = Router::new()
         .route("/api/auth/session", get(handlers::current_user))
         .route("/api/auth/logout", post(handlers::logout))
@@ -30,17 +29,14 @@ pub fn create_router(pool: PgPool, session_cookie_secure: bool, jwt_secret: Stri
         // Memeriksa session atau JWT sebelum request diteruskan ke handler.
         .route_layer(middleware::from_fn(auth::require_auth));
 
-    // Health dan login bersifat publik. Route terlindungi digabung setelahnya.
     Router::new()
         .route("/health", get(handlers::health))
         .route("/api/auth/login", post(handlers::login))
         .route("/api/auth/register", post(handlers::register))
         .merge(protected_routes)
-        // Login menerbitkan JWT; layer ini menyediakannya ke handler dan middleware.
         .layer(Extension(jwt))
         // Session disimpan di memori; cookie hanya `Secure` jika konfigurasi bernilai true.
         .layer(SessionManagerLayer::new(MemoryStore::default()).with_secure(session_cookie_secure))
-        // `State<PgPool>` pada handler mengambil clone pool dari state ini.
         .with_state(pool)
 }
 

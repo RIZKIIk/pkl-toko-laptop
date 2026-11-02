@@ -2,6 +2,9 @@
 
 > **Navigasi:** [Indeks catatan](../README.md) · [README proyek](../../README.md) · [Endpoint API](../../endpoin.md)
 
+![Ilustrasi: URL bertemu handler dan policy](../ilustrasi/halaman/42-routes.svg "URL bertemu handler dan policy")
+
+
 [Buka kode sumber `routes.rs`](../../src/routes.rs)
 
 ## Tanggung jawab file
@@ -9,6 +12,20 @@
 File ini menjadi peta URL API. Ia menentukan method HTTP mana yang memanggil fungsi handler mana, memasang `PgPool` dan verifikator JWT, dan melindungi route admin dengan session cookie atau bearer JWT.
 
 Tidak ada validasi, SQL, atau format response di sini. Pemisahan ini membuat daftar endpoint mudah dilihat dari satu file.
+
+## Peta route
+
+```text
+Router
+├── public: /health, /api/auth/register, /api/auth/login
+└── protected: /api/auth/session, /api/auth/logout, /api/laptops/**
+                 ↓ require_auth (JWT bearer atau session cookie)
+               handler
+```
+
+## Di halaman ini
+
+[Import](#import) · [Fungsi router](#fungsi-create_router) · [Urutan setup](#uraian-kode-berurutan) · [Daftar endpoint](#peta-endpoint) · [File terkait](#hubungan-dengan-file-lain)
 
 ## Import
 

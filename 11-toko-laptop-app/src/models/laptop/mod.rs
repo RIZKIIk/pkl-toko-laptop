@@ -1,5 +1,5 @@
 //! Bentuk data laptop untuk hasil query dan body request API.
-//! Dokumentasi: file:///home/rizki/projects/Rust/tugas/PKL/11-toko-laptop-app-lengkap/catatan/rust/models/laptop/mod.md
+//! Catatan: [Buka penjelasan](file:///home/rizki/projects/Rust/tugas/PKL/11-toko-laptop-app/catatan/rust/models/laptop/mod.md)
 mod create_payload;
 mod entity;
 mod update_payload;

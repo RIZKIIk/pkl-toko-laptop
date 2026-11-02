@@ -1,5 +1,5 @@
 //! Validasi ID laptop yang diterima dari parameter path URL.
-//! Dokumentasi: file:///home/rizki/projects/Rust/tugas/PKL/11-toko-laptop-app-lengkap/catatan/rust/validation/id.md
+//! Catatan: [Buka penjelasan](file:///home/rizki/projects/Rust/tugas/PKL/11-toko-laptop-app/catatan/rust/validation/id.md)
 use crate::error::ApiError;
 
 /// Menolak ID nol atau negatif sebelum query database dijalankan.

@@ -2,12 +2,21 @@
 
 > **Navigasi:** [Indeks catatan](README.md) · [README proyek](../README.md) · [Endpoint API](../endpoin.md)
 
+![Ilustrasi: Koleksi Postman sebagai peta API](ilustrasi/halaman/06-postman.svg "Koleksi Postman sebagai peta API")
+
+
 Folder ini tidak dijalankan oleh Rust. Isinya adalah konfigurasi Postman untuk mencoba registrasi/login dan menjalankan satu rangkaian uji CRUD terhadap API yang sedang hidup.
+
+## Di halaman ini
+
+[Collection dan request](#postman-collection) · [Environment lokal](#environment-postman-lokal)
 
 - [Buka collection JSON](../postman/toko-laptop-app.postman_collection.json)
 - [Buka environment JSON](../postman/toko-laptop-app.local.postman_environment.json)
 
-## `toko-laptop-app.postman_collection.json`
+## Postman collection
+
+File: [`toko-laptop-app.postman_collection.json`](../postman/toko-laptop-app.postman_collection.json)
 
 ### Bagian `info`
 
@@ -113,7 +122,9 @@ Request memakai `DELETE {{baseUrl}}/api/laptops/{{laptopId}}`. Script hanya meme
 | `pm.expect(...)` | Assertion berbasis Chai yang membuat test gagal jika kondisi salah. |
 | `pm.collectionVariables.set/get` | Menyimpan atau membaca variable pada collection saat run. |
 
-## `toko-laptop-app.local.postman_environment.json`
+## Environment Postman lokal
+
+File: [`toko-laptop-app.local.postman_environment.json`](../postman/toko-laptop-app.local.postman_environment.json)
 
 File environment mendefinisikan nilai `baseUrl` dengan nilai awal `http://127.0.0.1:3001`.
 
@@ -130,3 +141,12 @@ File environment mendefinisikan nilai `baseUrl` dengan nilai awal `http://127.0.
 | `_postman_exported_at` / `_using` | Metadata waktu dan aplikasi saat file diekspor. |
 
 Pilih environment ini di Postman, ubah `baseUrl` agar cocok dengan `APP_HOST` dan `APP_PORT`, lalu tambahkan `adminUsername` dan `adminPassword` sesuai environment server. Postman tidak membaca file `.env` backend otomatis. Username/password registrasi dapat diatur pada collection variables. Cookie session diatur melalui cookie jar Postman, bukan dimasukkan ke variable.
+
+## Ilustrasi urutan collection
+
+```text
+00 Register ─┐
+             ├─> 01 Login ─> 02 List ─> 03 Create ─> 04 Detail
+             │                                      └> 05 Update ─> 06 Delete
+             └─ registrasi dapat dilewati jika akun sudah tersedia
+```

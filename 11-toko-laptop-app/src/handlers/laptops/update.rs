@@ -1,5 +1,5 @@
 //! Handler untuk memperbarui sebagian field laptop.
-//! Dokumentasi: file:///home/rizki/projects/Rust/tugas/PKL/11-toko-laptop-app-lengkap/catatan/rust/handlers/laptops/update.md
+//! Catatan: [Buka penjelasan](file:///home/rizki/projects/Rust/tugas/PKL/11-toko-laptop-app/catatan/rust/handlers/laptops/update.md)
 use axum::{
     Json,
     extract::{Path, State},

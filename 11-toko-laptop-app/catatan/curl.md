@@ -2,7 +2,14 @@
 
 > **Navigasi:** [Indeks catatan](README.md) · [README proyek](../README.md) · [Endpoint API](../endpoin.md)
 
+![Ilustrasi: Dari terminal ke endpoint](ilustrasi/halaman/05-curl.svg "Dari terminal ke endpoint")
+
+
 Panduan ini berisi contoh untuk semua endpoint API toko laptop. Contoh memakai Bash/Linux/macOS dan URL lokal `http://127.0.0.1:3001` secara langsung. Jika host atau port server berubah, ganti URL tersebut pada command yang digunakan. Untuk Windows PowerShell, gunakan `curl.exe` bila perintah `curl` mengarah ke alias PowerShell.
+
+## Di halaman ini
+
+[Urutan login](#urutan-pemakaian) · [Semua contoh endpoint](#semua-endpoint) · [Opsi curl](#penjelasan-opsi-curl) · [Error umum](#error-umum)
 
 ## Urutan pemakaian
 
@@ -213,11 +220,11 @@ Contoh response `200 OK`:
 }
 ```
 
-Tanpa session aktif, server mengembalikan `401 Unauthorized`.
+Tanpa cookie session atau bearer JWT yang valid, server mengembalikan `401 Unauthorized`.
 
 ### 10. Logout — `POST /api/auth/logout`
 
-Wajib membawa cookie session. Tidak ada body, maka metode ditentukan eksplisit memakai `-X POST`. Logout menghapus session server-side.
+Wajib memakai cookie session atau JWT bearer yang valid. Tidak ada body, maka metode ditentukan eksplisit memakai `-X POST`. Logout menghapus session server-side; JWT bearer tetap berlaku sampai kedaluwarsa.
 
 ```bash
 curl -i \
@@ -260,8 +267,18 @@ Catatan tentang `-X`: opsi ini hanya memilih/menimpa nama metode HTTP; ia tidak 
 | Status | Penyebab umum | Yang perlu diperiksa |
 | --- | --- | --- |
 | `400` | Body JSON atau data laptop tidak valid; ID bukan bilangan positif. | Nama/merek, angka harga/stok, dan format JSON. |
-| `401` | Login belum dilakukan, password salah, atau session sudah tidak berlaku. | Login ulang dan pastikan `-b cookies.txt` disertakan. |
+| `401` | Login belum dilakukan, kredensial salah, atau session/JWT tidak valid. | Login ulang; kirim `-b cookies.txt` untuk cookie atau header `Authorization: Bearer $TOKEN` untuk JWT. |
 | `404` | Laptop dengan ID tersebut tidak ada. | Periksa ID dari response create. |
 | `500` | Query database atau session store gagal. | Log server; detail internal tidak dikirim pada response API. |
 
 Jika Axum menolak JSON yang malformed atau tipe konten yang salah sebelum handler berjalan, bentuk response error dapat berbeda dari JSON error aplikasi.
+
+## Ilustrasi alur request
+
+```text
+register (sekali) → login → simpan cookie/JWT
+                           ↓
+                    CRUD laptop
+                           ↓
+                       logout
+```

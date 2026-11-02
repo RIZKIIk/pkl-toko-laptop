@@ -1,5 +1,5 @@
 //! Query database khusus untuk tabel `users`.
-//! [Catatan repository user](../../catatan/rust/repositories/user-repository.md)
+//! Catatan: [Buka penjelasan](file:///home/rizki/projects/Rust/tugas/PKL/11-toko-laptop-app/catatan/rust/repositories/user-repository.md)
 use sqlx::PgPool;
 
 /// Mengambil password latihan yang tersimpan untuk username.
@@ -30,6 +30,7 @@ pub async fn insert_user(
     username: &str,
     password: &str,
 ) -> Result<bool, sqlx::Error> {
+    // ON CONFLICT menghindari race antara pengecekan username dan proses insert.
     let inserted_username: Option<String> = sqlx::query_scalar(
         "INSERT INTO public.users (username, password) VALUES ($1, $2) \
          ON CONFLICT (username) DO NOTHING RETURNING username",

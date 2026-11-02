@@ -2,147 +2,119 @@
 
 > **Navigasi:** [Indeks catatan](../../README.md) · [README proyek](../../../README.md) · [Endpoint API](../../../endpoin.md)
 
+![Ilustrasi: Dua jalur autentikasi request](../../ilustrasi/halaman/10-session.svg "Dua jalur autentikasi request")
+
+
 [Buka source `session.rs`](../../../src/auth/session.rs)
 
-## Gambaran singkat
+## Tujuan
 
-File ini menyimpan helper session dan middleware untuk route yang memerlukan login. Middleware menerima session cookie maupun bearer JWT yang diverifikasi oleh [`jwt.rs`](../../../src/auth/jwt.rs).
+File ini mengelola identitas session dan middleware autentikasi untuk endpoint yang memerlukan login. Middleware menerima salah satu dari dua bukti login: cookie session yang berisi username atau JWT bearer yang valid.
+
+## Di halaman ini
+
+[Alur login](#alur-autentikasi) · [Helper session](#helper-session) · [Middleware](#middleware-require_auth) · [Batasan store](#penyimpanan-dan-batasannya) · [Contoh curl](#contoh-memakai-cookie) · [File terkait](#file-terkait)
+
+| Bagian | Tugas |
+| --- | --- |
+| `SESSION_USERNAME_KEY` | Menyamakan nama key username yang disimpan dan dibaca dari session. |
+| `start_session` | Mengganti ID session setelah login dan menyimpan username. |
+| `session_username` | Membaca username dari session request. |
+| `clear_session` | Menghapus isi session dan record pada store. |
+| `require_auth` | Meloloskan request dengan JWT atau session yang memiliki username. |
+
+## Alur autentikasi
 
 ```text
-login berhasil -> start_session menyimpan username dan JWT diterbitkan
-request protected -> require_auth memeriksa bearer JWT atau username session
-logout -> clear_session menghapus session
+Login berhasil
+  ├─ start_session: ganti ID session dan simpan username
+  └─ handler menerbitkan JWT
+       ↓
+Request ke endpoint protected
+  ├─ JWT bearer valid → teruskan request
+  └─ JWT tidak ada/tidak valid → periksa username pada session
+       ├─ username ada → teruskan request
+       └─ session kosong → 401 Unauthorized
 ```
 
-Session disimpan di server. Browser atau client membawa cookie session; username tidak dipercaya dari body request untuk setiap operasi. Route dan middleware dipasang di [routes](../routes.md), sedangkan handler login/logout ada di [handler auth](../handlers/auth.md).
+JWT diperiksa lebih dulu. Jika tidak ada atau tidak valid, request masih dapat diterima lewat session cookie. Kegagalan teknis saat membaca session menghasilkan `500`; itu berbeda dari session yang terbaca tetapi belum login (`401`).
 
-## 1. Import
+## Import dan konstanta
 
 ```rust
-use axum::{extract::Request, http::StatusCode, middleware::Next, response::Response};
+use axum::{
+    extract::{Extension, Request},
+    http::StatusCode,
+    middleware::Next,
+    response::Response,
+};
 use tower_sessions::Session;
-use super::http::error_response;
-```
 
-- `Request` mewakili request HTTP yang diteruskan ke middleware.
-- `StatusCode` menyediakan kode seperti `401 Unauthorized` dan `500 Internal Server Error`.
-- `Next` mewakili langkah middleware/handler berikutnya dalam rantai request.
-- `Response` adalah hasil HTTP yang dikembalikan middleware.
-- `Session` adalah handle dari `tower-sessions` untuk membaca dan menulis data session.
-- `super::http::error_response` memakai helper response dari modul `auth` induk.
+use super::{http::error_response, jwt::JwtService};
 
-`use` membawa nama ke cakupan file. `super::` berarti mulai dari modul induk saat ini, yaitu `auth`.
-
-## 2. Key username session
-
-```rust
 pub(crate) const SESSION_USERNAME_KEY: &str = "username";
 ```
 
-- `pub(crate)` membuka konstanta ini ke bagian lain dalam crate, tetapi bukan ke pemakai crate dari luar.
-- `const` membuat nilai konstan yang tidak berubah saat program berjalan.
-- `SESSION_USERNAME_KEY` adalah nama konstanta; huruf kapital dan underscore adalah konvensi Rust untuk konstanta.
-- `: &str` menyatakan bahwa nilainya berupa string slice.
+- `Extension<JwtService>` menerima verifier JWT yang dipasang router.
+- `Request` dan `Next` mewakili request saat ini dan langkah handler berikutnya.
+- `Session` memberi akses ke session server-side untuk request ini.
+- `error_response` membentuk body JSON error yang seragam.
+- `SESSION_USERNAME_KEY` menjaga agar semua fungsi memakai ejaan key yang sama.
 
-Handler memakai key yang sama saat menyimpan dan membaca username agar tidak terjadi perbedaan ejaan key.
+## Helper session
 
-## 3. `start_session`
-
-```rust
-pub async fn start_session(
-    session: &Session,
-    username: &str,
-) -> Result<(), tower_sessions::session::Error> {
-    session.cycle_id().await?;
-    session.insert(SESSION_USERNAME_KEY, username).await
-}
-```
-
-Fungsi asinkron ini memulai identitas login pada session.
-
-- `&Session` dan `&str` adalah referensi: fungsi meminjam session dan teks username.
-- `async` memungkinkan fungsi menunggu operasi session dengan `.await`.
-- `Result<(), tower_sessions::session::Error>` berarti sukses tanpa nilai tambahan, atau error dari penyimpanan session.
-- `session.cycle_id().await?` mengganti ID session setelah autentikasi. `?` menghentikan fungsi dan meneruskan error jika pergantian ID gagal.
-- `session.insert(SESSION_USERNAME_KEY, username).await` menyimpan username dengan key tetap. Ini adalah ekspresi terakhir, jadi hasil `Result` langsung dikembalikan.
-
-Penggantian ID membantu mengurangi risiko session fixation. Detail teknis session tetap dikelola oleh library.
-
-## 4. `session_username`
+### `start_session(session, username)`
 
 ```rust
-pub async fn session_username(
-    session: &Session,
-) -> Result<Option<String>, tower_sessions::session::Error> {
-    session.get(SESSION_USERNAME_KEY).await
-}
+session.cycle_id().await?;
+session.insert(SESSION_USERNAME_KEY, username).await
 ```
 
-Fungsi ini mengambil username dari session:
+Fungsi ini dipanggil setelah kredensial cocok. `cycle_id()` mengganti ID session untuk mengurangi risiko session fixation. Sesudah itu, `insert` menyimpan username. Hasil `Result` terakhir dikembalikan langsung; `?` meneruskan error jika pergantian ID gagal.
 
-- `Option<String>` menunjukkan username bisa ditemukan (`Some(username)`) atau belum ada (`None`).
-- `Result<..., Error>` membedakan session kosong dari kegagalan membaca store. `Ok(None)` adalah kondisi normal belum login; `Err(...)` menunjukkan masalah teknis.
-- `session.get(...).await` meminta nilai dengan key username dan langsung mengembalikan hasilnya.
+### `session_username(session)`
 
-## 5. `clear_session`
+Mengambil nilai bertipe `Option<String>` dari key username. `Ok(Some(username))` berarti sudah login, `Ok(None)` berarti session ada tetapi belum berisi identitas, dan `Err(error)` berarti store gagal dibaca.
 
-```rust
-pub async fn clear_session(session: &Session) -> Result<(), tower_sessions::session::Error> {
-    session.flush().await
-}
+### `clear_session(session)`
+
+Memanggil `session.flush()` untuk menghapus data session dari store dan membersihkan session request. Handler logout menangani error dan mengembalikan response yang sesuai. JWT tidak dihapus oleh operasi ini.
+
+## Middleware `require_auth`
+
+Signature fungsi menerima extension JWT, session, request, dan `Next`, lalu selalu menghasilkan Axum `Response`.
+
+1. `username_from_headers(request.headers(), &jwt)` mencari dan memverifikasi bearer token.
+2. Jika token valid, `next.run(request).await` meneruskan request tanpa membaca session.
+3. Jika tidak, `session_username(&session).await` memeriksa identitas di cookie session.
+4. `Ok(Some(_))` meneruskan request. Username tidak perlu dibaca lagi oleh middleware karena handler berikutnya yang membutuhkan identitas mengambilnya sendiri.
+5. `Ok(None)` mengembalikan `401 Unauthorized` dengan pesan `Login diperlukan`.
+6. `Err(error)` dicatat memakai `eprintln!`, lalu client menerima `500` dengan pesan umum. Rincian internal tidak dikirim ke client.
+
+Middleware ini dipasang hanya pada grup route protected di [routes.rs](../routes.md). `/health`, registrasi, dan login tetap publik.
+
+## Penyimpanan dan batasannya
+
+Router memakai `MemoryStore`. Session akan hilang ketika server dimulai ulang dan tidak dibagikan ke instance aplikasi lain. Session dan JWT juga memiliki siklus logout berbeda: logout menghapus session, sedangkan JWT masih berlaku sampai expiry satu jam. Client harus menghapus token setelah logout.
+
+## Contoh memakai cookie
+
+`curl` dapat menyimpan cookie login ke file lalu mengirimkannya pada request berikutnya:
+
+```bash
+curl -i -c cookies.txt \
+  -H 'Content-Type: application/json' \
+  -d '{"username":"admin","password":"PASSWORD_LOKAL"}' \
+  http://127.0.0.1:3001/api/auth/login
+
+curl -i -b cookies.txt http://127.0.0.1:3001/api/laptops
 ```
 
-`session.flush().await` menghapus data session lokal dan record session di store. Hasil operasi berupa `Result`; handler dapat mencatat error jika penghapusan gagal.
+File cookie berisi kredensial aktif. Jangan dibagikan atau dimasukkan ke version control. Contoh seluruh request tersedia di [panduan curl](../../curl.md).
 
-## 6. Middleware `require_auth`
+## File terkait
 
-```rust
-pub async fn require_auth(session: Session, request: Request, next: Next) -> Response {
-    match session_username(&session).await {
-        Ok(Some(_)) => next.run(request).await,
-        Ok(None) => error_response(StatusCode::UNAUTHORIZED, "Login diperlukan"),
-        Err(error) => {
-            eprintln!("Gagal membaca session: {error}");
-            error_response(
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "Terjadi kesalahan pada session",
-            )
-        }
-    }
-}
-```
-
-### Parameter dan hasil
-
-- `Extension<JwtService>` menyediakan verifikator JWT yang dibuat dari `JWT_SECRET`.
-- `session: Session` adalah session request saat ini.
-- `request: Request` adalah request yang akan diteruskan jika pengguna sudah login.
-- `next: Next` adalah jalur untuk melanjutkan ke handler berikutnya.
-- `-> Response` berarti middleware selalu menghasilkan response HTTP, baik dengan meneruskan request maupun menghentikannya dengan error.
-
-### Cara membaca `match`
-
-Middleware memeriksa JWT bearer lebih dulu. Jika token tidak ada atau tidak valid, ia memeriksa session cookie:
-
-| Pola | Arti | Tindakan |
-| --- | --- | --- |
-| `Ok(Some(_))` | Session berhasil dibaca dan ada username. `_` berarti nilainya ada tetapi tidak perlu dipakai di sini. | `next.run(request).await` meneruskan request ke handler berikutnya. |
-| `Ok(None)` | Session terbaca, tetapi tidak menyimpan username. | Mengirim `401 Unauthorized` dengan pesan login diperlukan. |
-| `Err(error)` | Pembacaan session gagal secara teknis. | Mencatat detail di log server lalu mengirim `500` dengan pesan umum. |
-
-`eprintln!` mencetak error ke stderr server. Detail error tidak dikirim ke client; client hanya menerima pesan aman melalui [`error_response`](http.md).
-
-## 7. Unit test
-
-Test pada source membuat `MemoryStore` sementara, membuat `Session`, kemudian:
-
-1. Memulai session untuk `"admin"`.
-2. Menyimpan perubahan session dengan `session.save().await`.
-3. Memastikan `session_username` membaca kembali `"admin"`.
-4. Memanggil `clear_session` dan memastikan hasil bacaan menjadi `None`.
-
-`#[cfg(test)]` menyertakan modul hanya saat test dikompilasi. `#[tokio::test]` menyediakan runtime asynchronous untuk fungsi test, `Arc` memungkinkan store dibagikan, dan `assert_eq!` membandingkan hasil aktual dengan nilai yang diharapkan.
-
-## Catatan penyimpanan
-
-Router saat ini menggunakan `MemoryStore`, sehingga session hilang ketika proses server dimulai ulang dan tidak dibagikan antar-instance server. Password yang diperiksa login juga disimpan sebagai teks biasa untuk latihan lokal; keduanya bukan rancangan produksi.
+- [Handler auth](../handlers/auth.md) memulai dan menghapus session.
+- [JWT](jwt.md) menjelaskan pembuatan dan pemeriksaan bearer token.
+- [Routes](../routes.md) memasang `require_auth` dan `SessionManagerLayer`.
+- Source berisi unit test helper untuk menyimpan, membaca, dan membersihkan session.

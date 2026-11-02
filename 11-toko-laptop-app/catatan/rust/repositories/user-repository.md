@@ -2,6 +2,9 @@
 
 > **Navigasi:** [Indeks catatan](../../README.md) · [README proyek](../../../README.md) · [Endpoint API](../../../endpoin.md)
 
+![Ilustrasi: Akses data akun](../../ilustrasi/halaman/40-user-repository.svg "Akses data akun")
+
+
 [Buka source `user_repository.rs`](../../../src/repositories/user_repository.rs)
 
 ## Tujuan
@@ -108,3 +111,11 @@ Berbeda dari `upsert_user`, fungsi ini tidak menimpa akun. Jika username konflik
 | `insert_user` | Membuat akun dan menghasilkan `true` | Tidak mengubah data dan menghasilkan `false` |
 
 Skema tabel dijelaskan pada [migration users](../database/0002-create-users.md) dan [migration password latihan](../database/0003-plaintext-password.md).
+
+## Ilustrasi operasi akun
+
+```text
+login    → find_password → Some(password) / None
+startup  → upsert_user   → insert atau perbarui akun admin
+register → insert_user   → true (baru) / false (username dipakai)
+```

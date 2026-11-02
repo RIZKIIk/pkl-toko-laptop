@@ -2,6 +2,9 @@
 
 > **Navigasi:** [Indeks catatan](../../README.md) · [README proyek](../../../README.md) · [Endpoint API](../../../endpoin.md)
 
+![Ilustrasi: Angka menjadi label Rupiah](../../ilustrasi/halaman/36-rupiah.svg "Angka menjadi label Rupiah")
+
+
 [Buka source `rupiah.rs`](../../../src/presenters/rupiah.rs)
 
 ## Tujuan
@@ -56,6 +59,20 @@ Fungsi ini privat karena tidak memiliki `pub`; hanya kode modul presenter yang m
 
 Contoh angka `12500000` diproses menjadi `12.500.000`.
 
+| Angka internal | String response |
+| ---: | --- |
+| `0` | `Rp 0` |
+| `999` | `Rp 999` |
+| `1_000` | `Rp 1.000` |
+| `12_500_000` | `Rp 12.500.000` |
+| `-1_600_000` | `Rp -1.600.000` |
+
 ## 3. Unit test
 
 Test memastikan pemisah titik benar untuk angka besar, nol, angka di bawah seribu, batas seribu, dan nilai negatif. `assert_eq!(aktual, harapan)` membuat test gagal jika dua nilai berbeda.
+
+## Ilustrasi pemformatan
+
+```text
+12_500_000 → digit tanpa pemisah → kelompok tiga digit → Rp 12.500.000
+```

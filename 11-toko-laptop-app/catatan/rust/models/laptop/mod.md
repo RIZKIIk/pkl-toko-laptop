@@ -2,6 +2,9 @@
 
 > **Navigasi:** [Indeks catatan](../../../README.md) · [README proyek](../../../../README.md) · [Endpoint API](../../../../endpoin.md)
 
+![Ilustrasi: Submodul laptop diekspor](../../../ilustrasi/halaman/30-mod.svg "Submodul laptop diekspor")
+
+
 [Buka source `laptop/mod.rs`](../../../../src/models/laptop/mod.rs)
 
 ## Tujuan
@@ -45,3 +48,12 @@ Karena ekspor ulang ini, lapisan lain dapat menulis `crate::models::Laptop` dari
 | [`Laptop`](entity.md) | Data satu laptop yang dibaca atau disimpan ke database. |
 | [`CreateLaptopPayload`](create-payload.md) | Field yang diperlukan untuk membuat laptop baru. |
 | [`UpdateLaptopPayload`](update-payload.md) | Field yang boleh dikirim untuk perubahan parsial. |
+
+## Ilustrasi modul
+
+```text
+laptop/mod.rs
+├── create_payload.rs → CreateLaptopPayload
+├── entity.rs         → Laptop
+└── update_payload.rs → UpdateLaptopPayload
+```

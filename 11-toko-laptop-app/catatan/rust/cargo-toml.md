@@ -2,11 +2,27 @@
 
 > **Navigasi:** [Indeks catatan](../README.md) · [README proyek](../../README.md) · [Endpoint API](../../endpoin.md)
 
+![Ilustrasi: Peta dependency Cargo](../ilustrasi/halaman/11-cargo-toml.svg "Peta dependency Cargo")
+
+
 [Buka file `Cargo.toml`](../../Cargo.toml)
 
 ## Tanggung jawab file
 
 `Cargo.toml` adalah manifest Cargo di root proyek: file yang memberi nama package, memilih edisi Rust, dan mencatat library yang perlu diunduh/dikompilasi. File ini tidak dijalankan saat request API datang, tetapi tanpa file ini Cargo tidak tahu cara membangun aplikasi.
+
+## Peta dependency
+
+```text
+Cargo.toml
+├── runtime/server : tokio + axum
+├── database       : sqlx (PostgreSQL + migration)
+├── data JSON      : serde + serde_json
+├── auth           : tower-sessions + jsonwebtoken
+└── konfigurasi    : dotenvy
+```
+
+`Cargo.lock` kemudian mengunci versi dependency yang benar-benar dipakai dalam build proyek ini.
 
 ## Bagian `[package]`
 

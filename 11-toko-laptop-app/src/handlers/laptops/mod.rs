@@ -1,5 +1,5 @@
 //! Handler operasi laptop, dengan satu file untuk setiap aksi HTTP.
-//! Dokumentasi: file:///home/rizki/projects/Rust/tugas/PKL/11-toko-laptop-app-lengkap/catatan/rust/handlers/laptops/mod.md
+//! Catatan: [Buka penjelasan](file:///home/rizki/projects/Rust/tugas/PKL/11-toko-laptop-app/catatan/rust/handlers/laptops/mod.md)
 use crate::error::ApiError;
 use serde_json::{Value, json};
 

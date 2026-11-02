@@ -1,5 +1,5 @@
 //! Handler untuk membaca daftar atau satu laptop.
-//! Dokumentasi: file:///home/rizki/projects/Rust/tugas/PKL/11-toko-laptop-app-lengkap/catatan/rust/handlers/laptops/read.md
+//! Catatan: [Buka penjelasan](file:///home/rizki/projects/Rust/tugas/PKL/11-toko-laptop-app/catatan/rust/handlers/laptops/read.md)
 use axum::{
     Json,
     extract::{Path, State},

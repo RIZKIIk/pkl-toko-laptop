@@ -1,5 +1,5 @@
 //! Handler untuk membuat laptop baru.
-//! Dokumentasi: file:///home/rizki/projects/Rust/tugas/PKL/11-toko-laptop-app-lengkap/catatan/rust/handlers/laptops/create.md
+//! Catatan: [Buka penjelasan](file:///home/rizki/projects/Rust/tugas/PKL/11-toko-laptop-app/catatan/rust/handlers/laptops/create.md)
 use axum::{Json, extract::State, http::StatusCode};
 use serde_json::Value;
 use sqlx::PgPool;

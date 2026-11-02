@@ -1,5 +1,5 @@
 //! Body JSON dengan field opsional untuk mengubah sebagian data laptop.
-//! Dokumentasi: file:///home/rizki/projects/Rust/tugas/PKL/11-toko-laptop-app-lengkap/catatan/rust/models/laptop/update-payload.md
+//! Catatan: [Buka penjelasan](file:///home/rizki/projects/Rust/tugas/PKL/11-toko-laptop-app/catatan/rust/models/laptop/update-payload.md)
 use serde::Deserialize;
 
 /// Data parsial yang diterima oleh `PATCH /api/laptops/{id}`.

@@ -2,6 +2,9 @@
 
 > **Navigasi:** [Indeks catatan](../../README.md) · [README proyek](../../../README.md) · [Endpoint API](../../../endpoin.md)
 
+![Ilustrasi: Repository dipisah menurut domain](../../ilustrasi/halaman/39-mod.svg "Repository dipisah menurut domain")
+
+
 [Buka source `repositories/mod.rs`](../../../src/repositories/mod.rs)
 
 ## Tujuan
@@ -30,6 +33,11 @@ Dalam sintaks `pub mod nama;`:
 - `nama` adalah nama modul dan umumnya sama dengan nama file tanpa `.rs`.
 - `;` menandakan isi modul berada di file terpisah.
 
+| Modul | Tabel PostgreSQL | Kegunaan utama |
+| --- | --- | --- |
+| `laptop_repository` | `public.laptops` | Membaca daftar/detail, membuat, mengubah, dan menghapus laptop. |
+| `user_repository` | `public.users` | Mencari password latihan, membuat akun, dan menyinkronkan akun admin. |
+
 ## Koneksi database
 
 File ini tidak membuat koneksi. `PgPool` dibuat saat startup oleh [config](../config.md), lalu diberikan ke handler. Handler meneruskan referensi pool ke fungsi repository untuk menjalankan query.
@@ -38,3 +46,9 @@ File ini tidak membuat koneksi. `PgPool` dibuat saat startup oleh [config](../co
 
 - [laptop_repository.rs](laptop-repository.md) menjelaskan query CRUD untuk tabel laptops.
 - [user_repository.rs](user-repository.md) menjelaskan query akun pada tabel users.
+
+## Ilustrasi perjalanan query
+
+```text
+main membuat PgPool → router membagikan pool → handler → repository → PostgreSQL
+```

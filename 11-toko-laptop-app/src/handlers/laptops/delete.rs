@@ -1,5 +1,5 @@
 //! Handler untuk menghapus laptop berdasarkan ID.
-//! Dokumentasi: file:///home/rizki/projects/Rust/tugas/PKL/11-toko-laptop-app-lengkap/catatan/rust/handlers/laptops/delete.md
+//! Catatan: [Buka penjelasan](file:///home/rizki/projects/Rust/tugas/PKL/11-toko-laptop-app/catatan/rust/handlers/laptops/delete.md)
 use axum::{
     Json,
     extract::{Path, State},

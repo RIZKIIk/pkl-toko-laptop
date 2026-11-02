@@ -1,5 +1,5 @@
 //! Handler untuk login, pemeriksaan identitas, dan logout session/JWT admin.
-//! [Catatan handler auth](file:///home/rizki/projects/Rust/tugas/PKL/11-toko-laptop-app-lengkap/catatan/rust/handlers/auth.md)
+//! Catatan: [Buka penjelasan](file:///home/rizki/projects/Rust/tugas/PKL/11-toko-laptop-app/catatan/rust/handlers/auth.md)
 use axum::{
     Json,
     extract::{Extension, State},
@@ -14,6 +14,7 @@ use tower_sessions::Session;
 
 use crate::auth::{self, http, jwt::JwtService, session};
 
+/// Membersihkan username dan memastikan sesuai batas kolom database.
 fn validate_username(username: &str) -> Result<&str, &'static str> {
     let username = username.trim();
     if username.is_empty() {
@@ -27,7 +28,6 @@ fn validate_username(username: &str) -> Result<&str, &'static str> {
 
 /// Body JSON yang wajib dikirim ke `POST /api/auth/login`.
 #[derive(Deserialize)]
-// Menolak field tambahan agar body login selalu sesuai kontrak API.
 #[serde(deny_unknown_fields)]
 pub struct LoginPayload {
     /// Nama akun yang akan dicocokkan dengan tabel `users`.
@@ -67,6 +67,7 @@ pub async fn login(
         return http::error_response(StatusCode::UNAUTHORIZED, "Username atau password salah");
     }
 
+    // Satu login menghasilkan JWT dan session cookie untuk dua cara autentikasi.
     let token = match jwt.issue_token(username) {
         Ok(token) => token,
         Err(error) => {
@@ -135,6 +136,7 @@ pub async fn current_user(
     headers: HeaderMap,
     session: Session,
 ) -> Response {
+    // Jika bearer tidak ada atau tidak valid, coba identitas dari session cookie.
     if let Some(username) = auth::jwt::username_from_headers(&headers, &jwt) {
         return http::success_response(json!({
             "status": "success",

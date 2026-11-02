@@ -2,6 +2,9 @@
 
 > **Navigasi:** [Indeks catatan](../../README.md) · [README proyek](../../../README.md) · [Endpoint API](../../../endpoin.md)
 
+![Ilustrasi: Entity dipilih jadi response](../../ilustrasi/halaman/34-laptop-response.svg "Entity dipilih jadi response")
+
+
 [Buka source `laptop_response.rs`](../../../src/presenters/laptop_response.rs)
 
 ## Tujuan
@@ -81,6 +84,24 @@ Object yang dihasilkan:
 
 Harga menjadi string Rupiah, walaupun model dan database menyimpannya sebagai angka.
 
+## Pemetaan endpoint ke bentuk data
+
+| Operasi | Presenter | Bentuk `data` |
+| --- | --- | --- |
+| GET daftar | `laptop_to_array` untuk setiap baris. | Array berisi array laptop. |
+| GET detail | `laptop_to_array`. | Satu array `[id, nama, merek, harga, stok]`. |
+| PATCH | `laptop_to_array`. | Array laptop setelah perubahan. |
+| POST | `laptop_to_object`. | Object dengan key bernama. |
+
 ## 3. Unit test
 
 `#[cfg(test)]` menyertakan modul test hanya saat test dijalankan. `sample_laptop()` membuat data contoh yang dipakai dua test; `assert_eq!` membandingkan hasil presenter dengan JSON yang diharapkan. Test memeriksa urutan array dan key object, termasuk format harga.
+
+## Ilustrasi pemilihan bentuk
+
+```text
+Laptop
+  ├─ GET / PATCH → [id, nama, merek, harga, stok]
+  └─ POST         → object bernama
+                       harga menjadi string Rupiah
+```

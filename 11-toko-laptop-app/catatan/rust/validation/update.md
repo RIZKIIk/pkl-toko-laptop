@@ -2,6 +2,9 @@
 
 > **Navigasi:** [Indeks catatan](../../README.md) · [README proyek](../../../README.md) · [Endpoint API](../../../endpoin.md)
 
+![Ilustrasi: PATCH validasi hanya nilai hadir](../../ilustrasi/halaman/47-update.svg "PATCH validasi hanya nilai hadir")
+
+
 [Buka source `update.rs`](../../../src/validation/update.rs)
 
 ## Tujuan
@@ -87,6 +90,25 @@ Body `{"nama":" ThinkPad "}` menjadi `nama: Some("ThinkPad")`; field lain tetap 
 
 Field `None` diteruskan ke repository sebagai field yang tidak diubah. Query PATCH menggunakan `COALESCE` untuk mempertahankan nilai lama; detailnya ada di [repository laptop](../repositories/laptop-repository.md).
 
+## Ringkasan perilaku field
+
+| Field request | Contoh | Hasil validasi |
+| --- | --- | --- |
+| `nama` | `" ThinkPad "` | `Some("ThinkPad")` setelah trim. |
+| `merek` | Tidak dikirim | Tetap `None`; merek lama dipertahankan. |
+| `harga` | `0` | Diterima; nol diperbolehkan. |
+| `stok` | `-1` | Ditolak sebagai `BadRequest`. |
+| Semua field tidak dikirim | `{}` | Ditolak karena tidak ada perubahan. |
+
 ## 3. Unit test
 
 Test pada source memastikan satu field teks dapat dibersihkan sementara field lain tetap dipertahankan, serta payload yang seluruh field-nya `None` ditolak. `assert_eq!` membandingkan nilai, dan `assert!(...is_err())` memastikan hasilnya error.
+
+## Ilustrasi hasil PATCH
+
+```text
+Body berisi sebagian field → validasi nilai yang hadir
+                            → None dipertahankan oleh SQL
+                            → Some diperbarui
+Body kosong ────────────────→ 400 Bad Request
+```

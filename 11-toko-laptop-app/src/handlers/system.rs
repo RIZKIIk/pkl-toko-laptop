@@ -1,5 +1,5 @@
 //! Endpoint untuk pemeriksaan status server.
-//! Dokumentasi: file:///home/rizki/projects/Rust/tugas/PKL/11-toko-laptop-app-lengkap/catatan/rust/handlers/system.md
+//! Catatan: [Buka penjelasan](file:///home/rizki/projects/Rust/tugas/PKL/11-toko-laptop-app/catatan/rust/handlers/system.md)
 use axum::Json;
 use serde_json::{Value, json};
 

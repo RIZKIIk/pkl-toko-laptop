@@ -2,6 +2,9 @@
 
 > **Navigasi:** [Indeks catatan](../../README.md) · [README proyek](../../../README.md) · [Endpoint API](../../../endpoin.md)
 
+![Ilustrasi: Header auth membuka pintu](../../ilustrasi/halaman/07-http.svg "Header auth membuka pintu")
+
+
 [Buka source](../../../src/auth/http.rs)
 
 ## Gambaran singkat
@@ -14,6 +17,10 @@ File ini menyediakan dua helper untuk membuat response HTTP autentikasi dalam fo
 | `success_response(body)` | Proses berhasil | Selalu `200 OK` |
 
 Kedua helper mengubah data yang diberikan menjadi `Response` Axum. Dengan begitu, handler tidak perlu menyusun response HTTP sendiri berulang kali.
+
+## Di halaman ini
+
+[Import](#1-import) · [Response error](#2-helper-error_response) · [Response sukses](#3-helper-success_response) · [Alur](#alur-sederhananya)
 
 ## 1. Import
 
@@ -45,7 +52,7 @@ Axum adalah library web untuk Rust. Aplikasi menggunakan Axum untuk menangani re
 
 `serde_json` adalah library terpisah dari Axum. Di file ini, `json!` membuat datanya dan `Value` menjadi tipe data JSON-nya; Axum kemudian mengirimkannya melalui `Json`.
 
-## 2. `error_response(status, message)`
+## 2. Helper `error_response`
 
 Kode:
 
@@ -144,7 +151,7 @@ http::error_response(StatusCode::UNAUTHORIZED, "Login diperlukan")
 
 Hasilnya: status `401 Unauthorized` dan body JSON berisi status `"error"` serta pesan `"Login diperlukan"`. Pesan yang dikirim ke client sebaiknya aman dan tidak berisi rincian internal seperti query database.
 
-## 3. `success_response(body)`
+## 3. Helper `success_response`
 
 Kode:
 

@@ -2,6 +2,9 @@
 
 > **Navigasi:** [Indeks catatan](../README.md) · [README proyek](../../README.md) · [Endpoint API](../../endpoin.md)
 
+![Ilustrasi: Startup sampai server mendengar](../ilustrasi/halaman/27-main.svg "Startup sampai server mendengar")
+
+
 [Buka kode `main.rs`](../../src/main.rs)
 
 ## Tujuan file
@@ -10,6 +13,10 @@
 startup secara berurutan: memuat konfigurasi, membuka koneksi PostgreSQL,
 menjalankan migration, menyiapkan akun admin, membuat router, lalu menjalankan
 server HTTP.
+
+## Di halaman ini
+
+[Runtime](#runtime-dan-hasil-fungsi-main) · [Environment](#memuat-environment-variable) · [Database](#membaca-konfigurasi-dan-membuka-database) · [Migration](#menyiapkan-struktur-dan-akun-database) · [Router](#membuat-router-dan-listener-tcp) · [Urutan startup](#ringkasan-urutan-startup)
 
 ## Import
 
@@ -122,14 +129,17 @@ mengembalikan nama database untuk informasi log; password tidak pernah dicetak.
 ## Membuat router dan listener TCP
 
 ```rust
-let app = routes::create_router(pool, config.session_cookie_secure);
+let app = routes::create_router(
+    pool,
+    config.session_cookie_secure,
+    config.jwt_secret.clone(),
+);
 let address = (config.app_host.as_str(), config.app_port);
 let listener = tokio::net::TcpListener::bind(address).await?;
 ```
 
-- `create_router(pool, config.session_cookie_secure)` membuat router Axum dan
-  memberinya pool PostgreSQL serta pengaturan apakah cookie session hanya boleh
-  dikirim lewat HTTPS.
+- `create_router(...)` menerima pool PostgreSQL, pengaturan cookie Secure, dan
+  secret JWT untuk memeriksa atau menerbitkan bearer token.
 - `config.app_host.as_str()` mengambil `&str` dari host, sedangkan
   `config.app_port` adalah port server. Keduanya digabung menjadi alamat
   `(host, port)`.
@@ -162,3 +172,20 @@ server berakhir tanpa error.
 6. Menyusun router API beserta session dan state database.
 7. Membuka listener TCP pada `APP_HOST:APP_PORT`.
 8. Menjalankan server Axum.
+
+| Tahap | Hasil yang disiapkan | Jika gagal |
+| --- | --- | --- |
+| Memuat environment dan membaca config | Nilai host, port, database, admin, dan JWT. | Startup berhenti karena variabel wajib atau format tidak valid. |
+| Membuka koneksi PostgreSQL | `PgPool` bersama untuk request. | Server belum membuka listener HTTP. |
+| Menjalankan migration | Tabel dan skema database yang dibutuhkan aplikasi. | Startup berhenti jika migration gagal. |
+| Menyinkronkan akun admin | Akun dari `ADMIN_USERNAME` dan `ADMIN_PASSWORD`. | Startup berhenti bila query user gagal. |
+| Membuat router dan listener | Route, middleware, session store, dan socket HTTP. | Server tidak mulai menerima request. |
+| Menjalankan Axum | Server siap menerima request sampai proses dihentikan. | Error server diteruskan dari `main`. |
+
+## Ilustrasi startup
+
+```text
+.env → AppConfig → PostgreSQL → migrations → akun admin
+                                      ↓
+                            router + listener → Axum
+```

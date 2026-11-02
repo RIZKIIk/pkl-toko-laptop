@@ -1,5 +1,5 @@
 //! Body JSON dengan semua field wajib untuk membuat laptop.
-//! Dokumentasi: file:///home/rizki/projects/Rust/tugas/PKL/11-toko-laptop-app-lengkap/catatan/rust/models/laptop/create-payload.md
+//! Catatan: [Buka penjelasan](file:///home/rizki/projects/Rust/tugas/PKL/11-toko-laptop-app/catatan/rust/models/laptop/create-payload.md)
 use serde::Deserialize;
 
 /// Data yang diterima oleh `POST /api/laptops`.

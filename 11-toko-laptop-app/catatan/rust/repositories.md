@@ -2,6 +2,9 @@
 
 > **Navigasi:** [Indeks catatan](../README.md) · [README proyek](../../README.md) · [Endpoint API](../../endpoin.md)
 
+![Ilustrasi: Handler memakai repository](../ilustrasi/halaman/41-repositories.svg "Handler memakai repository")
+
+
 [Buka modul repository](../../src/repositories/mod.rs)
 
 ## Tanggung jawab

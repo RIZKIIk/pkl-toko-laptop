@@ -1,5 +1,5 @@
 //! Mengubah model laptop menjadi array atau object JSON response.
-//! Dokumentasi: file:///home/rizki/projects/Rust/tugas/PKL/11-toko-laptop-app-lengkap/catatan/rust/presenters/laptop-response.md
+//! Catatan: [Buka penjelasan](file:///home/rizki/projects/Rust/tugas/PKL/11-toko-laptop-app/catatan/rust/presenters/laptop-response.md)
 use crate::models::Laptop;
 use serde_json::{Value, json};
 

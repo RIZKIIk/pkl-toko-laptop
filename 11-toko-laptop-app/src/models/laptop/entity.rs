@@ -1,5 +1,5 @@
 //! Bentuk satu baris laptop yang dipetakan dari PostgreSQL.
-//! Dokumentasi: file:///home/rizki/projects/Rust/tugas/PKL/11-toko-laptop-app-lengkap/catatan/rust/models/laptop/entity.md
+//! Catatan: [Buka penjelasan](file:///home/rizki/projects/Rust/tugas/PKL/11-toko-laptop-app/catatan/rust/models/laptop/entity.md)
 use sqlx::FromRow;
 
 /// Data inventaris laptop yang dipakai repository dan presenter.

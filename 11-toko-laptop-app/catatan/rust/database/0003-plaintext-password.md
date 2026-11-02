@@ -2,6 +2,9 @@
 
 > **Navigasi:** [Indeks catatan](../../README.md) · [README proyek](../../../README.md) · [Endpoint API](../../../endpoin.md)
 
+![Ilustrasi: Perubahan skema untuk latihan](../../ilustrasi/halaman/15-0003-plaintext-password.svg "Perubahan skema untuk latihan")
+
+
 [Buka file migration](../../../database/migrations/0003_use_plaintext_password_for_learning.sql)
 
 ## Tujuan
@@ -46,3 +49,21 @@ Komentar di bagian paling atas source dimulai dengan `--`. PostgreSQL hanya meng
 Username dan ID yang ada tetap dipertahankan, tetapi password hash lama tidak dapat dikembalikan menjadi password asli. Akun latihan disinkronkan kembali saat startup dari `ADMIN_USERNAME` dan `ADMIN_PASSWORD`; akun lain perlu dibuat atau diatur ulang sesuai alur aplikasi.
 
 Migration berikutnya tidak seharusnya mengubah file migration ini setelah diterapkan di database. Tambahkan file migration baru untuk perubahan skema di masa depan.
+
+## Ringkasan dampak
+
+| Sebelum migration | Sesudah migration | Dampak |
+| --- | --- | --- |
+| Kolom `password_hash`. | Kolom `password` bertipe `TEXT`. | Aplikasi latihan membandingkan nilai password langsung. |
+| Hash akun lama tersimpan. | Nilai password lama tidak dapat dipulihkan. | Admin disinkronkan dari environment; akun lain perlu dibuat/diatur ulang. |
+| Tidak ada password teks biasa. | Password menjadi teks biasa. | Hanya aman untuk database lokal latihan, bukan produksi. |
+
+## Ilustrasi langkah SQL
+
+```text
+DROP password_hash
+        ↓
+ADD password TEXT NOT NULL DEFAULT empty string
+        ↓
+DROP DEFAULT agar akun baru mengirim password eksplisit
+```

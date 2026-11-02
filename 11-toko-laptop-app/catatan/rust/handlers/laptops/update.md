@@ -1,26 +1,79 @@
-# `handlers/laptops/update.rs`
+# `src/handlers/laptops/update.rs`
 
 > **Navigasi:** [Indeks catatan](../../../README.md) · [README proyek](../../../../README.md) · [Endpoint API](../../../../endpoin.md)
+
+![Ilustrasi: PATCH mengubah field terpilih](../../../ilustrasi/halaman/22-update.svg "PATCH mengubah field terpilih")
+
 
 [Buka source `update.rs`](../../../../src/handlers/laptops/update.rs)
 
 ## Tujuan
 
-`update_laptop` menangani `PATCH /api/laptops/{id}` untuk mengubah satu atau beberapa field.
+`update_laptop` menangani `PATCH /api/laptops/{id}`. Client boleh mengirim satu atau beberapa field; field yang tidak dikirim harus tetap memakai nilai lama. Handler memeriksa input, memanggil repository, lalu mengembalikan data terbaru.
 
-## Extractor dan hasil
+## Data masuk
 
-- `State(pool)` mengambil pool bersama dari router.
-- `Path(id)` membaca ID dari URL.
-- `Json(payload)` mendeserialisasi body menjadi `UpdateLaptopPayload`, yang field-nya opsional.
-- Hasil sukses berupa `Json<Value>` dengan status, pesan, dan representasi laptop. Kesalahan diteruskan sebagai `ApiError`.
+```rust
+pub async fn update_laptop(
+    State(pool): State<PgPool>,
+    Path(id): Path<i64>,
+    Json(payload): Json<UpdateLaptopPayload>,
+) -> Result<Json<Value>, ApiError>
+```
 
-## Alur
+- `State(pool)` mengambil pool PostgreSQL dari router.
+- `Path(id)` mengambil ID dari URL.
+- `Json(payload)` membaca body sebagai `UpdateLaptopPayload`; tiap field menggunakan `Option`.
+- `Result<Json<Value>, ApiError>` menyatakan handler bisa menghasilkan JSON sukses atau meneruskan error aplikasi.
 
-1. Validasi ID agar query tidak menerima nol atau ID negatif.
-2. Validasi payload agar teks dibersihkan, angka tidak negatif, dan setidaknya satu field dikirim.
-3. Repository menjalankan UPDATE parsial. Field `None` tidak mengubah nilai lama.
-4. Jika hasil repository `None`, `.ok_or_else(...)` membuat error 404.
-5. Presenter membentuk array data terbaru; helper response menambahkan pesan `Laptop berhasil diperbarui`.
+## Alur proses
 
-Pemeriksaan detail ada di [validation update](../../validation/update.md), query di [repository laptop](../../repositories/laptop-repository.md).
+1. `validate_laptop_id(id)?` menolak ID nol atau negatif.
+2. `validate_update_laptop(payload)?` membersihkan field teks yang dikirim, memeriksa angka agar tidak negatif, dan menolak body tanpa field.
+3. `repository::update_laptop(&pool, id, &payload).await?` menjalankan UPDATE. Repository memakai `COALESCE` supaya parameter `None` mempertahankan nilai lama.
+4. Bila repository mengembalikan `None`, tidak ada baris dengan ID tersebut; `.ok_or_else(...)` membentuk error 404.
+5. Presenter memformat data terbaru sebagai array; helper response menambahkan status dan pesan.
+
+```text
+ID + PATCH body
+  → validate ID dan field yang dikirim
+  → UPDATE dengan COALESCE
+  → Some(Laptop) atau None
+  → array response terbaru atau 404
+```
+
+## Contoh
+
+Request berikut hanya mengganti nama dan harga:
+
+```json
+{"nama":"ThinkPad E14 Gen 5","harga":13500000}
+```
+
+Response `200 OK` berisi semua nilai terbaru. Field merek dan stok tetap sama, dan harga ditampilkan sebagai teks Rupiah:
+
+```json
+{
+  "status": "success",
+  "message": "Laptop berhasil diperbarui",
+  "data": [1, "ThinkPad E14 Gen 5", "Lenovo", "Rp 13.500.000", 5]
+}
+```
+
+Body `{}` atau angka negatif menghasilkan `400 Bad Request`; ID positif yang tidak ditemukan menghasilkan `404 Not Found`; kegagalan database menghasilkan `500` dengan pesan umum.
+
+## Hubungan dengan file lain
+
+- [Payload update](../../models/laptop/update-payload.md) membedakan field yang dikirim dan yang tidak.
+- [Validation update](../../validation/update.md) menerapkan aturan PATCH.
+- [Repository laptop](../../repositories/laptop-repository.md) memakai `COALESCE` untuk mempertahankan nilai.
+- [Presenter laptop](../../presenters/laptop-response.md) membentuk array response.
+
+## Ringkasan hasil
+
+| Kondisi request | Hasil |
+| --- | --- |
+| ID ada dan payload berisi field valid | `200 OK` dengan data laptop terbaru. |
+| ID positif tidak ada | `404 Not Found`. |
+| ID bukan positif, payload kosong, teks tidak valid, atau angka negatif | `400 Bad Request`. |
+| Database gagal memproses query | `500 Internal Server Error` dengan pesan umum. |

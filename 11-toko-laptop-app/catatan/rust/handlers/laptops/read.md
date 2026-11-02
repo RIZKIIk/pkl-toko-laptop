@@ -1,29 +1,70 @@
-# `handlers/laptops/read.rs`
+# `src/handlers/laptops/read.rs`
 
 > **Navigasi:** [Indeks catatan](../../../README.md) · [README proyek](../../../../README.md) · [Endpoint API](../../../../endpoin.md)
+
+![Ilustrasi: Dua cara membaca resource](../../../ilustrasi/halaman/21-read.svg "Dua cara membaca resource")
+
 
 [Buka source `read.rs`](../../../../src/handlers/laptops/read.rs)
 
 ## Tujuan
 
-File ini menangani pembacaan daftar dan detail laptop.
+File ini menyediakan dua operasi baca: `GET /api/laptops` untuk daftar dan `GET /api/laptops/{id}` untuk detail. Kedua handler mengambil data melalui repository, kemudian memakai presenter untuk menyiapkan bentuk JSON API.
 
 ## `list_laptops`
 
-1. Mengambil `PgPool` melalui `State`.
-2. Memanggil repository yang mengembalikan `Vec<Laptop>`.
-3. `iter()` meminjam item satu per satu; `map(laptop_to_array)` mengubah tiap model; `collect::<Vec<_>>()` mengumpulkan hasil.
-4. `json!(data)` membentuk array JSON dan `success_response` menambah status sukses.
+Alur handler daftar:
 
-Jika belum ada data, hasilnya array kosong, bukan error.
+1. `State(pool)` mengambil pool dari state router.
+2. `repository::list_laptops(&pool).await?` meminta semua baris, diurutkan berdasarkan ID.
+3. Repository mengembalikan `Vec<Laptop>`. `iter()` meminjam setiap item; `map(laptop_to_array)` mengubahnya menjadi array response; `collect::<Vec<_>>()` mengumpulkan semua array.
+4. `json!(data)` membentuk nilai JSON, lalu `success_response` membungkusnya dengan `status: "success"`.
+
+Daftar kosong adalah kondisi sukses: response `200 OK` berisi `"data": []`.
 
 ## `get_laptop`
 
-1. Extractor `Path(id)` membaca ID URL sebagai `i64`.
-2. `validate_laptop_id(id)?` menolak nol atau angka negatif sebelum query.
-3. Repository mengembalikan `Result<Option<Laptop>, sqlx::Error>`. `await?` meneruskan error query, sedangkan `.ok_or_else(...)` mengubah `None` menjadi 404 dan mengambil nilai dari `Some`.
-4. `laptop_to_array` menjaga format detail tetap `[id, nama, merek, harga, stok]`.
+Alur handler detail:
 
-## Format dan route
+1. `Path(id)` membaca parameter `{id}` dari URL sebagai `i64`.
+2. `validate_laptop_id(id)?` menolak nilai nol atau negatif sebelum query.
+3. `repository::get_laptop(...)` mengembalikan `Result<Option<Laptop>, sqlx::Error>`.
+4. `await?` menunggu query dan meneruskan kegagalan database. `.ok_or_else(...)` mengubah `None` menjadi error 404 dan membuka nilai dari `Some(laptop)`.
+5. `laptop_to_array` membentuk data response dan `success_response` menambahkan status sukses.
 
-Kedua endpoint mengembalikan status sukses dengan `data` array. Router memasangnya pada `GET /api/laptops` dan `GET /api/laptops/{id}`.
+ID positif yang tidak ada menghasilkan `404 Not Found`; ID nol/negatif menghasilkan `400 Bad Request`.
+
+## Bentuk response
+
+Kedua handler mengirim laptop sebagai array berurutan `[id, nama, merek, harga, stok]`. Harga telah diformat menjadi string Rupiah.
+
+```json
+{
+  "status": "success",
+  "data": [1, "ThinkPad E14", "Lenovo", "Rp 12.500.000", 5]
+}
+```
+
+Daftar memakai array of arrays pada `data`; detail memakai satu array. Lihat [kontrak presenter](../../presenters/laptop-response.md) untuk alasan dan pemetaan field.
+
+## Hubungan dengan file lain
+
+- [Routes](../../routes.md) memasang kedua fungsi pada method `GET`.
+- [Validator ID](../../validation/id.md) memeriksa parameter detail.
+- [Repository laptop](../../repositories/laptop-repository.md) menjalankan query SELECT.
+- [Presenter laptop](../../presenters/laptop-response.md) menetapkan format array.
+- [Helper handler laptop](mod.md) membungkus response sukses.
+
+## Ringkasan endpoint
+
+| Route | Input khusus | Hasil normal | Jika data tidak ada |
+| --- | --- | --- | --- |
+| `GET /api/laptops` | Tidak ada body atau path ID. | `200 OK`, `data` berisi array laptop. | Daftar kosong tetap `200 OK`. |
+| `GET /api/laptops/{id}` | Path ID positif. | `200 OK`, `data` berisi satu array laptop. | `404 Not Found`. |
+
+## Ilustrasi baca data
+
+```text
+GET /api/laptops       → SELECT semua → Vec<Laptop> → array of arrays
+GET /api/laptops/{id}  → SELECT satu  → Option<Laptop> → array / 404
+```

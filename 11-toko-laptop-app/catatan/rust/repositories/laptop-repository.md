@@ -2,6 +2,9 @@
 
 > **Navigasi:** [Indeks catatan](../../README.md) · [README proyek](../../../README.md) · [Endpoint API](../../../endpoin.md)
 
+![Ilustrasi: Query laptop dan hasilnya](../../ilustrasi/halaman/38-laptop-repository.svg "Query laptop dan hasilnya")
+
+
 [Buka source `laptop_repository.rs`](../../../src/repositories/laptop_repository.rs)
 
 ## Tujuan
@@ -131,3 +134,21 @@ pub async fn delete_laptop(pool: &PgPool, id: i64) -> Result<bool, sqlx::Error> 
 ## Keamanan query
 
 Parameter request selalu diberikan melalui `.bind(...)`, bukan digabung ke teks SQL. Handler juga melakukan validasi sebelum query. Constraint database menjadi perlindungan tambahan; lihat [migration laptops](../database/0001-create-laptops.md).
+
+## Ringkasan hasil fungsi
+
+| Fungsi | Query | Hasil sukses | Arti hasil kosong |
+| --- | --- | --- | --- |
+| `list_laptops` | `SELECT ... ORDER BY id` | `Vec<Laptop>` | `Vec` kosong berarti belum ada data. |
+| `get_laptop` | `SELECT ... WHERE id` | `Option<Laptop>` | `None` berarti ID tidak ditemukan. |
+| `create_laptop` | `INSERT ... RETURNING` | `Laptop` | Tidak ada hasil kosong normal; query harus membuat satu baris. |
+| `update_laptop` | `UPDATE ... COALESCE ... RETURNING` | `Option<Laptop>` | `None` berarti ID tidak ditemukan. |
+| `delete_laptop` | `DELETE ...` | `bool` | `false` berarti tidak ada baris terhapus. |
+
+## Ilustrasi alur query
+
+```text
+handler → repository → SQL + .bind(parameter) → PostgreSQL
+              ↓                                  ↓
+         Result<T, Error> ← model / jumlah baris ┘
+```

@@ -2,13 +2,16 @@
 
 > **Navigasi:** [Indeks catatan](../../README.md) · [README proyek](../../../README.md) · [Endpoint API](../../../endpoin.md)
 
+![Ilustrasi: Modul presenter mengekspos formatter](../../ilustrasi/halaman/35-mod.svg "Modul presenter mengekspos formatter")
+
+
 [Buka source `presenters/mod.rs`](../../../src/presenters/mod.rs)
 
 ## Tujuan
 
-File ini menyusun modul presenter. Presenter mengubah data model menjadi bentuk yang sesuai untuk response API, tetapi tidak mengirim response HTTP secara langsung.
+File ini menyusun modul presenter. Presenter mengubah entity internal menjadi nilai yang akan dikirim sebagai JSON, tetapi tidak memilih status HTTP dan tidak menjalankan query database.
 
-## Kode dan urutannya
+## Deklarasi modul
 
 ```rust
 pub mod laptop_response;
@@ -16,16 +19,30 @@ pub mod laptop_response;
 mod rupiah;
 ```
 
-### `pub mod laptop_response;`
+| Deklarasi | Lokasi implementasi | Visibilitas | Kegunaan |
+| --- | --- | --- | --- |
+| `pub mod laptop_response;` | `laptop_response.rs` | Bisa diakses handler melalui `presenters::laptop_response`. | Mengubah `Laptop` menjadi array atau object JSON. |
+| `mod rupiah;` | `rupiah.rs` | Detail internal modul presenter. | Mengubah integer harga menjadi teks Rupiah. |
 
-Mendaftarkan submodul `laptop_response` yang implementasinya ada di `laptop_response.rs`. Kata `pub` membuat modul dan item publik di dalamnya dapat dijangkau melalui jalur seperti `presenters::laptop_response`.
+Kata `mod` mendaftarkan file sebagai modul. Kata `pub` pada `laptop_response` membuka jalur modul untuk handler. `rupiah` tetap privat; fungsi formatter-nya hanya diekspos ke modul induk dan turunannya dengan `pub(super)`.
 
-### `mod rupiah;`
+## Hubungan antar-presenter
 
-Mendaftarkan modul formatter Rupiah di `rupiah.rs`, tanpa kata `pub`. Modul ini dapat digunakan di dalam presenter yang menaunginya, tetapi tidak diekspos sebagai API publik crate.
+```text
+Laptop dari repository
+       ↓
+laptop_response::laptop_to_array / laptop_to_object
+       ↓ memakai
+rupiah::formatkan_rupiah
+       ↓
+serde_json::Value untuk handler
+```
 
-Pada kedua baris, `mod` adalah deklarasi modul dan titik koma menunjukkan isi modul ditulis di file terpisah.
+GET daftar, GET detail, dan PATCH memakai array berurutan `[id, nama, merek, harga, stok]`. POST memakai object dengan nama field. Perbedaan tersebut adalah kontrak API saat ini; handler menentukan kapan setiap presenter dipakai.
 
-## Kenapa dipisah?
+## File terkait
 
-`laptop_response` menentukan apakah laptop menjadi object atau array JSON. `rupiah` hanya mengubah angka menjadi teks Rupiah. Detail implementasi ada di [laptop response](laptop-response.md) dan [formatter Rupiah](rupiah.md).
+- [Presenter laptop](laptop-response.md) menjelaskan pemetaan field dan bentuk JSON.
+- [Formatter Rupiah](rupiah.md) menjelaskan tanda dan pemisah ribuan.
+- [Handler create](../handlers/laptops/create.md) memakai object response.
+- [Handler read](../handlers/laptops/read.md) dan [update](../handlers/laptops/update.md) memakai array response.

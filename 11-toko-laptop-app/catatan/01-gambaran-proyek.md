@@ -2,7 +2,10 @@
 
 > **Navigasi:** [Indeks catatan](README.md) · [README proyek](../README.md) · [Endpoint API](../endpoin.md)
 
-Toko Laptop App adalah REST API inventaris laptop. Kode aktif menyediakan operasi CRUD: melihat daftar laptop, melihat satu laptop, menambah, mengubah sebagian field, dan menghapus data. Aplikasi juga memiliki registrasi akun dan login berbasis cookie session. Repository ini tidak memiliki frontend, token, role pengguna, trigger PostgreSQL, atau function PostgreSQL aktif.
+![Ilustrasi: Peta wilayah aplikasi](ilustrasi/halaman/02-01-gambaran-proyek.svg "Peta wilayah aplikasi")
+
+
+Toko Laptop App adalah REST API inventaris laptop. Kode aktif menyediakan operasi CRUD: melihat daftar laptop, melihat satu laptop, menambah, mengubah sebagian field, dan menghapus data. Aplikasi juga memiliki registrasi akun serta login berbasis cookie session dan JWT bearer. Repository ini tidak memiliki frontend, role pengguna, trigger PostgreSQL, atau function PostgreSQL aktif.
 
 ## Teknologi yang benar-benar dipakai
 

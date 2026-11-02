@@ -1,5 +1,5 @@
 //! Layanan autentikasi: seed akun, verifikasi password, session, dan JWT.
-//! [Catatan modul auth](file:///home/rizki/projects/Rust/tugas/PKL/11-toko-laptop-app-lengkap/catatan/rust/auth/mod.md)
+//! Catatan: [Buka penjelasan](file:///home/rizki/projects/Rust/tugas/PKL/11-toko-laptop-app/catatan/rust/auth/mod.md)
 pub mod http;
 pub mod jwt;
 pub mod session;
@@ -45,7 +45,9 @@ pub async fn verify_credentials(
     Ok(password_matches(&stored_password, password))
 }
 
+/// Memastikan password masukan tidak kosong dan sama dengan nilai tersimpan.
 fn password_matches(stored_password: &str, provided_password: &str) -> bool {
+    // Password kosong selalu ditolak; perbandingan teks biasa hanya untuk latihan lokal.
     !provided_password.is_empty() && stored_password == provided_password
 }
 

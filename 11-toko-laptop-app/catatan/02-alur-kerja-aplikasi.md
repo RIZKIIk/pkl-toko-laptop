@@ -2,7 +2,14 @@
 
 > **Navigasi:** [Indeks catatan](README.md) · [README proyek](../README.md) · [Endpoint API](../endpoin.md)
 
+![Ilustrasi: Satu request, melewati 6 lapisan](ilustrasi/halaman/03-02-alur-kerja-aplikasi.svg "Satu request, melewati 6 lapisan")
+
+
 Halaman ini menghubungkan file-file backend. Penjelasan isi setiap fungsi ada di catatan file masing-masing; halaman ini fokus pada urutan perpindahan data.
+
+## Di halaman ini
+
+[Startup](#saat-server-dinyalakan) · [Request umum](#perjalanan-umum-request) · [Login](#alur-login-session) · [Error](#jalur-error) · [Endpoint laptop](#alur-setiap-endpoint) · [Lanjut belajar](#lanjut-belajar)
 
 ## Saat server dinyalakan
 
@@ -70,7 +77,7 @@ Password di database berupa teks biasa hanya untuk latihan lokal session. Server
 | ID nol/negatif, teks kosong, angka negatif, PATCH kosong | `validation/` | `ApiError::BadRequest` -> 400 JSON error. |
 | ID valid tetapi laptop tidak ada | Repository memberi `None` atau `false`. | `ApiError::NotFound` -> 404 JSON error. |
 | Koneksi/query database gagal | SQLx | `ApiError::Database` -> 500 JSON error; detail dicetak di server. |
-| Kredensial admin salah atau session tidak ada | `auth` handler/middleware | 401 JSON error. |
+| Kredensial login salah atau tidak ada session/JWT valid | `auth` handler/middleware | 401 JSON error. |
 | Penyimpanan atau pembacaan session gagal | `auth` handler/middleware | 500 JSON error; detail dicatat di server. |
 | JSON request/path tidak sesuai tipe | Extractor Axum | Axum menghentikan request sebelum handler. |
 

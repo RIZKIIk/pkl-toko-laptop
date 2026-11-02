@@ -1,5 +1,5 @@
 //! Validasi payload lengkap untuk pembuatan laptop.
-//! Dokumentasi: file:///home/rizki/projects/Rust/tugas/PKL/11-toko-laptop-app-lengkap/catatan/rust/validation/create.md
+//! Catatan: [Buka penjelasan](file:///home/rizki/projects/Rust/tugas/PKL/11-toko-laptop-app/catatan/rust/validation/create.md)
 use crate::{error::ApiError, models::CreateLaptopPayload};
 
 use super::text::validate_text;

@@ -1,5 +1,5 @@
 //! Query PostgreSQL untuk membaca, membuat, mengubah, dan menghapus laptop.
-//! Dokumentasi: file:///home/rizki/projects/Rust/tugas/PKL/11-toko-laptop-app-lengkap/catatan/rust/repositories/laptop-repository.md
+//! Catatan: [Buka penjelasan](file:///home/rizki/projects/Rust/tugas/PKL/11-toko-laptop-app/catatan/rust/repositories/laptop-repository.md)
 use crate::models::{CreateLaptopPayload, Laptop, UpdateLaptopPayload};
 use sqlx::PgPool;
 
@@ -42,6 +42,7 @@ pub async fn update_laptop(
     id: i64,
     payload: &UpdateLaptopPayload,
 ) -> Result<Option<Laptop>, sqlx::Error> {
+    // COALESCE mempertahankan nilai lama untuk field PATCH yang bernilai None.
     sqlx::query_as::<_, Laptop>(
         "UPDATE laptops
             SET nama = COALESCE($1, nama),

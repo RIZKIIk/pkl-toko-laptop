@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 360" role="img" aria-labelledby="title desc">
+<title id="title">Anatomi JWT dan masa hidup</title><desc id="desc">Ilustrasi khusus untuk jwt: Header; Payload: sub + exp; Signature HS256; Expiry 1 jam.</desc>
+<defs><pattern id="dots" width="18" height="18" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1" fill="#94a3b8" opacity=".25"/></pattern><filter id="shadow" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="5" stdDeviation="6" flood-color="#0f172a" flood-opacity=".1"/></filter></defs>
+<rect width="960" height="360" rx="28" fill="#f8fafc"/><rect width="960" height="360" rx="28" fill="url(#dots)"/>
+<rect x="32" y="28" width="8" height="38" rx="4" fill="#0f766e"/><text x="56" y="44" font-family="system-ui,sans-serif" font-size="12" font-weight="800" letter-spacing="2" fill="#0f766e">TOKEN ANATOMY</text>
+<text x="56" y="91" font-family="system-ui,sans-serif" font-size="25" font-weight="750" fill="#0f172a">Anatomi JWT dan masa hidup</text>
+<circle cx="895" cy="61" r="31" fill="#ccfbf1"/><text x="895" y="70" text-anchor="middle" font-family="system-ui,sans-serif" font-size="25">🎟️</text>
+<path d="M253 209h10m-8 -6 8 6-8 6" fill="none" stroke="#0f766e" stroke-width="2.5"/>
+<rect x="56" y="167" width="194" height="92" rx="18" fill="white" stroke="#0f766e" stroke-opacity=".25" filter="url(#shadow)"/>
+<circle cx="79" cy="191" r="12" fill="#ccfbf1"/><text x="79" y="196" text-anchor="middle" font-family="system-ui" font-size="12" font-weight="800" fill="#0f766e">1</text>
+<text x="72" y="230" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#134e4a">Header</text>
+<path d="M465 209h10m-8 -6 8 6-8 6" fill="none" stroke="#0f766e" stroke-width="2.5"/>
+<rect x="268" y="167" width="194" height="92" rx="18" fill="white" stroke="#0f766e" stroke-opacity=".25" filter="url(#shadow)"/>
+<circle cx="291" cy="191" r="12" fill="#ccfbf1"/><text x="291" y="196" text-anchor="middle" font-family="system-ui" font-size="12" font-weight="800" fill="#0f766e">2</text>
+<text x="284" y="230" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#134e4a">Payload: sub + exp</text>
+<path d="M677 209h10m-8 -6 8 6-8 6" fill="none" stroke="#0f766e" stroke-width="2.5"/>
+<rect x="480" y="167" width="194" height="92" rx="18" fill="white" stroke="#0f766e" stroke-opacity=".25" filter="url(#shadow)"/>
+<circle cx="503" cy="191" r="12" fill="#ccfbf1"/><text x="503" y="196" text-anchor="middle" font-family="system-ui" font-size="12" font-weight="800" fill="#0f766e">3</text>
+<text x="496" y="230" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#134e4a">Signature HS256</text>
+<rect x="692" y="167" width="194" height="92" rx="18" fill="white" stroke="#0f766e" stroke-opacity=".25" filter="url(#shadow)"/>
+<circle cx="715" cy="191" r="12" fill="#ccfbf1"/><text x="715" y="196" text-anchor="middle" font-family="system-ui" font-size="12" font-weight="800" fill="#0f766e">4</text>
+<text x="708" y="230" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#134e4a">Expiry 1 jam</text>
+<text x="56" y="340" font-family="system-ui,sans-serif" font-size="11" fill="#64748b">CATATAN BELAJAR  /  TOKEN ANATOMY</text></svg>

@@ -1,5 +1,5 @@
 //! Membaca konfigurasi aplikasi dan membangun koneksi pool PostgreSQL.
-//! [Buka catatan `config.rs`](file:///home/rizki/projects/Rust/tugas/PKL/11-toko-laptop-app-lengkap/catatan/rust/config.md)
+//! Catatan: [Buka penjelasan](file:///home/rizki/projects/Rust/tugas/PKL/11-toko-laptop-app/catatan/rust/config.md)
 use sqlx::postgres::{PgConnectOptions, PgPoolOptions};
 use std::{env, error::Error, time::Duration};
 
@@ -91,6 +91,7 @@ impl AppConfig {
     }
 }
 
+/// Mengambil variabel wajib dan menolak nilai kosong.
 fn required_non_empty_env(name: &str) -> Result<String, Box<dyn Error + Send + Sync>> {
     let value = env::var(name)?;
     if value.is_empty() {

@@ -2,6 +2,9 @@
 
 > **Navigasi:** [Indeks catatan](../../../README.md) · [README proyek](../../../../README.md) · [Endpoint API](../../../../endpoin.md)
 
+![Ilustrasi: PATCH: field yang absen tetap None](../../../ilustrasi/halaman/31-update-payload.svg "PATCH: field yang absen tetap None")
+
+
 [Buka source `update_payload.rs`](../../../../src/models/laptop/update_payload.rs)
 
 ## Tujuan
@@ -47,3 +50,13 @@ Contoh body yang mengubah hanya stok:
 ```
 
 Field lain akan bernilai `None`. Validator kemudian memeriksa field yang ada dan menolak body tanpa perubahan. Lihat [validator update](../../validation/update.md) dan [query PATCH](../../repositories/laptop-repository.md).
+
+## Ilustrasi PATCH parsial
+
+```text
+Body hanya berisi stok
+   ↓ Deserialize
+nama=None, merek=None, harga=None, stok=Some(angka)
+   ↓ validator + COALESCE
+nilai lama dipertahankan, stok diperbarui
+```

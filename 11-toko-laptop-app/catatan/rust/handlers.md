@@ -2,6 +2,9 @@
 
 > **Navigasi:** [Indeks catatan](../README.md) · [README proyek](../../README.md) · [Endpoint API](../../endpoin.md)
 
+![Ilustrasi: Handler sebagai pengarah request](../ilustrasi/halaman/25-handlers.svg "Handler sebagai pengarah request")
+
+
 [Buka modul handler](../../src/handlers/mod.rs)
 
 ## Peran handler
@@ -15,7 +18,8 @@ Handler tidak menyusun query SQL. Pembagian ini membuat alur request mudah diiku
 ```text
 handlers/
 ├── mod.rs                 # Mengekspor modul resource
-├── system.rs              # Health check dan pemeriksaan database
+├── auth.rs                # Registrasi, login, identitas, dan logout
+├── system.rs              # Health check HTTP
 └── laptops/
     ├── mod.rs             # Ekspor handler laptop dan helper response
     ├── create.rs          # POST
@@ -26,7 +30,8 @@ handlers/
 
 | Catatan dan source | Tanggung jawab |
 | --- | --- |
-| [system.rs](handlers/system.md) | `GET /health`. |
+| [auth.rs](handlers/auth.md) | Registrasi, login, baca identitas session/JWT, dan logout. |
+| [system.rs](handlers/system.md) | `GET /health`; hanya memeriksa server HTTP, bukan database. |
 | [laptops/mod.rs](handlers/laptops/mod.md) | Modul, helper response sukses, dan pesan 404. |
 | [laptops/create.rs](handlers/laptops/create.md) | Validasi dan pembuatan laptop. |
 | [laptops/read.rs](handlers/laptops/read.md) | Membaca semua laptop atau satu laptop. |
@@ -64,6 +69,10 @@ handlers/
 | Endpoint | Sukses | Bentuk body |
 | --- | --- | --- |
 | `GET /health` | 200 | Object status layanan. |
+| `POST /api/auth/register` | 201 | Username akun yang dibuat. |
+| `POST /api/auth/login` | 200 | Username, JWT, tipe token, dan masa berlaku; session cookie dikirim melalui header. |
+| `GET /api/auth/session` | 200 | Username dari JWT atau session aktif. |
+| `POST /api/auth/logout` | 200 | Pesan sukses; JWT yang ada tidak dicabut. |
 | `GET /api/laptops` | 200 | `data` berupa daftar array laptop. |
 | `GET /api/laptops/{id}` | 200 | `data` berupa satu array laptop. |
 | `POST /api/laptops` | 201 | `data` berupa object laptop serta pesan. |

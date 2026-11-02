@@ -2,6 +2,9 @@
 
 > **Navigasi:** [Indeks catatan](../../README.md) · [README proyek](../../../README.md) · [Endpoint API](../../../endpoin.md)
 
+![Ilustrasi: Skema akun: rancangan awal](../../ilustrasi/halaman/14-0002-create-users.svg "Skema akun: rancangan awal")
+
+
 [Buka file migration SQL](../../../database/migrations/0002_create_users.sql)
 
 ## Tanggung jawab
@@ -40,3 +43,11 @@ CREATE TABLE IF NOT EXISTS public.users (
 - Koma memisahkan definisi kolom/constraint, sedangkan `);` menutup definisi tabel dan mengakhiri perintah.
 
 Migration ini sudah mungkin tercatat pada database yang telah dijalankan. Jangan mengubah file migration lama; skema latihan saat ini dibentuk oleh migration berikutnya, [0003](0003-plaintext-password.md).
+
+## Ilustrasi perubahan skema
+
+```text
+0002: users(id, username, password_hash, created_at)
+                         ↓ migration 0003
+      users(id, username, password, created_at)
+```

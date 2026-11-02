@@ -1,5 +1,5 @@
 //! Mengubah kesalahan aplikasi menjadi respons JSON dengan status HTTP yang sesuai.
-//! [Buka catatan `error.rs`](file:///home/rizki/projects/Rust/tugas/PKL/11-toko-laptop-app-lengkap/catatan/rust/error.md)
+//! Catatan: [Buka penjelasan](file:///home/rizki/projects/Rust/tugas/PKL/11-toko-laptop-app/catatan/rust/error.md)
 use axum::{
     Json,
     http::StatusCode,

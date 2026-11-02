@@ -2,11 +2,24 @@
 
 > **Navigasi:** [Indeks catatan](../README.md) · [README proyek](../../README.md) · [Endpoint API](../../endpoin.md)
 
+![Ilustrasi: Library crate membuka modul](../ilustrasi/halaman/26-lib.svg "Library crate membuka modul")
+
+
 [Buka kode sumber `lib.rs`](../../src/lib.rs)
 
 ## Tanggung jawab file
 
 `lib.rs` adalah daftar pintu modul library `toko_laptop_app`. File ini tidak menyalakan server, tidak menjalankan query, dan tidak menerima request. Perannya hanya memberi tahu Rust bahwa file-file source lain adalah bagian dari library dan boleh dipakai melalui path yang jelas.
+
+## Peta modul utama
+
+```text
+crate
+├── config / routes / error
+├── auth / handlers
+├── models / validation
+└── repositories / presenters
+```
 
 Binary `main.rs` menggunakan library yang sama. Karena itu ia bisa menulis `toko_laptop_app::config::AppConfig` dan `toko_laptop_app::routes`.
 
@@ -22,7 +35,8 @@ Tambahan `pub` membuka modul untuk pemakai di luar modul induk, termasuk binary 
 | --- | --- | --- |
 | `pub mod config;` | `config.rs` | Membaca environment dan membuat pool PostgreSQL. |
 | `pub mod error;` | `error.rs` | Mengubah error aplikasi menjadi response HTTP JSON. |
-| `pub mod handlers;` | `handlers/mod.rs` | Mengekspor handler sistem dan resource laptop. |
+| `pub mod auth;` | `auth/mod.rs` | Layanan akun, pemeriksaan kredensial, session, dan JWT. |
+| `pub mod handlers;` | `handlers/mod.rs` | Mengekspor handler autentikasi, sistem, dan laptop. |
 | `pub mod models;` | `models/mod.rs` | Mengekspor entity dan payload request. |
 | `pub mod presenters;` | `presenters/mod.rs` | Mengubah laptop ke format JSON response dan Rupiah. |
 | `pub mod repositories;` | `repositories/mod.rs` | Mengekspor query PostgreSQL CRUD. |
@@ -34,7 +48,7 @@ Tambahan `pub` membuka modul untuk pemakai di luar modul induk, termasuk binary 
 1. Dua `//!` di atas adalah dokumentasi tingkat crate/modul dan tautan ke halaman ini.
 2. Deklarasi `pub mod` membuat namespace publik. Untuk modul yang berisi folder, Rust membaca `mod.rs` di folder tersebut; untuk modul tunggal seperti `config` dan `routes`, Rust membaca file `.rs`.
 3. Deklarasi modul tidak menjalankan handler atau query. Deklarasi tersebut hanya menyusun namespace saat kompilasi.
-4. Binary dapat mengimpor `toko_laptop_app::config::AppConfig` dan `toko_laptop_app::routes` karena keduanya diekspor dari akar library.
+4. Binary dapat mengimpor `toko_laptop_app::config::AppConfig` dan `toko_laptop_app::routes` karena keduanya diekspor dari akar library. Modul `auth` juga tersedia di jalur `toko_laptop_app::auth`.
 5. Di dalam library, `crate::handlers` menunjuk kembali ke akar crate ini, kemudian handler diakses lewat submodul seperti `handlers::laptops`.
 
 ## Mengapa file ini berguna

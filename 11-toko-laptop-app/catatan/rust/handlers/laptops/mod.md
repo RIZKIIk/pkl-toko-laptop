@@ -1,27 +1,47 @@
-# `handlers/laptops/mod.rs`
+# `src/handlers/laptops/mod.rs`
 
 > **Navigasi:** [Indeks catatan](../../../README.md) · [README proyek](../../../../README.md) · [Endpoint API](../../../../endpoin.md)
+
+![Ilustrasi: Modul laptop mengelompokkan aksi](../../../ilustrasi/halaman/20-mod.svg "Modul laptop mengelompokkan aksi")
+
 
 [Buka source `laptops/mod.rs`](../../../../src/handlers/laptops/mod.rs)
 
 ## Tujuan
 
-Mengelompokkan handler resource laptop, mengekspor fungsi untuk router, dan menyediakan helper response bersama.
+Modul ini mengelompokkan handler resource laptop, mengekspor fungsi untuk dipakai router, dan menyediakan helper response bersama. Modul ini tidak membaca request sendiri dan tidak menjalankan SQL.
 
-## Modul dan ekspor
+## Pembagian file
 
-Deklarasi `mod create;`, `mod delete;`, `mod read;`, dan `mod update;` memberi nama pada file implementasi di folder yang sama. Tanpa `pub`, modul implementasi tidak terbuka langsung untuk pemanggil luar.
+| File | Endpoint/tugas | Hasil utama |
+| --- | --- | --- |
+| [`create.rs`](create.md) | `POST /api/laptops` | Membuat laptop dan mengembalikan object. |
+| [`read.rs`](read.md) | `GET /api/laptops` dan `GET /api/laptops/{id}` | Mengembalikan daftar atau satu array laptop. |
+| [`update.rs`](update.md) | `PATCH /api/laptops/{id}` | Mengembalikan array laptop terbaru. |
+| [`delete.rs`](delete.md) | `DELETE /api/laptops/{id}` | Mengembalikan pesan dan ID yang dihapus. |
 
-`pub use create::create_laptop;` (dan deklarasi sejenis) mengekspor ulang fungsi tertentu. Router dapat memakai jalur `handlers::laptops::create_laptop` tanpa mengetahui file internalnya. `pub use read::{get_laptop, list_laptops};` memakai kurung kurawal untuk mengekspor dua nama dari satu modul.
+Setiap file operasi tetap menjadi modul internal (`mod create;`, dan seterusnya). Dengan cara itu, detail organisasi file terpisah dari jalur publik yang dipakai router.
+
+## Ekspor handler
+
+`pub use create::create_laptop;` mengekspor ulang satu fungsi dari modul anak. Baris yang sejenis mengekspor handler delete, read, dan update. Router kemudian dapat menggunakan jalur pendek seperti `handlers::laptops::create_laptop` tanpa mengimpor file implementasi satu per satu.
+
+`pub use read::{get_laptop, list_laptops};` memakai kurung kurawal untuk memilih dua nama dari modul `read`. Re-export hanya membuat jalur nama yang lebih ringkas; ia tidak menyalin atau mengubah fungsi.
 
 ## Helper response
 
-- `success_response(data)` membentuk JSON dengan `status` dan `data`.
-- `success_response_with_message(message, data)` menambahkan field `message` untuk operasi create dan update.
-- `not_found_laptop(id)` membuat `ApiError::NotFound` dengan format pesan yang seragam.
+| Helper | Bentuk JSON | Dipakai untuk |
+| --- | --- | --- |
+| `success_response(data)` | `{"status":"success","data":...}` | GET daftar dan detail. |
+| `success_response_with_message(message, data)` | Menambahkan `message` pada envelope sukses. | Create dan update. |
+| `not_found_laptop(id)` | `ApiError::NotFound` dengan ID pada pesan. | Detail, update, dan delete. |
 
-`Value` adalah tipe umum nilai JSON dan `json!` menyusunnya. Tiga helper memakai `pub(super)`: fungsi dapat diakses dari modul induk `handlers` dan submodulnya, tetapi tidak diekspos sebagai API publik crate. `message: &str` meminjam teks pesan; `data: Value` menerima body yang sudah dibentuk presenter. `not_found_laptop(id: i64) -> ApiError` menghasilkan error 404 dan memakai `format!` untuk menyisipkan ID ke dalam pesan.
+Helper menggunakan `serde_json::Value` agar dapat menerima array maupun object. `pub(super)` mengizinkan pemakaian dari `handlers` induk serta submodulnya, tanpa menjadikannya API publik crate.
 
-## File operasi
+## Alur pemanggilan
 
-Lihat [create](create.md), [read](read.md), [update](update.md), dan [delete](delete.md). Daftar endpoint dan bentuk body dijelaskan di [catatan handlers](../../handlers.md).
+```text
+routes.rs → handler operasi → helper bersama (jika dibutuhkan) → JSON/ApiError
+```
+
+Handler tetap menentukan urutan validasi dan query. Helper di file ini hanya menyamakan bentuk response dan pesan not-found. Untuk alur tiap method, buka halaman [handlers](../../handlers.md) atau halaman operasi di tabel atas.

@@ -2,6 +2,9 @@
 
 > **Navigasi:** [Indeks catatan](../../README.md) · [README proyek](../../../README.md) · [Endpoint API](../../../endpoin.md)
 
+![Ilustrasi: Validasi payload create](../../ilustrasi/halaman/43-create.svg "Validasi payload create")
+
+
 [Buka source `create.rs`](../../../src/validation/create.rs)
 
 ## Tujuan
@@ -80,3 +83,21 @@ Modul test pada source memiliki dua kasus:
 `#[cfg(test)]` membatasi modul test agar dikompilasi untuk test. `#[test]` menandai fungsi test. `assert_eq!` membandingkan hasil aktual dengan nilai harapan, sedangkan `.is_err()` memeriksa bahwa hasil bertipe `Result` adalah kegagalan.
 
 Validator ini dipanggil oleh handler create sebelum query `INSERT`. Aturan umum teks dijelaskan pada [validate_text](text.md).
+
+## Ringkasan aturan per field
+
+| Field | Syarat | Normalisasi |
+| --- | --- | --- |
+| `nama` | Tidak kosong, maksimum 150 karakter. | Spasi awal/akhir dibuang. |
+| `merek` | Tidak kosong, maksimum 100 karakter. | Spasi awal/akhir dibuang. |
+| `harga` | Integer `i64` dan bernilai nol atau lebih. | Tidak diubah. |
+| `stok` | Integer `i32` dan bernilai nol atau lebih. | Tidak diubah. |
+
+Semua syarat harus lolos sebelum handler meneruskan payload ke repository. Nilai nol untuk harga dan stok diperbolehkan.
+
+## Ilustrasi urutan validasi
+
+```text
+nama → trim + panjang → merek → trim + panjang → harga/stok ≥ 0 → valid
+                 gagal di langkah mana pun → ApiError::BadRequest
+```

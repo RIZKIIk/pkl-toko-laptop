@@ -1,5 +1,5 @@
 //! Normalisasi dan validasi umum untuk field teks.
-//! Dokumentasi: file:///home/rizki/projects/Rust/tugas/PKL/11-toko-laptop-app-lengkap/catatan/rust/validation/text.md
+//! Catatan: [Buka penjelasan](file:///home/rizki/projects/Rust/tugas/PKL/11-toko-laptop-app/catatan/rust/validation/text.md)
 use crate::error::ApiError;
 
 /// Menghapus spasi pinggir lalu memeriksa teks kosong dan batas karakter.
@@ -13,6 +13,7 @@ pub(super) fn validate_text(
     if value.is_empty() {
         return Err(ApiError::BadRequest(format!("{field} tidak boleh kosong")));
     }
+    // Hitung karakter Unicode, bukan byte UTF-8, agar batas sesuai yang dilihat pengguna.
     if value.chars().count() > max_length {
         return Err(ApiError::BadRequest(format!(
             "{field} maksimal {max_length} karakter"

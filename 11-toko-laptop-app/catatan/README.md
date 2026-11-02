@@ -1,61 +1,84 @@
-# Catatan Belajar Toko Laptop App
+# Pusat Catatan Belajar
 
-> **Navigasi:** [README proyek](../README.md) · [Dokumentasi API](../endpoin.md)
+> **Navigasi:** [README proyek](../README.md) · [Dokumentasi API](../endpoin.md) · [Panduan `curl`](curl.md) · [Panduan Postman](postman.md)
 
-Dokumentasi ini menjelaskan struktur aplikasi Rust di root, alur request, serta peran file source. Kode dikelompokkan per lapisan, lalu file dipisah berdasarkan tanggung jawabnya.
+![Ilustrasi: Pilih jalur belajar](ilustrasi/halaman/04-README.svg "Pilih jalur belajar")
 
-> [!TIP]
-> Baru mengenal proyek ini? Ikuti **Urutan belajar** dari nomor 1. Setiap halaman menyediakan tautan kembali ke indeks, README proyek, dan dokumentasi endpoint.
 
-## Gambaran cepat
+Folder ini menjelaskan cara kerja REST API toko laptop, dari startup server sampai response kembali ke client. Catatan ditulis dalam urutan sederhana: pahami gambaran proyek, ikuti satu request, lalu buka rincian file yang ingin dipelajari.
 
-- `src/routes.rs` menentukan URL dan middleware autentikasi.
-- `src/handlers/` menerima request HTTP dan mengirim response.
-- `src/validation/` memeriksa input sebelum query database.
-- `src/repositories/` mengelola query PostgreSQL per domain.
-- `src/presenters/` mengubah model menjadi JSON yang siap dikirim client.
+> **Baru membuka proyek?** Mulai dari [gambaran proyek](01-gambaran-proyek.md), lanjutkan ke [alur aplikasi](02-alur-kerja-aplikasi.md), lalu gunakan tabel referensi pada halaman ini untuk masuk ke detail source.
 
-## Cara membaca catatan
+## Peta aplikasi
 
-Setiap halaman kode mengikuti urutan source: gambaran tanggung jawab, import
-atau deklarasi modul, lalu fungsi dan alur penting dari atas ke bawah. Istilah
-Rust yang muncul dijelaskan saat pertama kali dipakai, dan contoh response
-menunjukkan bentuk data yang diterima client.
+```text
+main.rs → config + database → routes + auth middleware
+                                  ↓
+Client → handler → validation → repository → PostgreSQL
+                     ↓                         ↓
+                 ApiError ← presenter ← Laptop
+                     ↓
+                JSON response
+```
 
-- **Buka source** membawa kembali ke file Rust yang sedang dijelaskan.
-- **Navigasi** membawa ke indeks, README proyek, atau daftar endpoint.
-- Potongan kode yang diawali `let` atau contoh pemanggilan adalah ilustrasi
-  untuk membantu memahami konsep; ikuti catatan di sekitarnya untuk konteks.
-- Nama seperti `StatusCode::OK` atau `Option<T>` adalah sintaks Rust, bukan teks
-  yang harus diketik sebagai bagian dari URL.
+| Bagian | Pertanyaan yang dijawab | Mulai dari |
+| --- | --- | --- |
+| Startup | Apa yang terjadi sebelum server menerima request? | [Startup server](rust/main.md) |
+| Routes dan auth | URL mana yang publik, dan mana yang perlu login? | [Routes](rust/routes.md) · [Session dan JWT](rust/auth/session.md) |
+| Handler | Bagaimana request masuk dan response dibentuk? | [Ringkasan handlers](rust/handlers.md) |
+| Validation | Input seperti apa yang diterima? | [Ringkasan validation](rust/validation.md) |
+| Database | Di mana query PostgreSQL dijalankan? | [Ringkasan repository](rust/repositories.md) |
+| Response | Bagaimana data model menjadi JSON dan Rupiah? | [Ringkasan presenter](rust/presenters.md) |
 
-Jika baru belajar, mulai dari [gambaran proyek](01-gambaran-proyek.md), lalu
-ikuti [alur kerja aplikasi](02-alur-kerja-aplikasi.md). Gunakan daftar di bawah
-untuk membuka detail file saat ada istilah atau langkah yang belum jelas.
+## Jalur belajar yang disarankan
 
-## Urutan belajar
+1. **Kenali proyek:** baca [gambaran proyek](01-gambaran-proyek.md) dan [panduan presentasi](00-panduan-presentasi.md).
+2. **Ikuti urutannya:** baca [alur kerja aplikasi](02-alur-kerja-aplikasi.md), lalu pelajari [main](rust/main.md), [config](rust/config.md), [lib](rust/lib.md), dan [routes](rust/routes.md).
+3. **Telusuri satu endpoint:** gunakan `POST /api/laptops` sebagai contoh pada [handler create](rust/handlers/laptops/create.md), [validator create](rust/validation/create.md), [repository laptop](rust/repositories/laptop-repository.md), dan [presenter response](rust/presenters/laptop-response.md).
+4. **Pelajari login:** mulai dari [handler auth](rust/handlers/auth.md), lanjut ke [modul auth](rust/auth/mod.md), [session](rust/auth/session.md), [JWT](rust/auth/jwt.md), dan [repository user](rust/repositories/user-repository.md).
+5. **Buka konsep per lapisan:** gunakan indeks [models](rust/models.md), [validation](rust/validation.md), [repositories](rust/repositories.md), atau [presenters](rust/presenters.md) untuk memilih file terkait.
+6. **Lihat kontrak client:** buka [dokumentasi endpoint](../endpoin.md), [contoh `curl`](curl.md), atau [skenario Postman](postman.md).
 
-1. [Panduan presentasi](00-panduan-presentasi.md) memberi urutan singkat untuk menjelaskan proyek.
-2. [Gambaran proyek](01-gambaran-proyek.md) memperkenalkan teknologi dan lapisan aplikasi.
-3. [Alur kerja aplikasi](02-alur-kerja-aplikasi.md) mengikuti startup dan request sampai database.
-4. [Startup server](rust/main.md), [config](rust/config.md), dan [lib](rust/lib.md) menjelaskan persiapan aplikasi.
-5. [Routes](rust/routes.md) menunjukkan pemetaan URL ke handler dan middleware session/JWT.
-6. [Handlers](rust/handlers.md) menjelaskan alur request dengan tautan ke catatan tiap operasi.
-7. Pelajari [autentikasi modular](rust/auth/mod.md), [models](rust/models.md), [validation](rust/validation.md), [repositories](rust/repositories.md), dan [presenters](rust/presenters.md).
-8. Lihat [error API](rust/error.md), seluruh [migration database](rust/database/0001-create-laptops.md), dan [dependensi](rust/cargo-toml.md).
+## Misi belajar 15 menit
 
-## Dokumentasi per file
+Gunakan checklist ini setelah membaca. Setiap misi menghubungkan konsep dengan hasil yang bisa dilihat langsung.
 
-- **Handler:** [auth](rust/handlers/auth.md), [system](rust/handlers/system.md), [create](rust/handlers/laptops/create.md), [read](rust/handlers/laptops/read.md), [update](rust/handlers/laptops/update.md), dan [delete](rust/handlers/laptops/delete.md).
-- **Model:** [entity](rust/models/laptop/entity.md), [payload create](rust/models/laptop/create-payload.md), dan [payload update](rust/models/laptop/update-payload.md).
-- **Validation:** [ID](rust/validation/id.md), [teks](rust/validation/text.md), [create](rust/validation/create.md), dan [update](rust/validation/update.md).
-- **Repository:** [modul repository](rust/repositories/mod.md), [query laptop](rust/repositories/laptop-repository.md), dan [query user](rust/repositories/user-repository.md).
-- **Autentikasi:** [modul auth](rust/auth/mod.md), [session](rust/auth/session.md), [JWT](rust/auth/jwt.md), [response auth](rust/auth/http.md), dan [query user](rust/repositories/user-repository.md).
-- **Database:** [migration laptop](rust/database/0001-create-laptops.md), [skema awal users](rust/database/0002-create-users.md), dan [skema password latihan](rust/database/0003-plaintext-password.md).
-- **Presenter:** [response laptop](rust/presenters/laptop-response.md) dan [format Rupiah](rust/presenters/rupiah.md).
+| Misi | Tantangan | Petunjuk / hasil yang diharapkan |
+| --- | --- | --- |
+| 🧭 Telusuri request | Ikuti `POST /api/laptops` dari route sampai JSON response. | Temukan handler, validator, query `INSERT`, dan presenter. |
+| 🔮 Tebak status | Prediksi hasil body PATCH kosong dan ID positif yang tidak ada. | PATCH kosong → `400`; ID valid format tetapi baris tidak ada → `404`. |
+| 🛡️ Uji gerbang | Bandingkan `GET /health` dan `GET /api/laptops` tanpa login. | Health check → `200`; daftar laptop → `401`. |
+| 💸 Ikuti harganya | Cari angka harga dari model hingga JSON client. | Database menyimpan integer; presenter mengirim string Rupiah. |
+| 🎤 Jelaskan singkat | Terangkan proyek dalam tiga kalimat tanpa membaca source. | Sebut tujuan API, alur lapisan, lalu satu batasan keamanan. |
 
-## Mencoba endpoint
+Centang setiap misi yang sudah bisa dijelaskan:
 
-Daftar endpoint dan response tersedia di [endpoin.md](../endpoin.md). Contoh command lengkap beserta penjelasan opsi curl ada di [panduan curl](curl.md). Collection dan environment Postman ada di [postman/](../postman/toko-laptop-app.postman_collection.json) dan file environment JSON di folder yang sama.
+- [ ] Saya tahu file yang menentukan URL.
+- [ ] Saya bisa membedakan `400`, `401`, dan `404` pada contoh API.
+- [ ] Saya bisa menjelaskan perbedaan session cookie dan JWT setelah logout.
+- [ ] Saya tahu mengapa password teks biasa hanya untuk latihan lokal.
 
-Komentar dokumentasi pada source Rust menyediakan tautan `file://` langsung ke catatan terkait. Dari catatan, tautan “Buka source” kembali ke implementasi.
+## Referensi catatan source
+
+| Area | Ringkasan dan rincian |
+| --- | --- |
+| Startup dan struktur crate | [main](rust/main.md) · [config](rust/config.md) · [lib](rust/lib.md) · [Cargo.toml](rust/cargo-toml.md) |
+| Routing dan handler | [routes](rust/routes.md) · [ringkasan handlers](rust/handlers.md) · [modul handlers](rust/handlers/mod.md) · [auth](rust/handlers/auth.md) · [health check](rust/handlers/system.md) |
+| Operasi laptop | [modul laptop](rust/handlers/laptops/mod.md) · [create](rust/handlers/laptops/create.md) · [read](rust/handlers/laptops/read.md) · [update](rust/handlers/laptops/update.md) · [delete](rust/handlers/laptops/delete.md) |
+| Autentikasi | [modul auth](rust/auth/mod.md) · [response HTTP](rust/auth/http.md) · [JWT](rust/auth/jwt.md) · [session dan middleware](rust/auth/session.md) · [repository user](rust/repositories/user-repository.md) |
+| Model request dan entity | [ringkasan models](rust/models.md) · [modul models](rust/models/mod.md) · [modul laptop](rust/models/laptop/mod.md) · [entity](rust/models/laptop/entity.md) · [payload POST](rust/models/laptop/create-payload.md) · [payload PATCH](rust/models/laptop/update-payload.md) |
+| Validasi input | [ringkasan validation](rust/validation.md) · [modul](rust/validation/mod.md) · [ID](rust/validation/id.md) · [teks](rust/validation/text.md) · [create](rust/validation/create.md) · [update](rust/validation/update.md) |
+| Database | [ringkasan repository](rust/repositories.md) · [modul repository](rust/repositories/mod.md) · [query laptop](rust/repositories/laptop-repository.md) · [migration laptop](rust/database/0001-create-laptops.md) · [migration awal user](rust/database/0002-create-users.md) · [migration password latihan](rust/database/0003-plaintext-password.md) |
+| Response | [ringkasan presenters](rust/presenters.md) · [modul presenter](rust/presenters/mod.md) · [pemetaan laptop](rust/presenters/laptop-response.md) · [format Rupiah](rust/presenters/rupiah.md) · [error API](rust/error.md) |
+
+## Cara membaca setiap halaman
+
+- Tautan **Buka source** menuju file implementasi yang sedang dijelaskan.
+- Tabel merangkum fungsi, field, atau hasil sebelum uraian langkah demi langkah.
+- Potongan kode menunjukkan bagian penting source; JSON dan command merupakan contoh yang bisa disalin setelah server disiapkan.
+- Istilah Rust seperti `Result`, `Option`, `?`, dan `.await` dijelaskan sesuai konteks pemakaiannya.
+- Gunakan tautan di bagian **Hubungan dengan file lain** atau tabel indeks di atas untuk mengikuti data ke lapisan berikutnya.
+
+## Batasan yang perlu diingat
+
+Proyek ini tidak memiliki frontend. Catatan membahas pengalaman client API dan source backend. Password disimpan sebagai teks biasa untuk latihan lokal, session berada di memory store, dan logout tidak membatalkan JWT yang sudah diterbitkan. Jangan gunakan kredensial nyata atau deploy sebagai aplikasi produksi.

@@ -2,6 +2,9 @@
 
 > **Navigasi:** [Indeks catatan](../../../README.md) · [README proyek](../../../../README.md) · [Endpoint API](../../../../endpoin.md)
 
+![Ilustrasi: Kontrak data POST](../../../ilustrasi/halaman/28-create-payload.svg "Kontrak data POST")
+
+
 [Buka source `create_payload.rs`](../../../../src/models/laptop/create_payload.rs)
 
 ## Tujuan
@@ -56,3 +59,9 @@ Keempat field tidak memakai `Option`, sehingga body harus menyediakan semua nama
 ```
 
 `Deserialize` hanya membaca JSON ke struct. Ia tidak mengecek apakah teks kosong atau angka negatif. Handler meneruskan payload ke [validator create](../../validation/create.md) sebelum repository menyimpan data.
+
+## Ilustrasi perjalanan payload
+
+```text
+JSON POST → Deserialize → CreateLaptopPayload → validator → INSERT
+```
