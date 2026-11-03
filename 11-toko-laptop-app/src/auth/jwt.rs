@@ -19,10 +19,11 @@ pub struct JwtService {
     secret: Arc<str>,
 }
 
-#[derive(Deserialize, Serialize)]
-struct Claims {
-    sub: String,
-    exp: u64,
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub(crate) struct Claims {
+    pub(crate) sub: String,
+    pub(crate) exp: u64,
+    pub(crate) ver: i64,
 }
 
 impl JwtService {
@@ -37,12 +38,14 @@ impl JwtService {
     pub fn issue_token(
         &self,
         username: &str,
+        auth_version: i64,
     ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
         // JWT memakai detik sejak Unix epoch untuk mengisi klaim expiry standar.
         let now = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
         let claims = Claims {
             sub: username.to_owned(),
             exp: now + TOKEN_EXPIRED_SECONDS,
+            ver: auth_version,
         };
         let key = EncodingKey::from_secret(self.secret.as_bytes());
 
@@ -50,14 +53,13 @@ impl JwtService {
     }
 
     /// Memverifikasi signature dan expiry, lalu mengembalikan username subject.
-    pub fn verify_token(&self, token: &str) -> Result<String, jsonwebtoken::errors::Error> {
+    pub(crate) fn verify_token(&self, token: &str) -> Result<Claims, jsonwebtoken::errors::Error> {
         // Algoritma dibatasi ke HS256 dan leeway nol agar expiry berlaku tepat waktu.
         let key = DecodingKey::from_secret(self.secret.as_bytes());
         let mut validation = Validation::new(Algorithm::HS256);
         validation.leeway = 0;
 
-        let claims = decode::<Claims>(token, &key, &validation)?.claims;
-        Ok(claims.sub)
+        Ok(decode::<Claims>(token, &key, &validation)?.claims)
     }
 }
 
@@ -77,7 +79,7 @@ pub(crate) fn bearer_token(headers: &HeaderMap) -> Option<&str> {
 }
 
 /// Memvalidasi bearer JWT dari header dan mengambil username di dalamnya.
-pub(crate) fn username_from_headers(headers: &HeaderMap, jwt: &JwtService) -> Option<String> {
+pub(crate) fn claims_from_headers(headers: &HeaderMap, jwt: &JwtService) -> Option<Claims> {
     jwt.verify_token(bearer_token(headers)?).ok()
 }
 
@@ -90,16 +92,18 @@ mod tests {
     #[test]
     fn token_round_trip_returns_the_username() {
         let jwt = JwtService::new(SECRET.to_owned());
-        let token = jwt.issue_token("admin").unwrap();
+        let token = jwt.issue_token("admin", 0).unwrap();
 
-        assert_eq!(jwt.verify_token(&token).unwrap(), "admin");
+        let claims = jwt.verify_token(&token).unwrap();
+        assert_eq!(claims.sub, "admin");
+        assert_eq!(claims.ver, 0);
     }
 
     #[test]
     fn token_rejects_tampering_and_a_different_secret() {
         let jwt = JwtService::new(SECRET.to_owned());
         let other_jwt = JwtService::new("another-test-secret-with-32-bytes".to_owned());
-        let token = jwt.issue_token("admin").unwrap();
+        let token = jwt.issue_token("admin", 0).unwrap();
         let tampered = format!("{token}x");
 
         assert!(jwt.verify_token(&tampered).is_err());

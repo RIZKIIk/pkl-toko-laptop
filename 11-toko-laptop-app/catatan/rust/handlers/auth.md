@@ -15,9 +15,9 @@ Handler ini memproses registrasi dan login, menampilkan identitas dari session/J
 
 ```text
 register → users table → 201 / 409
-login → verify credentials → session cookie + JWT
-protected request → identity from JWT or session
-logout → clear session (JWT stays valid until expiry)
+login → verify credentials → session cookie + JWT with auth_version
+protected request → validate JWT/session and auth_version
+logout → increment auth_version + clear current session
 ```
 
 ## Payload login
@@ -31,7 +31,7 @@ logout → clear session (JWT stays valid until expiry)
 | POST | `/api/auth/register` | Membuat akun dengan username unik. |
 | POST | `/api/auth/login` | Memvalidasi kredensial, membuat session, dan menerbitkan JWT HS256 satu jam. |
 | GET | `/api/auth/session` | Mengembalikan username dari session atau JWT aktif. |
-| POST | `/api/auth/logout` | Menghapus data session di server; JWT tidak dicabut. |
+| POST | `/api/auth/logout` | Mencabut semua session/JWT lama milik pengguna. |
 
 ## Fungsi dan alurnya
 
@@ -46,21 +46,21 @@ logout → clear session (JWT stays valid until expiry)
 1. Memangkas spasi pinggir username dan menolak username kosong atau lebih dari 100 karakter; password kosong ditolak dengan `400 Bad Request`.
 2. Memanggil `auth::verify_credentials` untuk mencari username di tabel `users` dan mencocokkan password latihan.
 3. Mengembalikan `401 Unauthorized` jika username tidak ditemukan atau password tidak cocok. Kegagalan query dicatat di server dan menghasilkan `500`.
-4. Jika cocok, menerbitkan JWT HS256 dengan subject username dan expiry satu jam.
-5. Memanggil `session::start_session`. Fungsi itu mengganti ID session lalu menyimpan username di session server-side.
+4. Jika cocok, mengambil `auth_version` pengguna dan menerbitkan JWT HS256 dengan subject username, versi autentikasi, dan expiry satu jam.
+5. Memanggil `session::start_session`. Fungsi itu mengganti ID session lalu menyimpan username dan versi autentikasi di session server-side.
 6. Mengembalikan JSON `200 OK` berisi username, `access_token`, `token_type`, dan `expires_in`. Cookie session dikelola oleh `SessionManagerLayer`, bukan dibuat manual oleh handler.
 
 Untuk materi session, password registrasi disimpan langsung di database lokal dan dibandingkan secara langsung. Jangan gunakan implementasi ini untuk akun nyata atau produksi.
 
-### `current_user(session)`
+### `current_user(identity)`
 
-Mengembalikan username dari bearer JWT valid atau session aktif. Token tidak valid dan session yang tidak memiliki username menghasilkan `401`; kegagalan membaca session dicatat di server dan menghasilkan `500`.
+Mengembalikan username dari identitas yang sudah diverifikasi middleware. Middleware menolak JWT/session yang versi autentikasinya tidak lagi cocok.
 
-### `logout(session)`
+### `logout(pool, identity, session)`
 
-Memanggil `clear_session` untuk menghapus data session. JWT stateless tidak dapat dicabut oleh endpoint ini dan tetap valid sampai expiry satu jam, sehingga client perlu menghapus token setelah logout. Jika penghapusan session berhasil, handler mengembalikan `200 OK`; jika gagal, mencatat detail error di server dan mengembalikan `500`.
+Menaikkan `users.auth_version`, sehingga semua JWT dan session lama milik pengguna langsung ditolak, lalu memanggil `clear_session` untuk menghapus session aktif. Jika query database atau penghapusan session gagal, handler mencatat detail error di server dan mengembalikan `500`. Client tetap perlu menghapus token lokal setelah logout.
 
-`login` menggunakan `State` untuk menerima pool database dan `Json` untuk membaca body. Dua fungsi lain hanya memerlukan `Session`; semuanya mengembalikan `Response` agar dapat menyusun status dan JSON yang berbeda pada tiap cabang.
+`login` menggunakan `State` untuk menerima pool database dan `Json` untuk membaca body. `current_user` menerima identitas yang sudah diverifikasi middleware, sedangkan `logout` juga menerima pool dan session; semuanya mengembalikan `Response` agar dapat menyusun status dan JSON yang berbeda pada tiap cabang.
 
 `cycle_id()` mengganti ID session saat login untuk mengurangi risiko session fixation. Request tanpa session valid pada route yang dilindungi juga menghasilkan `401` melalui middleware.
 

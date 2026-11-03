@@ -52,7 +52,7 @@ Signature lengkapnya adalah `pub fn create_router(pool: PgPool, session_cookie_s
 
 1. Router publik mendaftarkan `GET /health`, `POST /api/auth/register`, dan `POST /api/auth/login`. Registrasi membuat akun; login memeriksa tabel user, membuat session baru, dan menerbitkan JWT saat password cocok.
 2. `protected_routes` mendaftarkan route `/api/auth/session`, `/api/auth/logout`, dan operasi laptop.
-3. `.route_layer(middleware::from_fn(auth::require_auth))` memanggil middleware dari [`auth/session.rs`](auth/session.md) sebelum request mencapai handler pada grup protected. Middleware memverifikasi bearer JWT lebih dulu, lalu memakai session sebagai alternatif.
+3. `.route_layer(middleware::from_fn_with_state(pool.clone(), auth::require_auth))` memanggil middleware dari [`auth/session.rs`](auth/session.md) sebelum request mencapai handler pada grup protected. Middleware memverifikasi bearer JWT atau session, lalu mencocokkan versi autentikasi ke database.
 4. Route `"/api/laptops"` memakai satu URL untuk dua method:
    - `get(handlers::list_laptops)` untuk mengambil daftar.
    - `.post(handlers::create_laptop)` untuk menambah data.
@@ -74,7 +74,7 @@ Method yang tidak didaftarkan pada URL tersebut tidak akan menuju handler ini. C
 | POST | `/api/auth/register` | `register` | `State(pool)`, JSON username/password; publik dan tidak membuat session. |
 | POST | `/api/auth/login` | `login` | `State(pool)`, `JwtService`, JSON username/password; membuat session dan token bila cocok dengan tabel users. |
 | GET | `/api/auth/session` | `current_user` | Session aktif atau JWT bearer valid (wajib login). |
-| POST | `/api/auth/logout` | `logout` | Session aktif atau JWT bearer valid (wajib login); token tidak dicabut. |
+| POST | `/api/auth/logout` | `logout` | Session aktif atau JWT bearer valid (wajib login); mencabut semua session/JWT lama milik pengguna. |
 | GET | `/api/laptops` | `list_laptops` | `State(pool)`. |
 | POST | `/api/laptops` | `create_laptop` | `State(pool)` dan `Json<CreateLaptopPayload>`. |
 | GET | `/api/laptops/{id}` | `get_laptop` | `State(pool)` dan `Path<i64>`. |

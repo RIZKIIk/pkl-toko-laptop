@@ -11,27 +11,28 @@
 
 Modul ini menerbitkan dan memverifikasi access token JWT menggunakan HMAC-SHA256 (HS256). Token memberi client cara mengautentikasi request tanpa mengirim password lagi. Secret dibaca dari `JWT_SECRET`, yang harus berisi sedikitnya 32 byte.
 
-> **Ringkas:** login membuat JWT yang berlaku satu jam; route terlindungi hanya menerima token dengan signature, algoritma, dan expiry yang valid.
+> **Ringkas:** login membuat JWT yang berlaku satu jam; route terlindungi memeriksa signature, expiry, dan versi autentikasi terbaru.
 
 ## Isi token
 
-JWT aplikasi membawa dua klaim (*claims*):
+JWT aplikasi membawa tiga klaim (*claims*):
 
 | Klaim | Nilai | Kegunaan |
 | --- | --- | --- |
 | `sub` | Username pengguna. | Menyatakan identitas pemilik token (*subject*). |
 | `exp` | Waktu kedaluwarsa sebagai Unix timestamp dalam detik. | Menentukan kapan token tidak berlaku lagi. |
+| `ver` | Versi autentikasi pengguna saat token diterbitkan. | Menolak token setelah logout atau pencabutan seluruh sesi. |
 
 Payload JWT ditandatangani, bukan dienkripsi. Client dapat membaca isinya. Jangan masukkan password, secret, atau data sensitif ke dalam claims.
 
 ## Cara kerja di aplikasi
 
 1. Saat startup, `main.rs` memberikan `JWT_SECRET` ke `create_router`, lalu router membuat `JwtService`.
-2. Setelah kredensial login cocok, `issue_token(username)` menghitung waktu saat ini dan menambahkan `TOKEN_EXPIRED_SECONDS` (3.600 detik) untuk klaim `exp`.
+2. Setelah kredensial login cocok, handler mengambil `auth_version` dari database. `issue_token(username, auth_version)` menyimpan versi itu bersama klaim expiry satu jam.
 3. `jsonwebtoken::encode` menandatangani claims dengan algoritma HS256 dan secret aplikasi.
 4. Client mengirim token melalui header `Authorization: Bearer <access_token>`.
 5. `bearer_token` membaca header dan mengambil token setelah skema `Bearer`. Header dengan format lain dianggap tidak memiliki bearer token.
-6. `verify_token` memeriksa algoritma, signature, dan expiry. Jika valid, `username_from_headers` mengembalikan username dari klaim `sub`; jika tidak, hasilnya `None`.
+6. `verify_token` memeriksa algoritma, signature, dan expiry. `claims_from_headers` mengembalikan claims yang lolos pemeriksaan kriptografis. Middleware mencocokkan klaim `ver` dengan `auth_version` terbaru di database; token lama yang versinya tidak cocok ditolak.
 
 `JwtService` menyimpan secret sebagai `Arc<str>`. `Arc` memungkinkan service di-clone dengan biaya rendah saat dipakai bersama oleh handler dan middleware. Secret tidak dimasukkan ke claims atau response.
 
@@ -65,11 +66,11 @@ JWT dan cookie session dapat dipakai sendiri-sendiri. Middleware memeriksa JWT l
 
 ## Kapan token ditolak?
 
-Token tidak memberi akses jika header tidak ada atau salah format, isi token berubah, token ditandatangani dengan secret lain, algoritmanya bukan HS256, atau token sudah kedaluwarsa. Middleware menghentikan request dan mengirim `401 Unauthorized`.
+Token tidak memberi akses jika header tidak ada atau salah format, isi token berubah, token ditandatangani dengan secret lain, algoritmanya bukan HS256, token sudah kedaluwarsa, atau `ver` tidak lagi cocok dengan database. Middleware menghentikan request dan mengirim `401 Unauthorized`.
 
-## Batas logout
+## Logout dan pencabutan token
 
-JWT bersifat stateless dan tidak dicabut oleh endpoint logout. Logout menghapus session cookie, sementara JWT yang sudah diterbitkan tetap dapat dipakai sampai masa berlaku satu jam berakhir. Client perlu menghapus token lokal setelah logout.
+JWT sendiri stateless, tetapi middleware membandingkan klaim `ver` dengan `users.auth_version` di database pada setiap request. Logout menaikkan versi tersebut, sehingga semua JWT lama langsung ditolak walaupun belum kedaluwarsa. Client tetap perlu menghapus token lokal setelah logout.
 
 ## File terkait
 
@@ -87,7 +88,7 @@ username + waktu expiry
         ↓ sign dengan secret HS256
      access token
         ↓ Authorization: Bearer ...
-verify signature + expiry
+verify signature + expiry + auth_version
         ├─ valid → username subject
         └─ gagal → 401
 ```

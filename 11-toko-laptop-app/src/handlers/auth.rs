@@ -3,7 +3,6 @@
 use axum::{
     Json,
     extract::{Extension, State},
-    http::HeaderMap,
     http::StatusCode,
     response::{IntoResponse, Response},
 };
@@ -68,7 +67,25 @@ pub async fn login(
     }
 
     // Satu login menghasilkan JWT dan session cookie untuk dua cara autentikasi.
-    let token = match jwt.issue_token(username) {
+    let auth_version =
+        match crate::repositories::user_repository::find_auth_version(&pool, username).await {
+            Ok(Some(auth_version)) => auth_version,
+            Ok(None) => {
+                return http::error_response(
+                    StatusCode::UNAUTHORIZED,
+                    "Username atau password salah",
+                );
+            }
+            Err(error) => {
+                eprintln!("Gagal mengambil versi autentikasi user: {error}");
+                return http::error_response(
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "Terjadi kesalahan saat login",
+                );
+            }
+        };
+
+    let token = match jwt.issue_token(username, auth_version) {
         Ok(token) => token,
         Err(error) => {
             eprintln!("Gagal membuat JWT saat login: {error}");
@@ -79,7 +96,7 @@ pub async fn login(
         }
     };
 
-    if let Err(error) = session::start_session(&session, username).await {
+    if let Err(error) = session::start_session(&session, username, auth_version).await {
         eprintln!("Gagal membuat session login: {error}");
         return http::error_response(
             StatusCode::INTERNAL_SERVER_ERROR,
@@ -131,37 +148,35 @@ pub async fn register(State(pool): State<PgPool>, Json(payload): Json<LoginPaylo
 }
 
 /// Mengembalikan identitas dari JWT bearer atau session aktif.
-pub async fn current_user(
-    Extension(jwt): Extension<JwtService>,
-    headers: HeaderMap,
-    session: Session,
-) -> Response {
-    // Jika bearer tidak ada atau tidak valid, coba identitas dari session cookie.
-    if let Some(username) = auth::jwt::username_from_headers(&headers, &jwt) {
-        return http::success_response(json!({
-            "status": "success",
-            "data": { "username": username }
-        }));
-    }
-
-    match auth::session::session_username(&session).await {
-        Ok(Some(username)) => http::success_response(json!({
-            "status": "success",
-            "data": { "username": username }
-        })),
-        Ok(None) => http::error_response(StatusCode::UNAUTHORIZED, "Login diperlukan"),
-        Err(error) => {
-            eprintln!("Gagal membaca session pengguna: {error}");
-            http::error_response(
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "Terjadi kesalahan pada session",
-            )
-        }
-    }
+pub async fn current_user(Extension(identity): Extension<session::AuthIdentity>) -> Response {
+    http::success_response(json!({
+        "status": "success",
+        "data": { "username": identity.username }
+    }))
 }
 
-/// Menghapus session aktif; JWT yang diterbitkan tetap berlaku sampai expiry.
-pub async fn logout(session: Session) -> Response {
+/// Mencabut seluruh JWT dan session pengguna, lalu menghapus session aktif.
+pub async fn logout(
+    State(pool): State<PgPool>,
+    Extension(identity): Extension<session::AuthIdentity>,
+    session: Session,
+) -> Response {
+    match crate::repositories::user_repository::invalidate_user_sessions(&pool, &identity.username)
+        .await
+    {
+        Ok(Some(_)) => {}
+        Ok(None) => {
+            return http::error_response(StatusCode::UNAUTHORIZED, "Login diperlukan");
+        }
+        Err(error) => {
+            eprintln!("Gagal mencabut autentikasi user saat logout: {error}");
+            return http::error_response(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Terjadi kesalahan saat logout",
+            );
+        }
+    }
+
     if let Err(error) = auth::session::clear_session(&session).await {
         eprintln!("Gagal menghapus session saat logout: {error}");
         return http::error_response(

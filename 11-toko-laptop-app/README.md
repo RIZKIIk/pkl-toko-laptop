@@ -49,7 +49,7 @@ Login melalui Postman atau `curl` untuk memperoleh session cookie dan JWT. Opera
 | `POST` | `/api/auth/register` | Mendaftarkan akun. | Publik |
 | `POST` | `/api/auth/login` | Login dan menerbitkan session serta JWT. | Publik |
 | `GET` | `/api/auth/session` | Melihat identitas pengguna aktif. | Login |
-| `POST` | `/api/auth/logout` | Menghapus session cookie. | Login |
+| `POST` | `/api/auth/logout` | Mencabut semua session dan JWT milik pengguna. | Login |
 | `GET` | `/api/laptops` | Melihat daftar laptop. | Login |
 | `POST` | `/api/laptops` | Menambahkan laptop. | Login |
 | `GET` | `/api/laptops/{id}` | Melihat detail laptop. | Login |
@@ -60,7 +60,7 @@ Login melalui Postman atau `curl` untuk memperoleh session cookie dan JWT. Opera
 - Salin perintah terminal dari [panduan curl](catatan/curl.md).
 - Jalankan skenario terurut dari [panduan Postman](catatan/postman.md) memakai collection dan environment di folder `postman/`.
 
-Login memberi JWT yang berlaku satu jam. Logout menghapus session, tetapi JWT tetap berlaku sampai kedaluwarsa; hapus token dari client setelah selesai.
+Login memberi JWT yang berlaku satu jam. Logout menaikkan versi autentikasi pengguna sehingga semua JWT dan session lama langsung ditolak; client tetap harus menghapus token lokal setelah selesai.
 
 ## Cara kerja aplikasi
 

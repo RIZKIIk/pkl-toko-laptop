@@ -68,7 +68,7 @@ Centang setiap misi yang sudah bisa dijelaskan:
 | Autentikasi | [modul auth](rust/auth/mod.md) · [response HTTP](rust/auth/http.md) · [JWT](rust/auth/jwt.md) · [session dan middleware](rust/auth/session.md) · [repository user](rust/repositories/user-repository.md) |
 | Model request dan entity | [ringkasan models](rust/models.md) · [modul models](rust/models/mod.md) · [modul laptop](rust/models/laptop/mod.md) · [entity](rust/models/laptop/entity.md) · [payload POST](rust/models/laptop/create-payload.md) · [payload PATCH](rust/models/laptop/update-payload.md) |
 | Validasi input | [ringkasan validation](rust/validation.md) · [modul](rust/validation/mod.md) · [ID](rust/validation/id.md) · [teks](rust/validation/text.md) · [create](rust/validation/create.md) · [update](rust/validation/update.md) |
-| Database | [ringkasan repository](rust/repositories.md) · [modul repository](rust/repositories/mod.md) · [query laptop](rust/repositories/laptop-repository.md) · [migration laptop](rust/database/0001-create-laptops.md) · [migration awal user](rust/database/0002-create-users.md) · [migration password latihan](rust/database/0003-plaintext-password.md) |
+| Database | [ringkasan repository](rust/repositories.md) · [modul repository](rust/repositories/mod.md) · [query laptop](rust/repositories/laptop-repository.md) · [migration laptop](rust/database/0001-create-laptops.md) · [migration awal user](rust/database/0002-create-users.md) · [migration password latihan](rust/database/0003-plaintext-password.md) · [versi autentikasi](rust/database/0004-add-auth-version.md) |
 | Response | [ringkasan presenters](rust/presenters.md) · [modul presenter](rust/presenters/mod.md) · [pemetaan laptop](rust/presenters/laptop-response.md) · [format Rupiah](rust/presenters/rupiah.md) · [error API](rust/error.md) |
 
 ## Cara membaca setiap halaman
@@ -81,4 +81,4 @@ Centang setiap misi yang sudah bisa dijelaskan:
 
 ## Batasan yang perlu diingat
 
-Proyek ini tidak memiliki frontend. Catatan membahas pengalaman client API dan source backend. Password disimpan sebagai teks biasa untuk latihan lokal, session berada di memory store, dan logout tidak membatalkan JWT yang sudah diterbitkan. Jangan gunakan kredensial nyata atau deploy sebagai aplikasi produksi.
+Proyek ini tidak memiliki frontend. Catatan membahas pengalaman client API dan source backend. Password disimpan sebagai teks biasa untuk latihan lokal dan session berada di memory store. Logout mencabut semua JWT serta session lama milik pengguna. Jangan gunakan kredensial nyata atau deploy sebagai aplikasi produksi.

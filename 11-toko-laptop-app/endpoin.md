@@ -21,7 +21,7 @@ Untuk seluruh contoh perintah terminal dan penjelasan opsi seperti `-X`, `-d`, `
 | `POST` | `/api/auth/register` | Membuat akun baru | Publik | `201 Created` |
 | `POST` | `/api/auth/login` | Login, membuat session, dan menerbitkan JWT | Publik | `200 OK` |
 | `GET` | `/api/auth/session` | Melihat pengguna pada session atau JWT aktif | Wajib login | `200 OK` |
-| `POST` | `/api/auth/logout` | Menghapus session | Wajib login | `200 OK` |
+| `POST` | `/api/auth/logout` | Mencabut semua session dan JWT pengguna | Wajib login | `200 OK` |
 | `GET` | [`/api/laptops`](http://127.0.0.1:3001/api/laptops) | Melihat semua laptop | Wajib login | `200 OK` |
 | `POST` | `/api/laptops` | Menambah laptop | Wajib login | `201 Created` |
 | `GET` | `/api/laptops/{id}` | Melihat detail laptop | Wajib login | `200 OK` |
@@ -84,7 +84,7 @@ curl -i -H "Authorization: Bearer $TOKEN" http://127.0.0.1:3001/api/laptops
 curl -i -H "Authorization: Bearer $TOKEN" http://127.0.0.1:3001/api/auth/session
 ```
 
-Kredensial salah, token tidak valid/kedaluwarsa, atau request terlindungi tanpa session maupun JWT menghasilkan `401 Unauthorized`. Jangan membagikan atau commit file cookie maupun token. Session disimpan dalam memori server dan otomatis hilang saat server dimulai ulang. Logout menghapus session cookie, tetapi tidak dapat membatalkan JWT yang sudah diterbitkan; token tetap berlaku sampai satu jam dan harus dihapus dari client.
+Kredensial salah, token tidak valid/kedaluwarsa/dicabut, atau request terlindungi tanpa session maupun JWT menghasilkan `401 Unauthorized`. Jangan membagikan atau commit file cookie maupun token. Session disimpan dalam memori server dan otomatis hilang saat server dimulai ulang. Logout menaikkan `auth_version` pengguna di database sehingga semua JWT dan session lama langsung ditolak; client tetap harus menghapus token lokal.
 
 ## Pemeriksaan Layanan
 

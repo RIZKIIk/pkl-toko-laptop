@@ -10,6 +10,28 @@ pub async fn find_password(pool: &PgPool, username: &str) -> Result<Option<Strin
         .await
 }
 
+/// Mengambil versi autentikasi aktif untuk username.
+pub async fn find_auth_version(pool: &PgPool, username: &str) -> Result<Option<i64>, sqlx::Error> {
+    sqlx::query_scalar("SELECT auth_version FROM public.users WHERE username = $1")
+        .bind(username)
+        .fetch_optional(pool)
+        .await
+}
+
+/// Mencabut semua session dan JWT dengan menaikkan versi autentikasi user.
+pub async fn invalidate_user_sessions(
+    pool: &PgPool,
+    username: &str,
+) -> Result<Option<i64>, sqlx::Error> {
+    sqlx::query_scalar(
+        "UPDATE public.users SET auth_version = auth_version + 1 \
+         WHERE username = $1 RETURNING auth_version",
+    )
+    .bind(username)
+    .fetch_optional(pool)
+    .await
+}
+
 /// Memasukkan atau menyinkronkan akun latihan dengan nilai environment.
 pub async fn upsert_user(pool: &PgPool, username: &str, password: &str) -> Result<(), sqlx::Error> {
     sqlx::query(

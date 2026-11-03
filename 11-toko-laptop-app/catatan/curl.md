@@ -25,7 +25,7 @@ curl -i \
   "http://127.0.0.1:3001/api/auth/login"
 ```
 
-Response sukses login berstatus `200 OK`, mengatur cookie session, dan mengembalikan JWT pada `data.access_token` yang berlaku satu jam. Setelah request lain, cek identitas dengan `GET /api/auth/session`. Logout menghapus session, tetapi token JWT tetap berlaku sampai kedaluwarsa.
+Response sukses login berstatus `200 OK`, mengatur cookie session, dan mengembalikan JWT pada `data.access_token` yang berlaku satu jam. Setelah request lain, cek identitas dengan `GET /api/auth/session`. Logout menaikkan versi autentikasi pengguna sehingga semua JWT dan session lama langsung ditolak; hapus token lokal setelah logout.
 
 ## Semua endpoint
 
@@ -224,7 +224,7 @@ Tanpa cookie session atau bearer JWT yang valid, server mengembalikan `401 Unaut
 
 ### 10. Logout — `POST /api/auth/logout`
 
-Wajib memakai cookie session atau JWT bearer yang valid. Tidak ada body, maka metode ditentukan eksplisit memakai `-X POST`. Logout menghapus session server-side; JWT bearer tetap berlaku sampai kedaluwarsa.
+Wajib memakai cookie session atau JWT bearer yang valid. Tidak ada body, maka metode ditentukan eksplisit memakai `-X POST`. Logout menaikkan versi autentikasi pengguna dan menghapus session aktif, sehingga semua JWT serta session lama pengguna langsung ditolak.
 
 ```bash
 curl -i \

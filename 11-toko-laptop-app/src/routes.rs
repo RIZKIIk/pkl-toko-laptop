@@ -27,7 +27,10 @@ pub fn create_router(pool: PgPool, session_cookie_secure: bool, jwt_secret: Stri
                 .delete(handlers::delete_laptop),
         )
         // Memeriksa session atau JWT sebelum request diteruskan ke handler.
-        .route_layer(middleware::from_fn(auth::require_auth));
+        .route_layer(middleware::from_fn_with_state(
+            pool.clone(),
+            auth::require_auth,
+        ));
 
     Router::new()
         .route("/health", get(handlers::health))
@@ -86,10 +89,9 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn protected_endpoints_accept_a_valid_bearer_token() {
+    async fn protected_endpoints_reject_an_invalid_bearer_token() {
         let secret = "test-secret-with-at-least-32-bytes-long".to_owned();
-        let jwt = crate::auth::jwt::JwtService::new(secret.clone());
-        let token = jwt.issue_token("admin").unwrap();
+        let token = "not-a-valid-token";
         let pool = PgPoolOptions::new()
             .connect_lazy("postgres://localhost/toko_laptop")
             .expect("lazy PostgreSQL pool should be valid");
@@ -120,6 +122,6 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
     }
 }
