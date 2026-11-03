@@ -3,7 +3,7 @@
 REST API inventaris laptop yang dibuat dengan Rust, Axum, SQLx, dan PostgreSQL. Proyek ini cocok untuk belajar alur request API dari route sampai query database.
 
 > [!WARNING]
-> Proyek ini hanya untuk latihan lokal. Password akun disimpan sebagai teks biasa dan session berada di memori. Jangan gunakan akun nyata atau jalankan sebagai layanan produksi.
+> Proyek ini untuk latihan lokal. Password di-hash dengan Argon2id, tetapi session masih berada di memori. Jangan gunakan akun nyata atau jalankan sebagai layanan produksi.
 
 ## Mulai cepat
 
@@ -11,7 +11,7 @@ REST API inventaris laptop yang dibuat dengan Rust, Axum, SQLx, dan PostgreSQL. 
 
 - Rust toolchain (edition 2024).
 - PostgreSQL yang sudah berjalan.
-- Database kosong untuk aplikasi.
+- Database PostgreSQL untuk aplikasi; database harus kosong jika baru pertama kali disiapkan.
 
 ### Siapkan konfigurasi
 
@@ -35,7 +35,7 @@ Buat secret acak, misalnya dengan `openssl rand -base64 32`. Jangan membagikan `
 cargo run
 ```
 
-Migration diterapkan otomatis saat startup. Aplikasi juga membuat atau memperbarui akun admin berdasarkan konfigurasi. Jika server berhasil dimulai, periksa [http://127.0.0.1:3001/health](http://127.0.0.1:3001/health) atau ubah alamat sesuai `APP_HOST` dan `APP_PORT`.
+Migration diterapkan otomatis saat startup. Password lama yang masih tersimpan sebagai teks biasa akan di-hash dengan Argon2id lalu nilai lamanya dihapus. Aplikasi juga membuat atau memperbarui akun admin berdasarkan konfigurasi. Jika server berhasil dimulai, periksa [http://127.0.0.1:3001/health](http://127.0.0.1:3001/health) atau ubah alamat sesuai `APP_HOST` dan `APP_PORT`.
 
 Jangan mengubah file migration yang sudah pernah dijalankan. SQLx memeriksa checksum-nya dan menghentikan startup jika isi file berbeda; buat file migration baru untuk perubahan skema berikutnya.
 
@@ -61,6 +61,8 @@ Login melalui Postman atau `curl` untuk memperoleh session cookie dan JWT. Opera
 - Jalankan skenario terurut dari [panduan Postman](catatan/postman.md) memakai collection dan environment di folder `postman/`.
 
 Login memberi JWT yang berlaku satu jam. Logout menaikkan versi autentikasi pengguna sehingga semua JWT dan session lama langsung ditolak; client tetap harus menghapus token lokal setelah selesai.
+
+Password akun disimpan sebagai hash Argon2id dengan salt acak, bukan sebagai teks asli. Setelah update pertama kali, migration dan proses startup meng-upgrade password lama otomatis; akun yang sudah terdaftar tetap bisa login dengan password yang sama.
 
 ## Cara kerja aplikasi
 

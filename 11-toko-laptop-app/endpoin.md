@@ -11,7 +11,7 @@ Endpoint laptop memerlukan login terlebih dahulu. Gunakan akun yang didaftarkan 
 Untuk seluruh contoh perintah terminal dan penjelasan opsi seperti `-X`, `-d`, `-b`, dan `-c`, lihat [panduan curl](catatan/curl.md).
 
 > [!WARNING]
-> Password akun latihan disimpan sebagai teks biasa dan session disimpan sementara di memori server. Gunakan hanya untuk belajar secara lokal, bukan untuk akun nyata atau produksi.
+> Password di-hash dengan Argon2id, tetapi session disimpan sementara di memori server. Gunakan hanya untuk belajar lokal, bukan untuk akun nyata atau produksi.
 
 ## Ringkasan Endpoint
 
@@ -55,7 +55,7 @@ curl -i \
   http://127.0.0.1:3001/api/auth/register
 ```
 
-Password disimpan sebagai teks biasa untuk latihan lokal session dan tidak aman untuk akun nyata atau produksi.
+Password di-hash dengan Argon2id dan tidak pernah dikembalikan dalam response. Gunakan password latihan, bukan password akun pribadi.
 
 `POST /api/auth/login` menerima JSON username dan password dari akun terdaftar atau sesuai `ADMIN_USERNAME` dan `ADMIN_PASSWORD` di environment server:
 

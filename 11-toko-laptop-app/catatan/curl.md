@@ -54,7 +54,7 @@ curl -i \
   "http://127.0.0.1:3001/api/auth/register"
 ```
 
-Response sukses berstatus `201 Created`. Username yang telah digunakan menghasilkan `409 Conflict`. Password disimpan sebagai teks biasa untuk latihan lokal saja; jangan gunakan untuk akun nyata atau produksi.
+Response sukses berstatus `201 Created`. Username yang telah digunakan menghasilkan `409 Conflict`. Password di-hash dengan Argon2id sebelum disimpan.
 
 ### 3. Login — `POST /api/auth/login`
 

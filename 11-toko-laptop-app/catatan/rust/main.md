@@ -101,6 +101,7 @@ let pool = config.connect_database().await?;
 
 ```rust
 sqlx::migrate!("./database/migrations").run(&pool).await?;
+toko_laptop_app::auth::migrate_legacy_passwords(&pool).await?;
 config.initialize_admin_user(&pool).await?;
 ```
 
@@ -108,9 +109,12 @@ config.initialize_admin_user(&pool).await?;
   dari folder tersebut ke program saat proses kompilasi.
 - `.run(&pool).await?` menerapkan migration yang belum tercatat sebagai sudah
   dijalankan pada database yang terhubung melalui `pool`.
+- `migrate_legacy_passwords(&pool)` meng-hash password lama dengan Argon2id,
+  menghapus nilai password lama, dan memastikan kolom hash wajib terisi.
 - `initialize_admin_user(&pool)` menyinkronkan akun admin dari
-  `ADMIN_USERNAME` dan `ADMIN_PASSWORD` ke tabel pengguna. Ini memastikan akun
-  admin tersedia sebelum endpoint login dipakai.
+  `ADMIN_USERNAME` dan `ADMIN_PASSWORD` ke tabel pengguna. Password hanya
+  disimpan dalam bentuk hash. Ini memastikan akun admin tersedia sebelum
+  endpoint login dipakai.
 - `await` menunggu proses database asynchronous selesai. Jika migration atau
   sinkronisasi admin gagal, `?` menghentikan startup dan mengembalikan error.
 

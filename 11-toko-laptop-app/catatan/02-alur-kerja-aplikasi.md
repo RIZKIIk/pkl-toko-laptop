@@ -17,7 +17,7 @@ Halaman ini menghubungkan file-file backend. Penjelasan isi setiap fungsi ada di
 2. `AppConfig::from_env()` di [config.rs](rust/config.md) membaca host, port, kredensial PostgreSQL/admin, dan secret JWT.
 3. `connect_database().await` membuat `PgPool`. Bila langkah ini gagal, server belum mulai menerima request.
 4. SQLx menjalankan seluruh migration dan mencatat migration yang sudah diaplikasikan di `_sqlx_migrations`.
-5. `initialize_admin_user()` menyimpan akun latihan dari environment. Password disimpan langsung untuk memudahkan materi session; jangan gunakan cara ini untuk produksi.
+5. `migrate_legacy_passwords()` meng-hash password lama dengan Argon2id dan menghapus nilai lama; `initialize_admin_user()` menyimpan hash password akun dari environment.
 6. `routes::create_router(...)` di [routes.rs](rust/routes.md) memasang endpoint, middleware session/JWT, dan pool sebagai state router.
 7. Tokio membuat `TcpListener` pada `APP_HOST:APP_PORT`.
 8. `axum::serve(listener, app).await` menunggu koneksi HTTP.
@@ -69,7 +69,7 @@ POST /api/auth/login + username/password
   -> semua JWT dan session lama ditolak; pengguna perlu login ulang
 ```
 
-Password di database berupa teks biasa hanya untuk latihan lokal session. Server-side session berarti browser atau `curl` membawa cookie sebagai penunjuk session; username disimpan di session store, bukan dipercayakan dari body request pada setiap endpoint.
+Password di database berupa hash Argon2id dengan salt unik. Server-side session berarti browser atau `curl` membawa cookie sebagai penunjuk session; username disimpan di session store, bukan dipercayakan dari body request pada setiap endpoint.
 
 ## Jalur error
 

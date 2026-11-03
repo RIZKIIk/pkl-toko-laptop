@@ -23,7 +23,7 @@ src/auth/
 
 ## Di halaman ini
 
-[Modul](#1-deklarasi-modul) · [Re-export](#2-import-dan-re-export) · [Seed akun](#3-initialize_admin_user) · [Registrasi](#4-register_user) · [Verifikasi](#5-verify_credentials) · [Perbandingan password](#6-password_matches) · [Alur ringkas](#ringkasan-alur)
+[Modul](#1-deklarasi-modul) · [Re-export](#2-import-dan-re-export) · [Seed akun](#3-initialize_admin_user) · [Registrasi](#4-register_user) · [Verifikasi](#5-verify_credentials) · [Hash password](#6-hash-password) · [Alur ringkas](#ringkasan-alur)
 
 ## 1. Deklarasi modul
 
@@ -71,14 +71,19 @@ pub async fn initialize_admin_user(
     username: &str,
     password: &str,
 ) -> Result<(), Box<dyn Error + Send + Sync>> {
-    user_repository::upsert_user(pool, username, password).await?;
+    if verify_credentials(pool, username, password).await? {
+        return Ok(());
+    }
+
+    let password_hash = hash_password(password).await?;
+    user_repository::upsert_user(pool, username, &password_hash).await?;
     Ok(())
 }
 ```
 
 ### Tujuan penyiapan akun admin
 
-Fungsi ini menyiapkan akun admin dari konfigurasi aplikasi saat startup. Fungsi meneruskan data ke repository untuk menyimpan akun. Jika username sudah ada, operasi *upsert* memperbarui password akun tersebut.
+Fungsi ini menyiapkan akun admin dari konfigurasi saat startup. Jika password konfigurasi sama dengan hash yang ada, akun tidak diubah. Jika berbeda atau akun belum ada, password di-hash dengan Argon2id lalu disimpan; perubahan password mencabut token lama.
 
 ### Cara membaca deklarasinya
 
@@ -94,10 +99,10 @@ Fungsi ini menyiapkan akun admin dari konfigurasi aplikasi saat startup. Fungsi 
 
 ### Cara membaca isi fungsi
 
-1. `user_repository::upsert_user(...)` meminta repository menyimpan atau memperbarui akun. Pemisahan ini membuat fungsi auth mengatur alur, sementara repository mengatur query database.
-2. `.await` menunggu operasi asinkron tersebut selesai.
-3. `?` berarti: jika hasilnya `Err`, hentikan fungsi dan teruskan error ke pemanggil; jika `Ok`, lanjutkan.
-4. `Ok(())` menyatakan operasi selesai sukses dan tidak ada nilai khusus yang perlu dikembalikan.
+1. `verify_credentials(...)` mempertahankan hash lama jika password admin masih cocok.
+2. `hash_password(...)` menghasilkan hash Argon2id baru jika akun perlu dibuat atau password berubah.
+3. `user_repository::upsert_user(...)` menyimpan hash melalui query berparameter.
+4. `Ok(())` menyatakan sinkronisasi akun selesai sukses.
 
 Fungsi ini dipanggil saat startup setelah database siap. Repository memakai `ON CONFLICT` sehingga username yang sudah ada tidak dibuat sebagai baris duplikat.
 
@@ -110,18 +115,19 @@ pub async fn register_user(
     pool: &PgPool,
     username: &str,
     password: &str,
-) -> Result<bool, sqlx::Error> {
-    user_repository::insert_user(pool, username, password).await
+) -> Result<bool, Box<dyn Error + Send + Sync>> {
+    let password_hash = hash_password(password).await?;
+    Ok(user_repository::insert_user(pool, username, &password_hash).await?)
 }
 ```
 
-Fungsi ini mencoba membuat akun baru tanpa menimpa akun dengan username yang sama.
+Fungsi ini meng-hash password terlebih dahulu, lalu mencoba membuat akun tanpa menimpa username yang sudah digunakan.
 
 - Parameter `pool`, `username`, dan `password` memiliki arti yang sama seperti di `initialize_admin_user`.
-- `Result<bool, sqlx::Error>` menyatakan ada dua tingkat hasil:
+- `Result<bool, Box<dyn Error + Send + Sync>>` menyatakan ada dua tingkat hasil:
   - `Ok(true)`: akun berhasil dibuat.
   - `Ok(false)`: username sudah digunakan, jadi tidak ada akun baru yang dibuat.
-  - `Err(error)`: terjadi error database.
+  - `Err(error)`: hashing atau query database gagal.
 - `user_repository::insert_user(...)` menjalankan operasi insert.
 - `.await` menunggu query selesai.
 
@@ -137,11 +143,11 @@ pub async fn verify_credentials(
     username: &str,
     password: &str,
 ) -> Result<bool, Box<dyn Error + Send + Sync>> {
-    let Some(stored_password) = user_repository::find_password(pool, username).await? else {
+    let Some(password_hash) = user_repository::find_password_hash(pool, username).await? else {
         return Ok(false);
     };
 
-    Ok(password_matches(&stored_password, password))
+    verify_password(password_hash, password).await
 }
 ```
 
@@ -151,40 +157,22 @@ Fungsi ini mencari password yang tersimpan untuk username yang diberikan, lalu m
 
 ### Alur baris demi baris
 
-1. `user_repository::find_password(pool, username)` meminta repository mencari password berdasarkan username.
+1. `user_repository::find_password_hash(pool, username)` meminta repository mencari hash berdasarkan username.
 2. `.await` menunggu query database selesai.
 3. `?` meneruskan error database ke pemanggil jika query gagal.
 4. Hasil query berbentuk `Option<String>`:
-   - `Some(password)` berarti username ditemukan.
+   - `Some(password_hash)` berarti username ditemukan.
    - `None` berarti username tidak ditemukan.
-5. Sintaks `let Some(stored_password) = ... else { ... };` adalah *let-else*. Jika hasilnya `Some`, nilai password dimasukkan ke `stored_password` dan fungsi melanjutkan. Jika hasilnya `None`, blok `else` dijalankan.
+5. Sintaks `let Some(password_hash) = ... else { ... };` adalah *let-else*. Jika hasilnya `Some`, hash dimasukkan ke `password_hash` dan fungsi melanjutkan. Jika hasilnya `None`, blok `else` dijalankan.
 6. `return Ok(false);` menghentikan fungsi dengan hasil “kredensial tidak cocok”. Username yang tidak ditemukan bukan error database.
-7. Jika username ditemukan, `password_matches(...)` memeriksa password.
-8. `Ok(...)` membungkus hasil pemeriksaan sebagai keberhasilan fungsi. Nilai `false` di dalam `Ok` artinya proses pemeriksaan berhasil dilakukan, tetapi kredensialnya tidak cocok.
+7. Jika username ditemukan, `verify_password(...)` menjalankan verifikasi Argon2id pada blocking thread.
+8. `Ok(...)` membungkus hasil pemeriksaan sebagai keberhasilan fungsi. Nilai `false` di dalam `Ok` artinya kredensialnya tidak cocok.
 
 Jadi `Ok(false)` berbeda dari `Err(error)`: yang pertama berarti login tidak cocok secara normal, sedangkan yang kedua berarti pemeriksaan gagal karena masalah seperti error database.
 
-## 6. `password_matches`
+## 6. Hash password
 
-```rust
-fn password_matches(stored_password: &str, provided_password: &str) -> bool {
-    !provided_password.is_empty() && stored_password == provided_password
-}
-```
-
-Fungsi ini privat karena tidak memiliki `pub`; hanya kode dalam modul `auth` yang dapat memanggilnya.
-
-- `stored_password` adalah password yang ditemukan di database.
-- `provided_password` adalah password yang dikirim pengguna.
-- `-> bool` berarti hasilnya hanya `true` atau `false`.
-- `provided_password.is_empty()` memeriksa apakah input kosong.
-- `!` berarti “bukan”, jadi `!provided_password.is_empty()` bernilai `true` jika password yang diberikan tidak kosong.
-- `&&` berarti “dan”. Kedua kondisi di sebelah kiri dan kanan harus benar.
-- `stored_password == provided_password` membandingkan kedua teks agar sama persis.
-
-Artinya, password hanya dianggap cocok jika input tidak kosong dan teksnya sama persis dengan nilai yang tersimpan.
-
-> **Catatan keamanan:** implementasi latihan ini menyimpan dan membandingkan password sebagai teks biasa. Ini mudah dipahami untuk latihan lokal, tetapi tidak aman untuk akun nyata atau penggunaan produksi. Sistem produksi harus menyimpan hash password dengan algoritma khusus password, misalnya Argon2.
+`hash_password` menghasilkan salt acak baru untuk tiap password dan menggunakan `Argon2::default()` (Argon2id). Hash dalam format PHC disimpan di database, bukan password asli. `verify_password` mem-parsing hash lalu membandingkan password menggunakan verifier Argon2. Kedua operasi dijalankan dengan `tokio::task::spawn_blocking` agar perhitungan CPU tidak menghambat runtime async.
 
 ## 7. Unit test
 
@@ -193,22 +181,25 @@ Di bagian akhir file:
 ```rust
 #[cfg(test)]
 mod tests {
-    #[test]
-    fn credential_check_requires_exact_non_empty_password() {
-        assert!(super::password_matches("secret", "secret"));
-        assert!(!super::password_matches("secret", "wrong"));
-        assert!(!super::password_matches("", ""));
+    #[tokio::test]
+    async fn argon2_password_hash_is_salted_and_verifies_only_matching_password() {
+        let hash = super::hash_password("secret").await.unwrap();
+        let another_hash = super::hash_password("secret").await.unwrap();
+        assert_ne!(hash, another_hash);
+        assert!(hash.starts_with("$argon2id$"));
+        assert!(super::verify_password(hash.clone(), "secret").await.unwrap());
+        assert!(!super::verify_password(hash, "wrong").await.unwrap());
     }
 }
 ```
 
 - `#[cfg(test)]` membuat modul test ini dikompilasi saat test dijalankan, bukan sebagai bagian dari aplikasi normal.
 - `mod tests` mengelompokkan test untuk modul ini.
-- `#[test]` menandai fungsi sebagai unit test.
+- `#[tokio::test]` menandai fungsi asinkron sebagai unit test.
 - `assert!(...)` membuat test gagal jika kondisi di dalamnya bernilai `false`.
-- `super::password_matches(...)` memanggil fungsi dari modul satu tingkat di atas (`auth`). Fungsi itu privat, tetapi test berada di dalam modul anak sehingga dapat mengaksesnya.
+- Test membuat hash Argon2id, memastikan password yang benar diterima dan password yang salah ditolak.
 
-Test memeriksa tiga keadaan penting: password yang sama diterima, password berbeda ditolak, dan password kosong ditolak.
+Test juga membuat dua hash dari password yang sama dan memastikan salt acak menghasilkan hash berbeda.
 
 ## Ringkasan alur
 

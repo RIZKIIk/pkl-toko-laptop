@@ -43,7 +43,7 @@ File: [`toko-laptop-app.postman_collection.json`](../postman/toko-laptop-app.pos
 
 ### Request 00 — Register akun
 
-Request publik memakai `POST {{baseUrl}}/api/auth/register` dengan body JSON berisi `registerUsername` dan `registerPassword`. Username harus unik dan maksimal 100 karakter setelah spasi pinggir dibuang; password tidak boleh kosong. Response `201 Created` berarti akun berhasil dibuat, sementara `409 Conflict` berarti username sudah terdaftar. Request dapat dijalankan berulang; test menerima kedua hasil tersebut. Registrasi tidak membuat session sehingga request ini tidak menggantikan login. Password pada proyek latihan disimpan sebagai teks biasa; jangan gunakan untuk akun nyata atau produksi.
+Request publik memakai `POST {{baseUrl}}/api/auth/register` dengan body JSON berisi `registerUsername` dan `registerPassword`. Username harus unik dan maksimal 100 karakter setelah spasi pinggir dibuang; password tidak boleh kosong. Response `201 Created` berarti akun berhasil dibuat, sementara `409 Conflict` berarti username sudah terdaftar. Request dapat dijalankan berulang; test menerima kedua hasil tersebut. Registrasi tidak membuat session sehingga request ini tidak menggantikan login. Password di-hash dengan Argon2id sebelum disimpan.
 
 ### Request 01 — Login admin
 

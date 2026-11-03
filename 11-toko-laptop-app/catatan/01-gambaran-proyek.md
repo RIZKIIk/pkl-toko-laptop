@@ -15,7 +15,7 @@ Toko Laptop App adalah REST API inventaris laptop. Kode aktif menyediakan operas
 | Axum | Router, handler, extractor, dan response HTTP. | `routes.rs`, `handlers/`, `error.rs`. |
 | Tokio | Runtime async dan listener TCP. | `#[tokio::main]`, `TcpListener`. |
 | SQLx | Pool dan query PostgreSQL. | `config.rs`, `repositories/`. |
-| PostgreSQL | Penyimpanan tabel `laptops` dan `users`. | migration `0001`–`0004`. |
+| PostgreSQL | Penyimpanan tabel `laptops` dan `users`. | migration `0001`–`0005`. |
 | Serde | Membaca JSON body ke payload Rust. | `#[derive(Deserialize)]`. |
 | serde_json | Membuat JSON response. | `json!`, `Value`. |
 | dotenvy | Mencoba memuat environment dari `.env`. | `main.rs`. |
@@ -35,7 +35,7 @@ Toko Laptop App adalah REST API inventaris laptop. Kode aktif menyediakan operas
 | `src/repositories/` | Query SQL dikelompokkan menurut resource. |
 | `src/presenters/` | Pemetaan response dan format Rupiah dipisah. |
 | `src/error.rs` | Memetakan error menjadi response HTTP JSON. |
-| `database/migrations/` | Membuat tabel laptop, tabel user, password latihan, dan versi autentikasi. |
+| `database/migrations/` | Membuat tabel laptop/user, hash password, dan versi autentikasi. |
 | `.env` | Pengaturan lokal server dan PostgreSQL; tidak dibagikan sebagai dokumentasi. |
 | `postman/` | Collection serta environment untuk uji manual. |
 | `catatan/` | Penjelasan detail kode; tidak dijalankan oleh aplikasi. |

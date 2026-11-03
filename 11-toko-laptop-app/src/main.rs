@@ -11,6 +11,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let pool = config.connect_database().await?;
 
     sqlx::migrate!("./database/migrations").run(&pool).await?;
+    toko_laptop_app::auth::migrate_legacy_passwords(&pool).await?;
     config.initialize_admin_user(&pool).await?;
 
     println!("Koneksi PostgreSQL berhasil.");

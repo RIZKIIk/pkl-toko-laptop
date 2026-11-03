@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS public.users (
 - `TIMESTAMPTZ` menyimpan timestamp dengan zona waktu. `DEFAULT CURRENT_TIMESTAMP` mengisi waktu saat ini jika INSERT tidak memberi nilai.
 - Koma memisahkan definisi kolom/constraint, sedangkan `);` menutup definisi tabel dan mengakhiri perintah.
 
-Migration ini sudah mungkin tercatat pada database yang telah dijalankan. Jangan mengubah file migration lama; skema latihan saat ini dibentuk oleh migration berikutnya, [0003](0003-plaintext-password.md).
+Migration ini sudah mungkin tercatat pada database yang telah dijalankan. Jangan mengubah file migration lama; skema saat ini kemudian diubah oleh migration [0003](0003-plaintext-password.md), [0004](0004-add-auth-version.md), dan [0005](0005-hash-user-passwords.md).
 
 ## Ilustrasi perubahan skema
 
@@ -50,4 +50,6 @@ Migration ini sudah mungkin tercatat pada database yang telah dijalankan. Jangan
 0002: users(id, username, password_hash, created_at)
                          ↓ migration 0003
       users(id, username, password, created_at)
+                         ↓ migration 0005 + startup
+      users(id, username, password_hash, auth_version, created_at)
 ```

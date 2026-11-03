@@ -24,7 +24,7 @@ repositories/
 
 - [repositories/mod.rs](repositories/mod.md) mendaftarkan setiap repository domain.
 - [repositories/laptop-repository.rs](repositories/laptop-repository.md) berisi query daftar, detail, insert, update, dan delete beserta penjelasan placeholder SQL.
-- [user_repository.rs](repositories/user-repository.md) berisi query akun dan password latihan tanpa mengurus HTTP.
+- [user_repository.rs](repositories/user-repository.md) berisi query akun, hash password, dan migrasi password lama tanpa mengurus HTTP.
 
 ### Makna sintaks modul
 
@@ -53,4 +53,4 @@ Handler -> repository + PgPool -> query parameterized -> PostgreSQL -> Result
 ```
 
 Nilai SQL dikirim memakai parameter, bukan digabung ke teks query. Struktur tabel serta batasan database dijelaskan pada [migration laptop](database/0001-create-laptops.md).
-Skema akun dijelaskan pada [migration users](database/0002-create-users.md) dan [migration password latihan](database/0003-plaintext-password.md).
+Skema akun dijelaskan pada [migration users](database/0002-create-users.md), [migration password latihan](database/0003-plaintext-password.md), dan [migration hash Argon2id](database/0005-hash-user-passwords.md).

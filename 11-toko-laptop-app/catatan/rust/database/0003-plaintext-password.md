@@ -9,9 +9,9 @@
 
 ## Tujuan
 
-Migration ini mengubah kolom password pada tabel users dari skema awal `password_hash` menjadi kolom `password` sederhana untuk latihan session.
+Migration ini secara historis mengubah kolom password pada tabel users dari skema awal `password_hash` menjadi kolom `password` teks biasa. Migration berikutnya, [0005](0005-hash-user-passwords.md), meng-hash ulang nilai lama dan menghapus kolom teks tersebut.
 
-> **Peringatan keamanan:** migration ini membuat aplikasi menyimpan password sebagai teks biasa. Gunakan hanya untuk database lokal latihan; jangan gunakan untuk akun nyata atau produksi.
+> **Catatan:** migration lama ini tetap disimpan apa adanya karena checksum-nya telah tercatat oleh SQLx. Jangan jalankan ulang atau mengeditnya; migration 0005 memperbaiki penyimpanan password pada skema saat ini.
 
 ## SQL berurutan
 
@@ -54,9 +54,9 @@ Migration berikutnya tidak seharusnya mengubah file migration ini setelah ditera
 
 | Sebelum migration | Sesudah migration | Dampak |
 | --- | --- | --- |
-| Kolom `password_hash`. | Kolom `password` bertipe `TEXT`. | Aplikasi latihan membandingkan nilai password langsung. |
-| Hash akun lama tersimpan. | Nilai password lama tidak dapat dipulihkan. | Admin disinkronkan dari environment; akun lain perlu dibuat/diatur ulang. |
-| Tidak ada password teks biasa. | Password menjadi teks biasa. | Hanya aman untuk database lokal latihan, bukan produksi. |
+| Kolom `password_hash`. | Kolom `password` bertipe `TEXT`. | Perubahan historis ini kemudian dibalik oleh migration 0005. |
+| Password hash lama. | Password lama berada sementara sebagai teks biasa. | Migration 0005 meng-hash nilai yang masih tersedia; akun tanpa password valid mungkin perlu diatur ulang. |
+| Skema setelah migration 0005. | Kolom `password_hash` Argon2id. | Aplikasi tidak lagi menyimpan password asli. |
 
 ## Ilustrasi langkah SQL
 

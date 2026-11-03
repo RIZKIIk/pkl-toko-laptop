@@ -11,7 +11,7 @@
 
 File ini mengisolasi query PostgreSQL pada tabel `public.users`. Ia tidak memproses request HTTP atau membuat session; layanan di [`auth/mod.rs`](../auth/mod.md) memanggil fungsi repository ini.
 
-> **Catatan keamanan:** kolom `password` dan perbandingan password di proyek ini menggunakan teks biasa untuk latihan session lokal. Jangan gunakan dengan akun nyata atau di produksi.
+> Password disimpan sebagai hash Argon2id pada kolom `password_hash`. Nilai password asli tidak disimpan.
 
 ## Import
 
@@ -21,14 +21,14 @@ use sqlx::PgPool;
 
 `PgPool` adalah pool koneksi SQLx ke PostgreSQL yang dibuat saat startup. Fungsi repository meminjamnya lewat `&PgPool`, sehingga koneksi dikelola bersama dan tidak dibuat ulang pada setiap query.
 
-## 1. `find_password`
+## 1. `find_password_hash`
 
 ```rust
-pub async fn find_password(
+pub async fn find_password_hash(
     pool: &PgPool,
     username: &str,
 ) -> Result<Option<String>, sqlx::Error> {
-    sqlx::query_scalar("SELECT password FROM public.users WHERE username = $1")
+    sqlx::query_scalar("SELECT password_hash FROM public.users WHERE username = $1")
         .bind(username)
         .fetch_optional(pool)
         .await
@@ -38,7 +38,7 @@ pub async fn find_password(
 - `pub async fn` mendeklarasikan fungsi publik yang dapat menunggu operasi database.
 - `username: &str` adalah username yang dipinjam dari pemanggil.
 - `Result<Option<String>, sqlx::Error>` membedakan error query dari username tidak ditemukan:
-  - `Ok(Some(password))`: baris ditemukan.
+  - `Ok(Some(password_hash))`: hash akun ditemukan.
   - `Ok(None)`: tidak ada username tersebut.
   - `Err(error)`: query gagal.
 - `query_scalar` mengambil satu nilai kolom, bukan seluruh baris sebagai struct.
@@ -52,14 +52,15 @@ pub async fn find_password(
 pub async fn upsert_user(
     pool: &PgPool,
     username: &str,
-    password: &str,
+    password_hash: &str,
 ) -> Result<(), sqlx::Error> {
     sqlx::query(
-        "INSERT INTO public.users (username, password) VALUES ($1, $2) \
-         ON CONFLICT (username) DO UPDATE SET password = EXCLUDED.password",
+        "INSERT INTO public.users (username, password_hash) VALUES ($1, $2) \
+         ON CONFLICT (username) DO UPDATE \
+         SET password_hash = EXCLUDED.password_hash, auth_version = users.auth_version + 1",
     )
     .bind(username)
-    .bind(password)
+    .bind(password_hash)
     .execute(pool)
     .await?;
 
@@ -67,11 +68,11 @@ pub async fn upsert_user(
 }
 ```
 
-Fungsi ini memasukkan akun baru. Jika username sudah ada, `ON CONFLICT (username) DO UPDATE` mengganti password dengan nilai baru; `EXCLUDED.password` merujuk nilai password dari baris yang sedang dicoba untuk dimasukkan.
+Fungsi ini memasukkan akun baru. Jika username sudah ada, `ON CONFLICT (username) DO UPDATE` mengganti hash password; `EXCLUDED.password_hash` merujuk hash dari baris yang sedang dicoba untuk dimasukkan.
 
 1. `sqlx::query(...)` membuat query yang tidak perlu membaca baris kembali.
-2. `.bind(username)` dan `.bind(password)` memasangkan nilai ke `$1` dan `$2`. Jangan menyambung nilai user langsung ke SQL.
-3. `.execute(pool).await?` menjalankan query. `?` meneruskan `sqlx::Error` jika operasi gagal.
+2. `.bind(username)` dan `.bind(password_hash)` memasangkan nilai ke `$1` dan `$2`. Jangan menyambung nilai user langsung ke SQL.
+3. `.execute(pool).await?` menjalankan query. Jika password admin berubah, query juga menaikkan versi autentikasi sehingga token lama dicabut.
 4. `Ok(())` menyatakan berhasil tanpa mengembalikan baris.
 
 ## 3. `insert_user`
@@ -80,14 +81,14 @@ Fungsi ini memasukkan akun baru. Jika username sudah ada, `ON CONFLICT (username
 pub async fn insert_user(
     pool: &PgPool,
     username: &str,
-    password: &str,
+    password_hash: &str,
 ) -> Result<bool, sqlx::Error> {
     let inserted_username: Option<String> = sqlx::query_scalar(
-        "INSERT INTO public.users (username, password) VALUES ($1, $2) \
+        "INSERT INTO public.users (username, password_hash) VALUES ($1, $2) \
          ON CONFLICT (username) DO NOTHING RETURNING username",
     )
     .bind(username)
-    .bind(password)
+    .bind(password_hash)
     .fetch_optional(pool)
     .await?;
 
@@ -107,15 +108,15 @@ Berbeda dari `upsert_user`, fungsi ini tidak menimpa akun. Jika username konflik
 
 | Fungsi | Username baru | Username sudah ada |
 | --- | --- | --- |
-| `upsert_user` | Membuat akun | Memperbarui password |
+| `upsert_user` | Membuat akun | Memperbarui hash password dan mencabut token lama |
 | `insert_user` | Membuat akun dan menghasilkan `true` | Tidak mengubah data dan menghasilkan `false` |
 
-Skema tabel dijelaskan pada [migration users](../database/0002-create-users.md) dan [migration password latihan](../database/0003-plaintext-password.md).
+Skema tabel dijelaskan pada [migration users](../database/0002-create-users.md), [migration password latihan](../database/0003-plaintext-password.md), dan [migration hash password](../database/0005-hash-user-passwords.md).
 
 ## Ilustrasi operasi akun
 
 ```text
-login    → find_password → Some(password) / None
-startup  → upsert_user   → insert atau perbarui akun admin
+login    → find_password_hash → Some(hash) / None
+startup  → upsert_user        → insert atau perbarui akun admin
 register → insert_user   → true (baru) / false (username dipakai)
 ```

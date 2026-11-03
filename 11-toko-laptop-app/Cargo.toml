@@ -20,6 +20,9 @@ serde_json = "1"
 # Session cookie serta penandatanganan dan verifikasi access token JWT.
 tower-sessions = "0.15.0"
 jsonwebtoken = "9.3.1"
+# Hash password menggunakan Argon2id dan salt acak per password.
+argon2 = { version = "0.5.3", features = ["std"] }
+rand_core = { version = "0.6", features = ["getrandom"] }
 
 [dev-dependencies]
 # Utilitas request in-process yang dipakai test router.
