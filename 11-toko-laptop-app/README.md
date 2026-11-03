@@ -37,6 +37,8 @@ cargo run
 
 Migration diterapkan otomatis saat startup. Aplikasi juga membuat atau memperbarui akun admin berdasarkan konfigurasi. Jika server berhasil dimulai, periksa [http://127.0.0.1:3001/health](http://127.0.0.1:3001/health) atau ubah alamat sesuai `APP_HOST` dan `APP_PORT`.
 
+Jangan mengubah file migration yang sudah pernah dijalankan. SQLx memeriksa checksum-nya dan menghentikan startup jika isi file berbeda; buat file migration baru untuk perubahan skema berikutnya.
+
 ## Coba API
 
 Login melalui Postman atau `curl` untuk memperoleh session cookie dan JWT. Operasi laptop menerima salah satu dari keduanya.
