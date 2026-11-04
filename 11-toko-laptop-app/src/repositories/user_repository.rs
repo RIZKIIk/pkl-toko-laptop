@@ -2,6 +2,8 @@
 //! Catatan: [Buka penjelasan](file:///home/rizki/projects/Rust/tugas/PKL/11-toko-laptop-app/catatan/rust/repositories/user-repository.md)
 use sqlx::PgPool;
 
+use crate::auth::role::UserRole;
+
 /// Mengambil hash password yang tersimpan untuk username.
 pub async fn find_password_hash(
     pool: &PgPool,
@@ -68,12 +70,49 @@ pub async fn finalize_password_hash_migration(pool: &PgPool) -> Result<(), sqlx:
     Ok(())
 }
 
-/// Mengambil versi autentikasi aktif untuk username.
-pub async fn find_auth_version(pool: &PgPool, username: &str) -> Result<Option<i64>, sqlx::Error> {
-    sqlx::query_scalar("SELECT auth_version FROM public.users WHERE username = $1")
-        .bind(username)
-        .fetch_optional(pool)
-        .await
+/// Mengambil versi autentikasi dan role aktif untuk username.
+pub async fn find_auth_state(
+    pool: &PgPool,
+    username: &str,
+) -> Result<Option<(i64, UserRole)>, sqlx::Error> {
+    let user = sqlx::query_as::<_, (i64, String)>(
+        "SELECT auth_version, role FROM public.users WHERE username = $1",
+    )
+    .bind(username)
+    .fetch_optional(pool)
+    .await?;
+
+    user.map(|(auth_version, role)| {
+        role.parse::<UserRole>()
+            .map(|role| (auth_version, role))
+            .map_err(|error| {
+                sqlx::Error::Decode(
+                    std::io::Error::new(std::io::ErrorKind::InvalidData, error).into(),
+                )
+            })
+    })
+    .transpose()
+}
+
+/// Mengubah role dan mencabut kredensial lama hanya jika role-nya berubah.
+pub async fn set_user_role(
+    pool: &PgPool,
+    username: &str,
+    role: UserRole,
+) -> Result<bool, sqlx::Error> {
+    let updated_username: Option<String> = sqlx::query_scalar(
+        "UPDATE public.users \
+         SET role = $2, \
+             auth_version = auth_version + CASE WHEN role <> $2 THEN 1 ELSE 0 END \
+         WHERE username = $1 \
+         RETURNING username",
+    )
+    .bind(username)
+    .bind(role.as_str())
+    .fetch_optional(pool)
+    .await?;
+
+    Ok(updated_username.is_some())
 }
 
 /// Mencabut semua session dan JWT dengan menaikkan versi autentikasi user.
@@ -95,14 +134,17 @@ pub async fn upsert_user(
     pool: &PgPool,
     username: &str,
     password_hash: &str,
+    role: UserRole,
 ) -> Result<(), sqlx::Error> {
     sqlx::query(
-        "INSERT INTO public.users (username, password_hash) VALUES ($1, $2) \
+        "INSERT INTO public.users (username, password_hash, role) VALUES ($1, $2, $3) \
          ON CONFLICT (username) DO UPDATE \
-         SET password_hash = EXCLUDED.password_hash, auth_version = users.auth_version + 1",
+         SET password_hash = EXCLUDED.password_hash, role = EXCLUDED.role, \
+             auth_version = users.auth_version + 1",
     )
     .bind(username)
     .bind(password_hash)
+    .bind(role.as_str())
     .execute(pool)
     .await?;
 
@@ -114,14 +156,16 @@ pub async fn insert_user(
     pool: &PgPool,
     username: &str,
     password_hash: &str,
+    role: UserRole,
 ) -> Result<bool, sqlx::Error> {
     // ON CONFLICT menghindari race antara pengecekan username dan proses insert.
     let inserted_username: Option<String> = sqlx::query_scalar(
-        "INSERT INTO public.users (username, password_hash) VALUES ($1, $2) \
+        "INSERT INTO public.users (username, password_hash, role) VALUES ($1, $2, $3) \
          ON CONFLICT (username) DO NOTHING RETURNING username",
     )
     .bind(username)
     .bind(password_hash)
+    .bind(role.as_str())
     .fetch_optional(pool)
     .await?;
 

@@ -6,7 +6,7 @@
 
 Alamat server mengikuti `APP_HOST` dan `APP_PORT` di `.env` pada root proyek. Pada konfigurasi yang sedang berjalan, server tersedia di [http://127.0.0.1:3001](http://127.0.0.1:3001). Jika port atau host berubah, sesuaikan URL request dan variabel `baseUrl` di environment Postman. `APP_HOST` default-nya `127.0.0.1`, sedangkan `APP_PORT` wajib diatur.
 
-Endpoint laptop memerlukan login terlebih dahulu. Gunakan akun yang didaftarkan atau akun admin dari environment; login mengirim cookie session dan JWT untuk request selanjutnya. Route terlindungi menerima cookie session atau header `Authorization: Bearer <token>`. Contoh URL di bawah memakai server lokal pada port `3001`.
+Endpoint laptop memerlukan login terlebih dahulu. Pendaftaran publik menghasilkan role `buyer`; akun admin berasal dari environment. Admin dapat membuat akun buyer/restocker dan mengubah role akun melalui endpoint admin. Login mengirim cookie session dan JWT untuk request selanjutnya. Route terlindungi menerima cookie session atau header `Authorization: Bearer <token>`. Contoh URL di bawah memakai server lokal pada port `3001`.
 
 Untuk seluruh contoh perintah terminal dan penjelasan opsi seperti `-X`, `-d`, `-b`, dan `-c`, lihat [panduan curl](catatan/curl.md).
 
@@ -22,11 +22,13 @@ Untuk seluruh contoh perintah terminal dan penjelasan opsi seperti `-X`, `-d`, `
 | `POST` | `/api/auth/login` | Login, membuat session, dan menerbitkan JWT | Publik | `200 OK` |
 | `GET` | `/api/auth/session` | Melihat pengguna pada session atau JWT aktif | Wajib login | `200 OK` |
 | `POST` | `/api/auth/logout` | Mencabut semua session dan JWT pengguna | Wajib login | `200 OK` |
-| `GET` | [`/api/laptops`](http://127.0.0.1:3001/api/laptops) | Melihat semua laptop | Wajib login | `200 OK` |
-| `POST` | `/api/laptops` | Menambah laptop | Wajib login | `201 Created` |
-| `GET` | `/api/laptops/{id}` | Melihat detail laptop | Wajib login | `200 OK` |
-| `PATCH` | `/api/laptops/{id}` | Mengubah sebagian field laptop | Wajib login | `200 OK` |
-| `DELETE` | `/api/laptops/{id}` | Menghapus laptop | Wajib login | `200 OK` |
+| `POST` | `/api/admin/users` | Membuat akun buyer/restocker | Admin | `201 Created` |
+| `PATCH` | `/api/admin/users/{username}/role` | Mengubah role menjadi buyer/restocker | Admin | `200 OK` |
+| `GET` | [`/api/laptops`](http://127.0.0.1:3001/api/laptops) | Melihat semua laptop | Admin, buyer, restocker | `200 OK` |
+| `POST` | `/api/laptops` | Menambah laptop | Admin | `201 Created` |
+| `GET` | `/api/laptops/{id}` | Melihat detail laptop | Admin, buyer, restocker | `200 OK` |
+| `PATCH` | `/api/laptops/{id}` | Mengubah sebagian field laptop | Admin, restocker | `200 OK` |
+| `DELETE` | `/api/laptops/{id}` | Menghapus laptop | Admin | `200 OK` |
 
 `{id}` harus berupa ID positif laptop yang ada di database. Collection Postman menyediakan request registrasi dan login, serta lima request CRUD; setelah request tambah berhasil, collection menyimpan ID sebagai `laptopId` untuk request detail, ubah, dan hapus.
 
@@ -46,7 +48,7 @@ Untuk seluruh contoh perintah terminal dan penjelasan opsi seperti `-X`, `-d`, `
 
 ### Registrasi — `POST /api/auth/register`
 
-Endpoint publik untuk membuat akun. Kirim JSON berisi `username` (1–100 karakter setelah spasi pinggir dibuang) dan `password` (tidak boleh kosong). Username yang sudah dipakai mengembalikan `409 Conflict`. Registrasi tidak otomatis login; gunakan endpoint login setelah akun berhasil dibuat.
+Endpoint publik untuk membuat akun buyer. Kirim JSON berisi `username` (1–100 karakter setelah spasi pinggir dibuang) dan `password` (tidak boleh kosong). Role tidak dapat ditentukan dari endpoint publik. Username yang sudah dipakai mengembalikan `409 Conflict`. Registrasi tidak otomatis login; gunakan endpoint login setelah akun berhasil dibuat.
 
 ```bash
 curl -i \
@@ -57,6 +59,21 @@ curl -i \
 
 Password di-hash dengan Argon2id dan tidak pernah dikembalikan dalam response. Gunakan password latihan, bukan password akun pribadi.
 
+### Pengelolaan akun — admin
+
+Admin awal disinkronkan dari `ADMIN_USERNAME` dan `ADMIN_PASSWORD`. Setelah login sebagai admin, buat akun buyer/restocker dengan `POST /api/admin/users`:
+
+```bash
+curl -i -b cookies.txt \
+  -H 'Content-Type: application/json' \
+  -d '{"username":"petugas-stok","password":"password-lokal","role":"restocker"}' \
+  http://127.0.0.1:3001/api/admin/users
+```
+
+Role akun yang sudah ada dapat diubah dengan `PATCH /api/admin/users/{username}/role`, memakai body `{"role":"buyer"}` atau `{"role":"restocker"}`. Role `admin` hanya dapat ditetapkan melalui konfigurasi startup, dan admin tidak dapat mengubah role akunnya sendiri. Perubahan role mencabut session dan JWT lama pengguna tersebut.
+
+Role menentukan akses endpoint laptop: buyer hanya dapat `GET`, restocker dapat `GET` dan `PATCH`, sedangkan admin dapat melakukan semua operasi. Endpoint login, session, dan logout tetap tersedia untuk semua role yang sudah login. Request terautentikasi tanpa izin mendapat `403 Forbidden`.
+
 `POST /api/auth/login` menerima JSON username dan password dari akun terdaftar atau sesuai `ADMIN_USERNAME` dan `ADMIN_PASSWORD` di environment server:
 
 ```bash
@@ -66,7 +83,7 @@ curl -i -c cookies.txt \
   http://127.0.0.1:3001/api/auth/login
 ```
 
-Response sukses mengembalikan nama pengguna, header `Set-Cookie` untuk session, dan `data.access_token` berupa JWT HMAC-SHA256. Token berlaku satu jam (`expires_in: 3600`) dan dapat dipakai pada header `Authorization: Bearer <token>`. Cookie bersifat `HttpOnly`; pada HTTPS juga atur `SESSION_COOKIE_SECURE=true`.
+Response sukses mengembalikan nama pengguna, role, header `Set-Cookie` untuk session, dan `data.access_token` berupa JWT HMAC-SHA256. Token berlaku satu jam (`expires_in: 3600`) dan dapat dipakai pada header `Authorization: Bearer <token>`. Cookie bersifat `HttpOnly`; pada HTTPS juga atur `SESSION_COOKIE_SECURE=true`.
 
 Untuk autentikasi cookie, gunakan cookie jar yang sama:
 

@@ -50,11 +50,13 @@ Login melalui Postman atau `curl` untuk memperoleh session cookie dan JWT. Opera
 | `POST` | `/api/auth/login` | Login dan menerbitkan session serta JWT. | Publik |
 | `GET` | `/api/auth/session` | Melihat identitas pengguna aktif. | Login |
 | `POST` | `/api/auth/logout` | Mencabut semua session dan JWT milik pengguna. | Login |
-| `GET` | `/api/laptops` | Melihat daftar laptop. | Login |
-| `POST` | `/api/laptops` | Menambahkan laptop. | Login |
-| `GET` | `/api/laptops/{id}` | Melihat detail laptop. | Login |
-| `PATCH` | `/api/laptops/{id}` | Mengubah field tertentu. | Login |
-| `DELETE` | `/api/laptops/{id}` | Menghapus laptop. | Login |
+| `POST` | `/api/admin/users` | Membuat akun buyer/restocker. | Admin |
+| `PATCH` | `/api/admin/users/{username}/role` | Mengubah role menjadi buyer/restocker. | Admin |
+| `GET` | `/api/laptops` | Melihat daftar laptop. | Admin, buyer, restocker |
+| `POST` | `/api/laptops` | Menambahkan laptop. | Admin |
+| `GET` | `/api/laptops/{id}` | Melihat detail laptop. | Admin, buyer, restocker |
+| `PATCH` | `/api/laptops/{id}` | Mengubah field tertentu. | Admin, restocker |
+| `DELETE` | `/api/laptops/{id}` | Menghapus laptop. | Admin |
 
 - Lihat body request, response, validasi, dan status error di [dokumentasi endpoint](endpoin.md).
 - Salin perintah terminal dari [panduan curl](catatan/curl.md).
@@ -63,6 +65,8 @@ Login melalui Postman atau `curl` untuk memperoleh session cookie dan JWT. Opera
 Login memberi JWT yang berlaku satu jam. Logout menaikkan versi autentikasi pengguna sehingga semua JWT dan session lama langsung ditolak; client tetap harus menghapus token lokal setelah selesai.
 
 Password akun disimpan sebagai hash Argon2id dengan salt acak, bukan sebagai teks asli. Setelah update pertama kali, migration dan proses startup meng-upgrade password lama otomatis; akun yang sudah terdaftar tetap bisa login dengan password yang sama.
+
+Pendaftaran publik selalu membuat role `buyer`. Akun admin disinkronkan dari `ADMIN_USERNAME` dan `ADMIN_PASSWORD`; admin dapat membuat akun buyer/restocker atau mengubah role lewat endpoint admin. Buyer hanya dapat melihat laptop, restocker dapat melihat serta memperbarui laptop, dan admin dapat menjalankan semua operasi.
 
 ## Cara kerja aplikasi
 

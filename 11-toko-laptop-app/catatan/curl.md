@@ -13,7 +13,7 @@ Panduan ini berisi contoh untuk semua endpoint API toko laptop. Contoh memakai B
 
 ## Urutan pemakaian
 
-Endpoint laptop dan endpoint session aktif/logout memerlukan login terlebih dahulu. Buat akun lewat registrasi atau gunakan akun admin dari environment, lalu login untuk mendapat cookie session dan JWT HMAC. Route terlindungi menerima cookie seperti sebelumnya atau JWT pada header `Authorization`.
+Endpoint laptop dan endpoint session aktif/logout memerlukan login terlebih dahulu. Pendaftaran publik membuat akun buyer. Untuk memilih role buyer atau restocker, login sebagai admin dari environment lalu buat akun melalui endpoint admin. Route terlindungi menerima cookie session atau JWT pada header `Authorization`.
 
 Contoh login di bawah memakai placeholder. Ganti nilainya dengan `ADMIN_USERNAME` dan `ADMIN_PASSWORD` yang ada di `.env` lokal. Jangan menaruh password asli dalam dokumentasi, source code, atau file yang akan dibagikan. File cookie adalah kredensial aktif; jangan dibagikan atau di-commit.
 
@@ -43,9 +43,9 @@ Contoh response `200 OK`:
 {"status":"ok","service":"toko-laptop-app"}
 ```
 
-### 2. Registrasi — `POST /api/auth/register`
+### 2. Registrasi buyer — `POST /api/auth/register`
 
-Endpoint publik. Username harus unik dan maksimal 100 karakter; password tidak boleh kosong. Registrasi membuat akun tetapi tidak otomatis membuat session.
+Endpoint publik yang membuat akun dengan role `buyer`. Username harus unik dan maksimal 100 karakter; password tidak boleh kosong. Role tidak bisa dipilih pada endpoint ini, dan registrasi tidak otomatis membuat session.
 
 ```bash
 curl -i \
@@ -56,9 +56,9 @@ curl -i \
 
 Response sukses berstatus `201 Created`. Username yang telah digunakan menghasilkan `409 Conflict`. Password di-hash dengan Argon2id sebelum disimpan.
 
-### 3. Login — `POST /api/auth/login`
+### 3. Login admin — `POST /api/auth/login`
 
-Endpoint publik. Isi username/password sesuai environment server. `-c cookies.txt` menyimpan cookie dari response untuk dipakai pada request selanjutnya.
+Endpoint publik. Untuk membuat akun dengan role tertentu, login memakai `ADMIN_USERNAME` dan `ADMIN_PASSWORD` dari environment server. `-c cookies.txt` menyimpan cookie dari response untuk dipakai pada request admin selanjutnya.
 
 ```bash
 curl -i \
@@ -76,6 +76,7 @@ Contoh response sukses `200 OK`:
   "message": "Login berhasil",
   "data": {
     "username": "admin",
+    "role": "admin",
     "access_token": "<JWT>",
     "token_type": "Bearer",
     "expires_in": 3600
@@ -85,7 +86,33 @@ Contoh response sukses `200 OK`:
 
 Login gagal mengembalikan `401 Unauthorized`. Simpan/copy `access_token` dari response untuk request bearer. Login tidak memakai `-X POST`: opsi `-d` (`--data`) membuat curl otomatis memakai metode `POST`.
 
-### 4. Daftar laptop — `GET /api/laptops`
+### 4. Membuat akun buyer/restocker — `POST /api/admin/users`
+
+Wajib login sebagai admin. Body harus berisi `username`, `password`, dan `role`. Role yang bisa dibuat lewat endpoint ini adalah `buyer` atau `restocker`; role `admin` hanya dapat ditetapkan melalui konfigurasi server.
+
+Contoh membuat akun buyer:
+
+```bash
+curl -i \
+  -b cookies.txt \
+  -H 'Content-Type: application/json' \
+  -d '{"username":"pembeli-baru","password":"password-lokal","role":"buyer"}' \
+  "http://127.0.0.1:3001/api/admin/users"
+```
+
+Contoh membuat akun restocker:
+
+```bash
+curl -i \
+  -b cookies.txt \
+  -H 'Content-Type: application/json' \
+  -d '{"username":"petugas-stok","password":"password-lokal","role":"restocker"}' \
+  "http://127.0.0.1:3001/api/admin/users"
+```
+
+Ganti username dan password contoh sesuai kebutuhan. Sukses mengembalikan `201 Created`; username yang sudah digunakan mengembalikan `409 Conflict`. Endpoint ini tidak menerima role admin.
+
+### 5. Daftar laptop — `GET /api/laptops`
 
 Wajib login. `-b cookies.txt` mengirim cookie yang sebelumnya disimpan saat login. Jika memilih JWT, ganti cookie dengan header `Authorization: Bearer $TOKEN`. Tidak perlu `-X GET`: tanpa opsi metode atau body, curl memakai `GET` secara default.
 
@@ -106,7 +133,7 @@ Contoh response `200 OK`:
 
 Jika belum ada laptop, `data` adalah array kosong. Setiap item berbentuk `[id, nama, merek, harga, stok]`.
 
-### 5. Tambah laptop — `POST /api/laptops`
+### 6. Tambah laptop — `POST /api/laptops`
 
 Wajib login. `-H` menyatakan bahwa body yang dikirim adalah JSON. `-d` mengirim body dan otomatis memilih metode POST, jadi `-X POST` tidak diperlukan.
 
@@ -136,7 +163,7 @@ Contoh response `201 Created`:
 
 Simpan nilai `data.id` dari response untuk detail, update, atau delete. Nama wajib maksimal 150 karakter; merek maksimal 100 karakter. Harga dan stok harus bilangan bulat nol atau lebih.
 
-### 6. Detail laptop — `GET /api/laptops/{id}`
+### 7. Detail laptop — `GET /api/laptops/{id}`
 
 Ganti `1` dengan ID laptop yang didapat dari response tambah laptop. Wajib login. GET tidak memerlukan `-X`.
 
@@ -155,7 +182,7 @@ Contoh response `200 OK`:
 
 ID tidak valid menghasilkan `400 Bad Request`; ID positif yang tidak ditemukan menghasilkan `404 Not Found`.
 
-### 7. Update sebagian field — `PATCH /api/laptops/{id}`
+### 8. Update sebagian field — `PATCH /api/laptops/{id}`
 
 Wajib login. PATCH mengirim satu atau beberapa field yang ingin diubah; field lain tidak berubah. Di sini `-X PATCH` diperlukan karena `-d` sendiri secara default memilih POST, bukan PATCH.
 
@@ -180,7 +207,7 @@ Contoh response `200 OK`:
 
 Body tanpa field yang dapat diubah ditolak dengan `400 Bad Request`.
 
-### 8. Hapus laptop — `DELETE /api/laptops/{id}`
+### 9. Hapus laptop — `DELETE /api/laptops/{id}`
 
 Wajib login. Karena tidak ada body, `-X DELETE` dipakai untuk memilih metode HTTP DELETE.
 
@@ -203,7 +230,7 @@ Contoh response `200 OK`:
 
 Jika ID tidak ditemukan, response `404 Not Found`.
 
-### 9. Lihat session aktif — `GET /api/auth/session`
+### 10. Lihat session aktif — `GET /api/auth/session`
 
 Wajib login. GET tidak memerlukan `-X`.
 
@@ -222,7 +249,7 @@ Contoh response `200 OK`:
 
 Tanpa cookie session atau bearer JWT yang valid, server mengembalikan `401 Unauthorized`.
 
-### 10. Logout — `POST /api/auth/logout`
+### 11. Logout — `POST /api/auth/logout`
 
 Wajib memakai cookie session atau JWT bearer yang valid. Tidak ada body, maka metode ditentukan eksplisit memakai `-X POST`. Logout menaikkan versi autentikasi pengguna dan menghapus session aktif, sehingga semua JWT serta session lama pengguna langsung ditolak.
 

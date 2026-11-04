@@ -26,6 +26,11 @@ pub fn create_router(pool: PgPool, session_cookie_secure: bool, jwt_secret: Stri
                 .patch(handlers::update_laptop)
                 .delete(handlers::delete_laptop),
         )
+        .route("/api/admin/users", post(handlers::create_user))
+        .route(
+            "/api/admin/users/{username}/role",
+            axum::routing::patch(handlers::update_user_role),
+        )
         // Memeriksa session atau JWT sebelum request diteruskan ke handler.
         .route_layer(middleware::from_fn_with_state(
             pool.clone(),

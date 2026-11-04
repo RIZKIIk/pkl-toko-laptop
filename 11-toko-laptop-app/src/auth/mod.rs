@@ -2,6 +2,7 @@
 //! Catatan: [Buka penjelasan](file:///home/rizki/projects/Rust/tugas/PKL/11-toko-laptop-app/catatan/rust/auth/mod.md)
 pub mod http;
 pub mod jwt;
+pub mod role;
 pub mod session;
 
 use std::error::Error;
@@ -14,6 +15,7 @@ use rand_core::OsRng;
 use sqlx::PgPool;
 
 use crate::repositories::user_repository;
+use role::UserRole;
 
 pub use session::require_auth;
 
@@ -24,11 +26,12 @@ pub async fn initialize_admin_user(
     password: &str,
 ) -> Result<(), Box<dyn Error + Send + Sync>> {
     if verify_credentials(pool, username, password).await? {
+        user_repository::set_user_role(pool, username, UserRole::Admin).await?;
         return Ok(());
     }
 
     let password_hash = hash_password(password).await?;
-    user_repository::upsert_user(pool, username, &password_hash).await?;
+    user_repository::upsert_user(pool, username, &password_hash, UserRole::Admin).await?;
     Ok(())
 }
 
@@ -83,8 +86,18 @@ pub async fn register_user(
     username: &str,
     password: &str,
 ) -> Result<bool, Box<dyn Error + Send + Sync>> {
+    register_user_with_role(pool, username, password, UserRole::Buyer).await
+}
+
+/// Membuat akun baru dengan role yang diberikan oleh endpoint tepercaya.
+pub async fn register_user_with_role(
+    pool: &PgPool,
+    username: &str,
+    password: &str,
+    role: UserRole,
+) -> Result<bool, Box<dyn Error + Send + Sync>> {
     let password_hash = hash_password(password).await?;
-    Ok(user_repository::insert_user(pool, username, &password_hash).await?)
+    Ok(user_repository::insert_user(pool, username, &password_hash, role).await?)
 }
 
 /// Memverifikasi username dan password terhadap hash Argon2id di users.

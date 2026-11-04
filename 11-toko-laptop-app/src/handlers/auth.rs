@@ -2,7 +2,7 @@
 //! Catatan: [Buka penjelasan](file:///home/rizki/projects/Rust/tugas/PKL/11-toko-laptop-app/catatan/rust/handlers/auth.md)
 use axum::{
     Json,
-    extract::{Extension, State},
+    extract::{Extension, Path, State},
     http::StatusCode,
     response::{IntoResponse, Response},
 };
@@ -11,7 +11,7 @@ use serde_json::json;
 use sqlx::PgPool;
 use tower_sessions::Session;
 
-use crate::auth::{self, http, jwt::JwtService, session};
+use crate::auth::{self, http, jwt::JwtService, role::UserRole, session};
 
 /// Membersihkan username dan memastikan sesuai batas kolom database.
 fn validate_username(username: &str) -> Result<&str, &'static str> {
@@ -33,6 +33,20 @@ pub struct LoginPayload {
     username: String,
     /// Password latihan yang akan diverifikasi; tidak dikirim kembali ke client.
     password: String,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct CreateUserPayload {
+    username: String,
+    password: String,
+    role: UserRole,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct UpdateUserRolePayload {
+    role: UserRole,
 }
 
 /// Memeriksa kredensial lalu membuat session baru dan access token JWT.
@@ -67,9 +81,9 @@ pub async fn login(
     }
 
     // Satu login menghasilkan JWT dan session cookie untuk dua cara autentikasi.
-    let auth_version =
-        match crate::repositories::user_repository::find_auth_version(&pool, username).await {
-            Ok(Some(auth_version)) => auth_version,
+    let (auth_version, role) =
+        match crate::repositories::user_repository::find_auth_state(&pool, username).await {
+            Ok(Some(auth_state)) => auth_state,
             Ok(None) => {
                 return http::error_response(
                     StatusCode::UNAUTHORIZED,
@@ -109,6 +123,7 @@ pub async fn login(
         "message": "Login berhasil",
         "data": {
             "username": username,
+            "role": role,
             "access_token": token,
             "token_type": "Bearer",
             "expires_in": auth::jwt::TOKEN_EXPIRED_SECONDS
@@ -132,7 +147,7 @@ pub async fn register(State(pool): State<PgPool>, Json(payload): Json<LoginPaylo
             axum::Json(json!({
                 "status": "success",
                 "message": "Akun berhasil dibuat",
-                "data": { "username": username }
+                "data": { "username": username, "role": UserRole::Buyer }
             })),
         )
             .into_response(),
@@ -147,11 +162,92 @@ pub async fn register(State(pool): State<PgPool>, Json(payload): Json<LoginPaylo
     }
 }
 
+/// Membuat akun buyer/restocker melalui endpoint khusus admin.
+pub async fn create_user(
+    State(pool): State<PgPool>,
+    Json(payload): Json<CreateUserPayload>,
+) -> Response {
+    let username = match validate_username(&payload.username) {
+        Ok(username) => username,
+        Err(message) => return http::error_response(StatusCode::BAD_REQUEST, message),
+    };
+    if payload.password.is_empty() {
+        return http::error_response(StatusCode::BAD_REQUEST, "Password wajib diisi");
+    }
+    if payload.role == UserRole::Admin {
+        return http::error_response(
+            StatusCode::BAD_REQUEST,
+            "Role admin hanya dapat ditetapkan melalui konfigurasi server",
+        );
+    }
+
+    match auth::register_user_with_role(&pool, username, &payload.password, payload.role).await {
+        Ok(true) => (
+            StatusCode::CREATED,
+            Json(json!({
+                "status": "success",
+                "message": "Akun berhasil dibuat",
+                "data": { "username": username, "role": payload.role }
+            })),
+        )
+            .into_response(),
+        Ok(false) => http::error_response(StatusCode::CONFLICT, "Username sudah digunakan"),
+        Err(error) => {
+            eprintln!("Gagal membuat akun dengan role: {error}");
+            http::error_response(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Terjadi kesalahan saat membuat akun",
+            )
+        }
+    }
+}
+
+/// Mengubah role pengguna menjadi buyer/restocker dan mencabut kredensial lamanya.
+pub async fn update_user_role(
+    State(pool): State<PgPool>,
+    Extension(identity): Extension<session::AuthIdentity>,
+    Path(username): Path<String>,
+    Json(payload): Json<UpdateUserRolePayload>,
+) -> Response {
+    let username = match validate_username(&username) {
+        Ok(username) => username,
+        Err(message) => return http::error_response(StatusCode::BAD_REQUEST, message),
+    };
+    if username == identity.username {
+        return http::error_response(
+            StatusCode::BAD_REQUEST,
+            "Role akun yang sedang digunakan tidak dapat diubah",
+        );
+    }
+    if payload.role == UserRole::Admin {
+        return http::error_response(
+            StatusCode::BAD_REQUEST,
+            "Role admin hanya dapat ditetapkan melalui konfigurasi server",
+        );
+    }
+
+    match crate::repositories::user_repository::set_user_role(&pool, username, payload.role).await {
+        Ok(true) => http::success_response(json!({
+            "status": "success",
+            "message": "Role pengguna berhasil diperbarui",
+            "data": { "username": username, "role": payload.role }
+        })),
+        Ok(false) => http::error_response(StatusCode::NOT_FOUND, "Pengguna tidak ditemukan"),
+        Err(error) => {
+            eprintln!("Gagal mengubah role pengguna: {error}");
+            http::error_response(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Terjadi kesalahan saat mengubah role pengguna",
+            )
+        }
+    }
+}
+
 /// Mengembalikan identitas dari JWT bearer atau session aktif.
 pub async fn current_user(Extension(identity): Extension<session::AuthIdentity>) -> Response {
     http::success_response(json!({
         "status": "success",
-        "data": { "username": identity.username }
+        "data": { "username": identity.username, "role": identity.role }
     }))
 }
 
