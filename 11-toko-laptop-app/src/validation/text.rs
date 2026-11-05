@@ -3,7 +3,7 @@
 use crate::error::ApiError;
 
 /// Menghapus spasi pinggir lalu memeriksa teks kosong dan batas karakter.
-pub(super) fn validate_text(
+pub fn validate_text(
     value: String,
     field: &str,
     max_length: usize,

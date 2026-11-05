@@ -14,12 +14,12 @@ pub use read::{get_laptop, list_laptops};
 pub use update::update_laptop;
 
 /// Membentuk response sukses yang membawa data.
-pub(super) fn success_response(data: Value) -> Value {
+pub fn success_response(data: Value) -> Value {
     json!({"status": "success", "data": data})
 }
 
 /// Membentuk response sukses dengan pesan dan data.
-pub(super) fn success_response_with_message(message: &str, data: Value) -> Value {
+pub fn success_response_with_message(message: &str, data: Value) -> Value {
     json!({
         "status": "success",
         "message": message,
@@ -28,6 +28,6 @@ pub(super) fn success_response_with_message(message: &str, data: Value) -> Value
 }
 
 /// Membuat error 404 dengan pesan laptop yang konsisten.
-pub(super) fn not_found_laptop(id: i64) -> ApiError {
+pub fn not_found_laptop(id: i64) -> ApiError {
     ApiError::NotFound(format!("Laptop dengan ID {id} tidak ditemukan"))
 }

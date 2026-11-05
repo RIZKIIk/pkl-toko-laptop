@@ -12,8 +12,8 @@ use tower_sessions::Session;
 use super::{http::error_response, jwt::JwtService, role::UserRole};
 
 /// Nama key yang menyimpan username di dalam session server-side.
-pub(crate) const SESSION_USERNAME_KEY: &str = "username";
-pub(crate) const SESSION_AUTH_VERSION_KEY: &str = "auth_version";
+pub const SESSION_USERNAME_KEY: &str = "username";
+pub const SESSION_AUTH_VERSION_KEY: &str = "auth_version";
 
 #[derive(Clone, Debug)]
 pub struct AuthIdentity {
@@ -23,7 +23,7 @@ pub struct AuthIdentity {
 }
 
 #[derive(Clone, Debug)]
-pub(crate) struct SessionIdentity {
+pub struct SessionIdentity {
     pub username: String,
     pub auth_version: i64,
 }
@@ -41,7 +41,7 @@ pub async fn start_session(
 }
 
 /// Membaca identitas dan versi autentikasi yang disimpan dalam session.
-pub(crate) async fn session_identity(
+pub async fn session_identity(
     session: &Session,
 ) -> Result<Option<SessionIdentity>, tower_sessions::session::Error> {
     let Some(username) = session.get(SESSION_USERNAME_KEY).await? else {

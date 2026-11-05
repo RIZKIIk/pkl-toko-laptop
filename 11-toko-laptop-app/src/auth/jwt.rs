@@ -20,10 +20,10 @@ pub struct JwtService {
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
-pub(crate) struct Claims {
-    pub(crate) sub: String,
-    pub(crate) exp: u64,
-    pub(crate) ver: i64,
+pub struct Claims {
+    pub sub: String,
+    pub exp: u64,
+    pub ver: i64,
 }
 
 impl JwtService {
@@ -53,7 +53,7 @@ impl JwtService {
     }
 
     /// Memverifikasi signature dan expiry, lalu mengembalikan username subject.
-    pub(crate) fn verify_token(&self, token: &str) -> Result<Claims, jsonwebtoken::errors::Error> {
+    pub fn verify_token(&self, token: &str) -> Result<Claims, jsonwebtoken::errors::Error> {
         // Algoritma dibatasi ke HS256 dan leeway nol agar expiry berlaku tepat waktu.
         let key = DecodingKey::from_secret(self.secret.as_bytes());
         let mut validation = Validation::new(Algorithm::HS256);
@@ -64,7 +64,7 @@ impl JwtService {
 }
 
 /// Mengambil token dari header Authorization dengan format `Bearer <token>`.
-pub(crate) fn bearer_token(headers: &HeaderMap) -> Option<&str> {
+pub fn bearer_token(headers: &HeaderMap) -> Option<&str> {
     let value = headers.get(AUTHORIZATION)?.to_str().ok()?;
     let (scheme, token) = value.split_once(' ')?;
 
@@ -79,7 +79,7 @@ pub(crate) fn bearer_token(headers: &HeaderMap) -> Option<&str> {
 }
 
 /// Memvalidasi bearer JWT dari header dan mengambil username di dalamnya.
-pub(crate) fn claims_from_headers(headers: &HeaderMap, jwt: &JwtService) -> Option<Claims> {
+pub fn claims_from_headers(headers: &HeaderMap, jwt: &JwtService) -> Option<Claims> {
     jwt.verify_token(bearer_token(headers)?).ok()
 }
 

@@ -1,7 +1,7 @@
 //! Memformat angka harga menjadi teks Rupiah untuk response API.
 //! Catatan: [Buka penjelasan](file:///home/rizki/projects/Rust/tugas/PKL/11-toko-laptop-app/catatan/rust/presenters/rupiah.md)
 /// Memformat Rupiah dengan pemisah ribuan titik.
-pub(super) fn formatkan_rupiah(nilai: i64) -> String {
+pub fn formatkan_rupiah(nilai: i64) -> String {
     let tanda = if nilai < 0 { "-" } else { "" };
     format!("Rp {tanda}{}", kelompokkan_ribuan(nilai.unsigned_abs()))
 }

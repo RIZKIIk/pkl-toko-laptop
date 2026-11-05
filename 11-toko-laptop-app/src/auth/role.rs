@@ -20,7 +20,7 @@ impl UserRole {
         }
     }
 
-    pub(crate) fn can_access(self, method: &Method, path: &str) -> bool {
+    pub fn can_access(self, method: &Method, path: &str) -> bool {
         if matches!(path, "/api/auth/session" | "/api/auth/logout") {
             return true;
         }
