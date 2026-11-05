@@ -3,11 +3,7 @@
 use crate::error::ApiError;
 
 /// Menghapus spasi pinggir lalu memeriksa teks kosong dan batas karakter.
-pub fn validate_text(
-    value: String,
-    field: &str,
-    max_length: usize,
-) -> Result<String, ApiError> {
+pub fn validate_text(value: String, field: &str, max_length: usize) -> Result<String, ApiError> {
     let value = value.trim().to_string();
 
     if value.is_empty() {

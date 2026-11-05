@@ -7,7 +7,10 @@ use std::{
 
 use axum::http::{HeaderMap, header::AUTHORIZATION};
 use jsonwebtoken::{Algorithm, DecodingKey, EncodingKey, Header, Validation, decode, encode};
+use rand_core::{OsRng, RngCore};
 use serde::{Deserialize, Serialize};
+
+use super::role::UserRole;
 
 /// Masa berlaku access token dalam detik (satu jam).
 pub const TOKEN_EXPIRED_SECONDS: u64 = 60 * 60;
@@ -21,9 +24,10 @@ pub struct JwtService {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Claims {
-    pub sub: String,
+    pub sub: i64,
     pub exp: u64,
-    pub ver: i64,
+    pub role: UserRole,
+    pub jti: String,
 }
 
 impl JwtService {
@@ -34,25 +38,30 @@ impl JwtService {
         }
     }
 
-    /// Menerbitkan token HS256 dengan username sebagai subject dan expiry satu jam.
+    /// Menerbitkan token HS256 dengan ID dan role pengguna, berlaku satu jam.
     pub fn issue_token(
         &self,
-        username: &str,
-        auth_version: i64,
+        user_id: i64,
+        role: UserRole,
     ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
         // JWT memakai detik sejak Unix epoch untuk mengisi klaim expiry standar.
         let now = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
+        let mut token_id = [0_u8; 32];
+        let mut rng = OsRng;
+        rng.try_fill_bytes(&mut token_id)?;
+        let jti: String = token_id.iter().map(|byte| format!("{byte:02x}")).collect();
         let claims = Claims {
-            sub: username.to_owned(),
+            sub: user_id,
             exp: now + TOKEN_EXPIRED_SECONDS,
-            ver: auth_version,
+            role,
+            jti,
         };
         let key = EncodingKey::from_secret(self.secret.as_bytes());
 
         Ok(encode(&Header::new(Algorithm::HS256), &claims, &key)?)
     }
 
-    /// Memverifikasi signature dan expiry, lalu mengembalikan username subject.
+    /// Memverifikasi signature dan expiry, lalu mengembalikan claims pengguna.
     pub fn verify_token(&self, token: &str) -> Result<Claims, jsonwebtoken::errors::Error> {
         // Algoritma dibatasi ke HS256 dan leeway nol agar expiry berlaku tepat waktu.
         let key = DecodingKey::from_secret(self.secret.as_bytes());
@@ -85,25 +94,25 @@ pub fn claims_from_headers(headers: &HeaderMap, jwt: &JwtService) -> Option<Clai
 
 #[cfg(test)]
 mod tests {
-    use super::JwtService;
+    use super::{JwtService, UserRole};
 
     const SECRET: &str = "test-secret-with-at-least-32-bytes-long";
 
     #[test]
-    fn token_round_trip_returns_the_username() {
+    fn token_round_trip_returns_the_user_id_and_role() {
         let jwt = JwtService::new(SECRET.to_owned());
-        let token = jwt.issue_token("admin", 0).unwrap();
+        let token = jwt.issue_token(7, UserRole::Admin).unwrap();
 
         let claims = jwt.verify_token(&token).unwrap();
-        assert_eq!(claims.sub, "admin");
-        assert_eq!(claims.ver, 0);
+        assert_eq!(claims.sub, 7);
+        assert_eq!(claims.role, UserRole::Admin);
     }
 
     #[test]
     fn token_rejects_tampering_and_a_different_secret() {
         let jwt = JwtService::new(SECRET.to_owned());
         let other_jwt = JwtService::new("another-test-secret-with-32-bytes".to_owned());
-        let token = jwt.issue_token("admin", 0).unwrap();
+        let token = jwt.issue_token(7, UserRole::Admin).unwrap();
         let tampered = format!("{token}x");
 
         assert!(jwt.verify_token(&tampered).is_err());

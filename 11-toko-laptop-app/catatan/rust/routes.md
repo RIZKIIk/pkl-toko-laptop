@@ -52,7 +52,7 @@ Signature lengkapnya adalah `pub fn create_router(pool: PgPool, session_cookie_s
 
 1. Router publik mendaftarkan `GET /health`, `POST /api/auth/register`, dan `POST /api/auth/login`. Registrasi membuat akun; login memeriksa tabel user, membuat session baru, dan menerbitkan JWT saat password cocok.
 2. `protected_routes` mendaftarkan route `/api/auth/session`, `/api/auth/logout`, dan operasi laptop.
-3. `.route_layer(middleware::from_fn_with_state(pool.clone(), auth::require_auth))` memanggil middleware dari [`auth/session.rs`](auth/session.md) sebelum request mencapai handler pada grup protected. Middleware memverifikasi bearer JWT atau session, lalu mencocokkan versi autentikasi ke database.
+3. `.route_layer(middleware::from_fn_with_state(pool.clone(), auth::require_auth))` memanggil middleware dari [`auth/session.rs`](auth/session.md) sebelum request mencapai handler pada grup protected. Middleware memverifikasi bearer JWT atau session; JWT diperiksa terhadap denylist `jti` dan role terkini di database.
 4. Route `"/api/laptops"` memakai satu URL untuk dua method:
    - `get(handlers::list_laptops)` untuk mengambil daftar.
    - `.post(handlers::create_laptop)` untuk menambah data.

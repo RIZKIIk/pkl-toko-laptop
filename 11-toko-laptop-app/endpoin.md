@@ -101,7 +101,7 @@ curl -i -H "Authorization: Bearer $TOKEN" http://127.0.0.1:3001/api/laptops
 curl -i -H "Authorization: Bearer $TOKEN" http://127.0.0.1:3001/api/auth/session
 ```
 
-Kredensial salah, token tidak valid/kedaluwarsa/dicabut, atau request terlindungi tanpa session maupun JWT menghasilkan `401 Unauthorized`. Jangan membagikan atau commit file cookie maupun token. Session disimpan dalam memori server dan otomatis hilang saat server dimulai ulang. Logout menaikkan `auth_version` pengguna di database sehingga semua JWT dan session lama langsung ditolak; client tetap harus menghapus token lokal.
+Kredensial salah, token tidak valid/kedaluwarsa/dicabut, atau request terlindungi tanpa session maupun JWT menghasilkan `401 Unauthorized`. Jangan membagikan atau commit file cookie maupun token. Session disimpan dalam memori server dan otomatis hilang saat server dimulai ulang. Logout mencabut JWT yang dipakai pada request itu dan menghapus session aktif; client tetap harus menghapus token lokal.
 
 ## Pemeriksaan Layanan
 

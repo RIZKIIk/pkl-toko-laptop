@@ -57,7 +57,7 @@ pub async fn upsert_user(
     sqlx::query(
         "INSERT INTO public.users (username, password_hash) VALUES ($1, $2) \
          ON CONFLICT (username) DO UPDATE \
-         SET password_hash = EXCLUDED.password_hash, auth_version = users.auth_version + 1",
+         SET password_hash = EXCLUDED.password_hash",
     )
     .bind(username)
     .bind(password_hash)
@@ -72,7 +72,7 @@ Fungsi ini memasukkan akun baru. Jika username sudah ada, `ON CONFLICT (username
 
 1. `sqlx::query(...)` membuat query yang tidak perlu membaca baris kembali.
 2. `.bind(username)` dan `.bind(password_hash)` memasangkan nilai ke `$1` dan `$2`. Jangan menyambung nilai user langsung ke SQL.
-3. `.execute(pool).await?` menjalankan query. Jika password admin berubah, query juga menaikkan versi autentikasi sehingga token lama dicabut.
+3. `.execute(pool).await?` menjalankan query. JWT yang sudah diterbitkan tetap berlaku sampai logout atau kedaluwarsa.
 4. `Ok(())` menyatakan berhasil tanpa mengembalikan baris.
 
 ## 3. `insert_user`

@@ -15,9 +15,9 @@ Handler ini memproses registrasi dan login, menampilkan identitas dari session/J
 
 ```text
 register → users table → 201 / 409
-login → verify credentials → session cookie + JWT with auth_version
-protected request → validate JWT/session and auth_version
-logout → increment auth_version + clear current session
+login → verify credentials → session cookie + JWT with user ID and role
+protected request → validate JWT/session against current user and role
+logout → revoke current JWT jti + clear current session
 ```
 
 ## Payload login
@@ -46,19 +46,19 @@ logout → increment auth_version + clear current session
 1. Memangkas spasi pinggir username dan menolak username kosong atau lebih dari 100 karakter; password kosong ditolak dengan `400 Bad Request`.
 2. Memanggil `auth::verify_credentials` untuk mencari username di tabel `users` dan mencocokkan password latihan.
 3. Mengembalikan `401 Unauthorized` jika username tidak ditemukan atau password tidak cocok. Kegagalan query dicatat di server dan menghasilkan `500`.
-4. Jika cocok, mengambil `auth_version` pengguna dan menerbitkan JWT HS256 dengan subject username, versi autentikasi, dan expiry satu jam.
-5. Memanggil `session::start_session`. Fungsi itu mengganti ID session lalu menyimpan username dan versi autentikasi di session server-side.
+4. Jika cocok, mengambil ID dan role pengguna. JWT HS256 berisi ID sebagai `sub`, `role`, expiry satu jam, dan `jti` acak.
+5. Memanggil `session::start_session`. Fungsi itu mengganti ID session lalu menyimpan username di session server-side.
 6. Mengembalikan JSON `200 OK` berisi username, `access_token`, `token_type`, dan `expires_in`. Cookie session dikelola oleh `SessionManagerLayer`, bukan dibuat manual oleh handler.
 
 Untuk materi session, password registrasi disimpan langsung di database lokal dan dibandingkan secara langsung. Jangan gunakan implementasi ini untuk akun nyata atau produksi.
 
 ### `current_user(identity)`
 
-Mengembalikan username dari identitas yang sudah diverifikasi middleware. Middleware menolak JWT/session yang versi autentikasinya tidak lagi cocok.
+Mengembalikan username dari identitas yang sudah diverifikasi middleware. Middleware memeriksa `jti` JWT dan mencocokkan role-nya dengan role terbaru di database.
 
 ### `logout(pool, identity, session)`
 
-Menaikkan `users.auth_version`, sehingga semua JWT dan session lama milik pengguna langsung ditolak, lalu memanggil `clear_session` untuk menghapus session aktif. Jika query database atau penghapusan session gagal, handler mencatat detail error di server dan mengembalikan `500`. Client tetap perlu menghapus token lokal setelah logout.
+Mencatat `jti` JWT yang dipakai request ini ke tabel `revoked_jwts`, lalu memanggil `clear_session` untuk menghapus session aktif. JWT itu langsung ditolak; token lain milik pengguna tidak ikut dicabut. Jika query database atau penghapusan session gagal, handler mencatat detail error di server dan mengembalikan `500`.
 
 `login` menggunakan `State` untuk menerima pool database dan `Json` untuk membaca body. `current_user` menerima identitas yang sudah diverifikasi middleware, sedangkan `logout` juga menerima pool dan session; semuanya mengembalikan `Response` agar dapat menyusun status dan JSON yang berbeda pada tiap cabang.
 

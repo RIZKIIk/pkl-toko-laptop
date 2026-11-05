@@ -35,7 +35,7 @@ Toko Laptop App adalah REST API inventaris laptop. Kode aktif menyediakan operas
 | `src/repositories/` | Query SQL dikelompokkan menurut resource. |
 | `src/presenters/` | Pemetaan response dan format Rupiah dipisah. |
 | `src/error.rs` | Memetakan error menjadi response HTTP JSON. |
-| `database/migrations/` | Membuat tabel laptop/user, hash password, dan versi autentikasi. |
+| `database/migrations/` | Membuat tabel laptop/user, hash password, dan daftar JWT yang dicabut. |
 | `.env` | Pengaturan lokal server dan PostgreSQL; tidak dibagikan sebagai dokumentasi. |
 | `postman/` | Collection serta environment untuk uji manual. |
 | `catatan/` | Penjelasan detail kode; tidak dijalankan oleh aplikasi. |

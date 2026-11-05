@@ -81,9 +81,9 @@ pub async fn login(
     }
 
     // Satu login menghasilkan JWT dan session cookie untuk dua cara autentikasi.
-    let (auth_version, role) =
-        match crate::repositories::user_repository::find_auth_state(&pool, username).await {
-            Ok(Some(auth_state)) => auth_state,
+    let (user_id, role) =
+        match crate::repositories::user_repository::find_login_identity(&pool, username).await {
+            Ok(Some(login_identity)) => login_identity,
             Ok(None) => {
                 return http::error_response(
                     StatusCode::UNAUTHORIZED,
@@ -91,7 +91,7 @@ pub async fn login(
                 );
             }
             Err(error) => {
-                eprintln!("Gagal mengambil versi autentikasi user: {error}");
+                eprintln!("Gagal mengambil identitas user: {error}");
                 return http::error_response(
                     StatusCode::INTERNAL_SERVER_ERROR,
                     "Terjadi kesalahan saat login",
@@ -99,7 +99,7 @@ pub async fn login(
             }
         };
 
-    let token = match jwt.issue_token(username, auth_version) {
+    let token = match jwt.issue_token(user_id, role) {
         Ok(token) => token,
         Err(error) => {
             eprintln!("Gagal membuat JWT saat login: {error}");
@@ -110,7 +110,7 @@ pub async fn login(
         }
     };
 
-    if let Err(error) = session::start_session(&session, username, auth_version).await {
+    if let Err(error) = session::start_session(&session, username).await {
         eprintln!("Gagal membuat session login: {error}");
         return http::error_response(
             StatusCode::INTERNAL_SERVER_ERROR,
@@ -251,21 +251,17 @@ pub async fn current_user(Extension(identity): Extension<session::AuthIdentity>)
     }))
 }
 
-/// Mencabut seluruh JWT dan session pengguna, lalu menghapus session aktif.
+/// Mencabut JWT yang dipakai request ini dan menghapus session aktif.
 pub async fn logout(
     State(pool): State<PgPool>,
     Extension(identity): Extension<session::AuthIdentity>,
     session: Session,
 ) -> Response {
-    match crate::repositories::user_repository::invalidate_user_sessions(&pool, &identity.username)
-        .await
-    {
-        Ok(Some(_)) => {}
-        Ok(None) => {
-            return http::error_response(StatusCode::UNAUTHORIZED, "Login diperlukan");
-        }
-        Err(error) => {
-            eprintln!("Gagal mencabut autentikasi user saat logout: {error}");
+    if let Some((jti, expires_at)) = &identity.token_to_revoke {
+        if let Err(error) =
+            crate::repositories::jwt_repository::revoke(&pool, jti, *expires_at).await
+        {
+            eprintln!("Gagal mencabut JWT saat logout: {error}");
             return http::error_response(
                 StatusCode::INTERNAL_SERVER_ERROR,
                 "Terjadi kesalahan saat logout",

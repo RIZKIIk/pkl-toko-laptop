@@ -72,7 +72,7 @@ handlers/
 | `POST /api/auth/register` | 201 | Username akun yang dibuat. |
 | `POST /api/auth/login` | 200 | Username, JWT, tipe token, dan masa berlaku; session cookie dikirim melalui header. |
 | `GET /api/auth/session` | 200 | Username dari JWT atau session aktif. |
-| `POST /api/auth/logout` | 200 | Pesan sukses; seluruh JWT dan session lama milik pengguna dicabut. |
+| `POST /api/auth/logout` | 200 | Pesan sukses; JWT yang digunakan dan session aktif dicabut. |
 | `GET /api/laptops` | 200 | `data` berupa daftar array laptop. |
 | `GET /api/laptops/{id}` | 200 | `data` berupa satu array laptop. |
 | `POST /api/laptops` | 201 | `data` berupa object laptop serta pesan. |

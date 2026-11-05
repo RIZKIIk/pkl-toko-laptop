@@ -11,28 +11,40 @@
 
 Modul ini menerbitkan dan memverifikasi access token JWT menggunakan HMAC-SHA256 (HS256). Token memberi client cara mengautentikasi request tanpa mengirim password lagi. Secret dibaca dari `JWT_SECRET`, yang harus berisi sedikitnya 32 byte.
 
-> **Ringkas:** login membuat JWT yang berlaku satu jam; route terlindungi memeriksa signature, expiry, dan versi autentikasi terbaru.
+> **Ringkas:** login membuat JWT satu jam dengan ID pengguna (`sub`) dan `role`; route terlindungi memeriksa signature, expiry, pengguna, dan role terbaru.
 
 ## Isi token
 
-JWT aplikasi membawa tiga klaim (*claims*):
+JWT aplikasi membawa empat klaim (*claims*):
 
 | Klaim | Nilai | Kegunaan |
 | --- | --- | --- |
-| `sub` | Username pengguna. | Menyatakan identitas pemilik token (*subject*). |
+| `sub` | ID pengguna berupa angka. | Menyatakan identitas pemilik token (*subject*). |
 | `exp` | Waktu kedaluwarsa sebagai Unix timestamp dalam detik. | Menentukan kapan token tidak berlaku lagi. |
-| `ver` | Versi autentikasi pengguna saat token diterbitkan. | Menolak token setelah logout atau pencabutan seluruh sesi. |
+| `role` | Role pengguna, misalnya `admin`. | Menentukan akses yang dimiliki token; middleware mencocokkannya dengan role terbaru di database. |
+| `jti` | ID acak unik untuk token ini. | Memungkinkan logout mencabut satu JWT tanpa `auth_version`. |
+
+Contoh payload setelah di-decode:
+
+```json
+{
+  "sub": 7,
+  "exp": 1793864943,
+  "role": "admin",
+  "jti": "ID_ACAK_UNIK"
+}
+```
 
 Payload JWT ditandatangani, bukan dienkripsi. Client dapat membaca isinya. Jangan masukkan password, secret, atau data sensitif ke dalam claims.
 
 ## Cara kerja di aplikasi
 
 1. Saat startup, `main.rs` memberikan `JWT_SECRET` ke `create_router`, lalu router membuat `JwtService`.
-2. Setelah kredensial login cocok, handler mengambil `auth_version` dari database. `issue_token(username, auth_version)` menyimpan versi itu bersama klaim expiry satu jam.
+2. Setelah kredensial login cocok, handler mengambil ID dan role pengguna dari database. `issue_token(user_id, role)` menyimpan keduanya bersama klaim expiry satu jam.
 3. `jsonwebtoken::encode` menandatangani claims dengan algoritma HS256 dan secret aplikasi.
 4. Client mengirim token melalui header `Authorization: Bearer <access_token>`.
 5. `bearer_token` membaca header dan mengambil token setelah skema `Bearer`. Header dengan format lain dianggap tidak memiliki bearer token.
-6. `verify_token` memeriksa algoritma, signature, dan expiry. `claims_from_headers` mengembalikan claims yang lolos pemeriksaan kriptografis. Middleware mencocokkan klaim `ver` dengan `auth_version` terbaru di database; token lama yang versinya tidak cocok ditolak.
+6. `verify_token` memeriksa algoritma, signature, dan expiry. Middleware menolak `jti` yang tercatat di tabel `revoked_jwts`, lalu mencari pengguna berdasarkan `sub` dan mencocokkan `role` dengan role terbaru di database.
 
 `JwtService` menyimpan secret sebagai `Arc<str>`. `Arc` memungkinkan service di-clone dengan biaya rendah saat dipakai bersama oleh handler dan middleware. Secret tidak dimasukkan ke claims atau response.
 
@@ -43,7 +55,7 @@ Payload JWT ditandatangani, bukan dienkripsi. Client dapat membaca isinya. Janga
 | `pub const TOKEN_EXPIRED_SECONDS: u64 = 60 * 60;` | `const` adalah nilai tetap saat kompilasi; `u64` adalah bilangan bulat tanpa tanda 64-bit. Perkalian menghasilkan 3.600 detik. |
 | `#[derive(Clone)]` | Attribute meminta compiler membuat implementasi `Clone`, sehingga `JwtService` bisa diduplikasi untuk dibagikan ke request. `Arc` membuat duplikasi secret murah. |
 | `struct Claims { ... }` | Struct mendefinisikan bentuk data token. `#[derive(Deserialize, Serialize)]` memungkinkan library JWT membaca claims dan menulisnya ke token. |
-| `&self`, `&str`, `String` | `&self` meminjam service tanpa mengambil alihnya; `&str` meminjam teks username; `String` memiliki teks hasil atau salinan yang dimiliki struct. |
+| `&self`, `String` | `&self` meminjam service tanpa mengambil alihnya; `String` memiliki teks secret yang diberikan saat service dibuat. |
 | `Result<String, Error>` | Fungsi dapat berhasil dengan `String` atau gagal dengan error. `Box<dyn Error + Send + Sync>` menyatukan berbagai error yang dapat dikirim dan dibagi antar thread. |
 | `?` | Mengembalikan error lebih awal jika operasi gagal; jika sukses, mengambil nilai di dalam `Result`. Di sini dipakai untuk waktu sistem, encoding token, dan decoding claims. |
 | `Option<&str>` | Hasil ekstraksi header bisa memiliki token (`Some`) atau tidak (`None`). Operator `?` pada `Option` menghentikan parsing jika header tidak ada atau formatnya keliru. |
@@ -66,11 +78,11 @@ JWT dan cookie session dapat dipakai sendiri-sendiri. Middleware memeriksa JWT l
 
 ## Kapan token ditolak?
 
-Token tidak memberi akses jika header tidak ada atau salah format, isi token berubah, token ditandatangani dengan secret lain, algoritmanya bukan HS256, token sudah kedaluwarsa, atau `ver` tidak lagi cocok dengan database. Middleware menghentikan request dan mengirim `401 Unauthorized`.
+Token tidak memberi akses jika header tidak ada atau salah format, isi token berubah, token ditandatangani dengan secret lain, algoritmanya bukan HS256, token sudah kedaluwarsa atau dicabut, pengguna tidak ditemukan, atau role di token berbeda dari role terbaru di database. Middleware menghentikan request dan mengirim `401 Unauthorized`.
 
 ## Logout dan pencabutan token
 
-JWT sendiri stateless, tetapi middleware membandingkan klaim `ver` dengan `users.auth_version` di database pada setiap request. Logout menaikkan versi tersebut, sehingga semua JWT lama langsung ditolak walaupun belum kedaluwarsa. Client tetap perlu menghapus token lokal setelah logout.
+JWT tidak membawa `auth_version`. Setiap token punya `jti` acak; logout menyimpan `jti` JWT yang dipakai ke tabel `revoked_jwts`, sehingga token itu langsung ditolak sampai kedaluwarsa. Session cookie aktif juga dihapus. Token lain milik pengguna tidak ikut dicabut. Client tetap perlu menghapus token lokal setelah logout.
 
 ## File terkait
 
@@ -84,11 +96,11 @@ Source juga memiliki unit test untuk penerbitan/verifikasi token serta penolakan
 ## Ilustrasi perjalanan JWT
 
 ```text
-username + waktu expiry
+user ID + role + waktu expiry
         ↓ sign dengan secret HS256
      access token
         ↓ Authorization: Bearer ...
-verify signature + expiry + auth_version
-        ├─ valid → username subject
+verify signature + expiry + user ID + role
+        ├─ valid → username dan role terbaru
         └─ gagal → 401
 ```

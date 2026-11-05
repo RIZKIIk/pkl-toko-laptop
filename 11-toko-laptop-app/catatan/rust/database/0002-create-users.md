@@ -51,5 +51,5 @@ Migration ini sudah mungkin tercatat pada database yang telah dijalankan. Jangan
                          ↓ migration 0003
       users(id, username, password, created_at)
                          ↓ migration 0005 + startup
-      users(id, username, password_hash, auth_version, created_at)
+      users(id, username, password_hash, role, created_at)
 ```

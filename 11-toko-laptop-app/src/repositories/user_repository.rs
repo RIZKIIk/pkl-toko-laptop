@@ -70,21 +70,39 @@ pub async fn finalize_password_hash_migration(pool: &PgPool) -> Result<(), sqlx:
     Ok(())
 }
 
-/// Mengambil versi autentikasi dan role aktif untuk username.
-pub async fn find_auth_state(
+/// Mengambil role aktif untuk username session.
+pub async fn find_user_by_username(
+    pool: &PgPool,
+    username: &str,
+) -> Result<Option<UserRole>, sqlx::Error> {
+    let user: Option<String> =
+        sqlx::query_scalar("SELECT role FROM public.users WHERE username = $1")
+            .bind(username)
+            .fetch_optional(pool)
+            .await?;
+
+    user.map(|role| {
+        role.parse::<UserRole>().map_err(|error| {
+            sqlx::Error::Decode(std::io::Error::new(std::io::ErrorKind::InvalidData, error).into())
+        })
+    })
+    .transpose()
+}
+
+/// Mengambil ID dan role untuk membuat kredensial login.
+pub async fn find_login_identity(
     pool: &PgPool,
     username: &str,
 ) -> Result<Option<(i64, UserRole)>, sqlx::Error> {
-    let user = sqlx::query_as::<_, (i64, String)>(
-        "SELECT auth_version, role FROM public.users WHERE username = $1",
-    )
-    .bind(username)
-    .fetch_optional(pool)
-    .await?;
+    let user =
+        sqlx::query_as::<_, (i64, String)>("SELECT id, role FROM public.users WHERE username = $1")
+            .bind(username)
+            .fetch_optional(pool)
+            .await?;
 
-    user.map(|(auth_version, role)| {
+    user.map(|(user_id, role)| {
         role.parse::<UserRole>()
-            .map(|role| (auth_version, role))
+            .map(|role| (user_id, role))
             .map_err(|error| {
                 sqlx::Error::Decode(
                     std::io::Error::new(std::io::ErrorKind::InvalidData, error).into(),
@@ -94,7 +112,31 @@ pub async fn find_auth_state(
     .transpose()
 }
 
-/// Mengubah role dan mencabut kredensial lama hanya jika role-nya berubah.
+/// Mengambil username dan role aktif berdasarkan ID pengguna.
+pub async fn find_user_by_id(
+    pool: &PgPool,
+    user_id: i64,
+) -> Result<Option<(String, UserRole)>, sqlx::Error> {
+    let user = sqlx::query_as::<_, (String, String)>(
+        "SELECT username, role FROM public.users WHERE id = $1",
+    )
+    .bind(user_id)
+    .fetch_optional(pool)
+    .await?;
+
+    user.map(|(username, role)| {
+        role.parse::<UserRole>()
+            .map(|role| (username, role))
+            .map_err(|error| {
+                sqlx::Error::Decode(
+                    std::io::Error::new(std::io::ErrorKind::InvalidData, error).into(),
+                )
+            })
+    })
+    .transpose()
+}
+
+/// Mengubah role; middleware menolak JWT yang membawa role berbeda.
 pub async fn set_user_role(
     pool: &PgPool,
     username: &str,
@@ -102,8 +144,7 @@ pub async fn set_user_role(
 ) -> Result<bool, sqlx::Error> {
     let updated_username: Option<String> = sqlx::query_scalar(
         "UPDATE public.users \
-         SET role = $2, \
-             auth_version = auth_version + CASE WHEN role <> $2 THEN 1 ELSE 0 END \
+         SET role = $2 \
          WHERE username = $1 \
          RETURNING username",
     )
@@ -113,20 +154,6 @@ pub async fn set_user_role(
     .await?;
 
     Ok(updated_username.is_some())
-}
-
-/// Mencabut semua session dan JWT dengan menaikkan versi autentikasi user.
-pub async fn invalidate_user_sessions(
-    pool: &PgPool,
-    username: &str,
-) -> Result<Option<i64>, sqlx::Error> {
-    sqlx::query_scalar(
-        "UPDATE public.users SET auth_version = auth_version + 1 \
-         WHERE username = $1 RETURNING auth_version",
-    )
-    .bind(username)
-    .fetch_optional(pool)
-    .await
 }
 
 /// Memasukkan atau menyinkronkan akun latihan dengan nilai environment.
@@ -139,8 +166,7 @@ pub async fn upsert_user(
     sqlx::query(
         "INSERT INTO public.users (username, password_hash, role) VALUES ($1, $2, $3) \
          ON CONFLICT (username) DO UPDATE \
-         SET password_hash = EXCLUDED.password_hash, role = EXCLUDED.role, \
-             auth_version = users.auth_version + 1",
+         SET password_hash = EXCLUDED.password_hash, role = EXCLUDED.role",
     )
     .bind(username)
     .bind(password_hash)

@@ -59,7 +59,7 @@ Login melalui Postman atau `curl` untuk memperoleh session cookie dan JWT. Opera
 - Salin perintah terminal dari [panduan curl](catatan/curl.md).
 - Jalankan skenario terurut dari [panduan Postman](catatan/postman.md) memakai collection dan environment di folder `postman/`.
 
-Login memberi JWT yang berlaku satu jam. Logout menaikkan versi autentikasi pengguna sehingga semua JWT dan session lama langsung ditolak; client tetap harus menghapus token lokal setelah selesai.
+Login memberi JWT yang berlaku satu jam. Logout mencabut JWT yang dipakai pada request itu dan menghapus session aktif. Token lain milik pengguna tidak ikut dicabut; client tetap perlu menghapus token lokal setelah selesai.
 
 Password akun disimpan sebagai hash Argon2id dengan salt acak, bukan sebagai teks asli. Setelah update pertama kali, migration dan proses startup meng-upgrade password lama otomatis; akun yang sudah terdaftar tetap bisa login dengan password yang sama.
 

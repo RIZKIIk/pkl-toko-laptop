@@ -64,9 +64,9 @@ POST /api/auth/login + username/password
   -> password cocok: buat session baru dan JWT HS256 (berlaku satu jam)
   -> SessionManagerLayer mengirim cookie session ke client
   -> client mengirim cookie session atau Authorization: Bearer <JWT>
-  -> middleware require_auth memverifikasi JWT/session dan auth_version di database
-  -> logout menaikkan auth_version dan menghapus session aktif
-  -> semua JWT dan session lama ditolak; pengguna perlu login ulang
+  -> middleware require_auth memverifikasi JWT/session dan role pengguna di database
+  -> logout mencabut jti JWT yang dipakai dan menghapus session aktif
+  -> JWT itu dan session aktif ditolak
 ```
 
 Password di database berupa hash Argon2id dengan salt unik. Server-side session berarti browser atau `curl` membawa cookie sebagai penunjuk session; username disimpan di session store, bukan dipercayakan dari body request pada setiap endpoint.

@@ -13,48 +13,37 @@ use super::{http::error_response, jwt::JwtService, role::UserRole};
 
 /// Nama key yang menyimpan username di dalam session server-side.
 pub const SESSION_USERNAME_KEY: &str = "username";
-pub const SESSION_AUTH_VERSION_KEY: &str = "auth_version";
 
 #[derive(Clone, Debug)]
 pub struct AuthIdentity {
     pub username: String,
-    pub auth_version: i64,
     pub role: UserRole,
+    pub token_to_revoke: Option<(String, u64)>,
 }
 
 #[derive(Clone, Debug)]
 pub struct SessionIdentity {
     pub username: String,
-    pub auth_version: i64,
 }
 
 /// Ganti ID session setelah login lalu simpan identitas pengguna.
 pub async fn start_session(
     session: &Session,
     username: &str,
-    auth_version: i64,
 ) -> Result<(), tower_sessions::session::Error> {
     // Mengganti ID mencegah session pra-login dipakai ulang setelah autentikasi.
     session.cycle_id().await?;
-    session.insert(SESSION_USERNAME_KEY, username).await?;
-    session.insert(SESSION_AUTH_VERSION_KEY, auth_version).await
+    session.insert(SESSION_USERNAME_KEY, username).await
 }
 
-/// Membaca identitas dan versi autentikasi yang disimpan dalam session.
+/// Membaca username yang disimpan dalam session.
 pub async fn session_identity(
     session: &Session,
 ) -> Result<Option<SessionIdentity>, tower_sessions::session::Error> {
     let Some(username) = session.get(SESSION_USERNAME_KEY).await? else {
         return Ok(None);
     };
-    let Some(auth_version) = session.get(SESSION_AUTH_VERSION_KEY).await? else {
-        return Ok(None);
-    };
-
-    Ok(Some(SessionIdentity {
-        username,
-        auth_version,
-    }))
+    Ok(Some(SessionIdentity { username }))
 }
 
 /// Menghapus session di store dan membersihkan data session lokal.
@@ -71,15 +60,28 @@ pub async fn require_auth(
     next: Next,
 ) -> Response {
     let identity = if let Some(claims) = super::jwt::claims_from_headers(request.headers(), &jwt) {
-        match crate::repositories::user_repository::find_auth_state(&pool, &claims.sub).await {
-            Ok(Some((auth_version, role))) if auth_version == claims.ver => Some(AuthIdentity {
-                username: claims.sub,
-                auth_version,
-                role,
-            }),
-            Ok(_) => None,
+        match crate::repositories::jwt_repository::is_revoked(&pool, &claims.jti).await {
+            Ok(true) => None,
+            Ok(false) => {
+                match crate::repositories::user_repository::find_user_by_id(&pool, claims.sub).await
+                {
+                    Ok(Some((username, role))) if role == claims.role => Some(AuthIdentity {
+                        username,
+                        role,
+                        token_to_revoke: Some((claims.jti, claims.exp)),
+                    }),
+                    Ok(_) => None,
+                    Err(error) => {
+                        eprintln!("Gagal memeriksa identitas JWT: {error}");
+                        return error_response(
+                            StatusCode::INTERNAL_SERVER_ERROR,
+                            "Terjadi kesalahan saat memeriksa autentikasi",
+                        );
+                    }
+                }
+            }
             Err(error) => {
-                eprintln!("Gagal memeriksa versi autentikasi JWT: {error}");
+                eprintln!("Gagal memeriksa pencabutan JWT: {error}");
                 return error_response(
                     StatusCode::INTERNAL_SERVER_ERROR,
                     "Terjadi kesalahan saat memeriksa autentikasi",
@@ -94,22 +96,20 @@ pub async fn require_auth(
         Some(identity) => identity,
         None => match session_identity(&session).await {
             Ok(Some(identity)) => {
-                match crate::repositories::user_repository::find_auth_state(
+                match crate::repositories::user_repository::find_user_by_username(
                     &pool,
                     &identity.username,
                 )
                 .await
                 {
-                    Ok(Some((auth_version, role))) if auth_version == identity.auth_version => {
-                        AuthIdentity {
-                            username: identity.username,
-                            auth_version,
-                            role,
-                        }
-                    }
+                    Ok(Some(role)) => AuthIdentity {
+                        username: identity.username,
+                        role,
+                        token_to_revoke: None,
+                    },
                     Ok(_) => return error_response(StatusCode::UNAUTHORIZED, "Login diperlukan"),
                     Err(error) => {
-                        eprintln!("Gagal memeriksa versi autentikasi session: {error}");
+                        eprintln!("Gagal memeriksa identitas session: {error}");
                         return error_response(
                             StatusCode::INTERNAL_SERVER_ERROR,
                             "Terjadi kesalahan saat memeriksa autentikasi",
@@ -152,14 +152,14 @@ mod tests {
         let store = Arc::new(MemoryStore::default());
         let session = Session::new(None, store, None);
 
-        start_session(&session, "admin", 3).await.unwrap();
+        start_session(&session, "admin").await.unwrap();
         session.save().await.unwrap();
         assert_eq!(
             session_identity(&session)
                 .await
                 .unwrap()
-                .map(|identity| (identity.username, identity.auth_version)),
-            Some(("admin".to_owned(), 3))
+                .map(|identity| identity.username),
+            Some("admin".to_owned())
         );
 
         clear_session(&session).await.unwrap();
