@@ -2,9 +2,6 @@
 
 REST API inventaris laptop yang dibuat dengan Rust, Axum, SQLx, dan PostgreSQL. Proyek ini cocok untuk belajar alur request API dari route sampai query database.
 
-> [!WARNING]
-> Proyek ini untuk latihan lokal. Password di-hash dengan Argon2id, tetapi session masih berada di memori. Jangan gunakan akun nyata atau jalankan sebagai layanan produksi.
-
 ## Mulai cepat
 
 ### Yang diperlukan
