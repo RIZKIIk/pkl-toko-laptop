@@ -232,10 +232,22 @@ Jika ID tidak ditemukan, response `404 Not Found`.
 
 ### 10. Lihat session aktif — `GET /api/auth/session`
 
-Wajib login. GET tidak memerlukan `-X`.
+Wajib login. Endpoint ini mengembalikan username dan role akun yang terautentikasi. GET tidak memerlukan `-X`.
+
+Dengan cookie session:
 
 ```bash
 curl -i -b cookies.txt "http://127.0.0.1:3001/api/auth/session"
+```
+
+Dengan JWT bearer, isi `TOKEN` dengan nilai `data.access_token` dari response login:
+
+```bash
+TOKEN='tempel_jwt_di_sini'
+
+curl -i \
+  -H "Authorization: Bearer $TOKEN" \
+  "http://127.0.0.1:3001/api/auth/session"
 ```
 
 Contoh response `200 OK`:
@@ -243,11 +255,14 @@ Contoh response `200 OK`:
 ```json
 {
   "status": "success",
-  "data": {"username": "admin"}
+  "data": {
+    "username": "admin",
+    "role": "admin"
+  }
 }
 ```
 
-Tanpa cookie session atau bearer JWT yang valid, server mengembalikan `401 Unauthorized`.
+JWT digunakan untuk autentikasi. Server mengambil role terbaru pengguna dari database, jadi role tidak perlu dibaca dari token. Tanpa cookie session atau bearer JWT yang valid, server mengembalikan `401 Unauthorized`.
 
 ### 11. Logout — `POST /api/auth/logout`
 
