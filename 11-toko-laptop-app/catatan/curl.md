@@ -21,7 +21,7 @@ Contoh login di bawah memakai placeholder. Ganti nilainya dengan `ADMIN_USERNAME
 curl -i \
   -c cookies.txt \
   -H 'Content-Type: application/json' \
-  -d '{"username":"admin","password":"GANTI_DENGAN_ADMIN_PASSWORD"}' \
+  -d '{"username":"admin","password":"Rizki123!"}' \
   "http://127.0.0.1:3001/api/auth/login"
 ```
 

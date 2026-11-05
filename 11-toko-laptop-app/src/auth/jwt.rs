@@ -87,7 +87,7 @@ pub fn bearer_token(headers: &HeaderMap) -> Option<&str> {
     }
 }
 
-/// Memvalidasi bearer JWT dari header dan mengambil username di dalamnya.
+/// Memvalidasi bearer JWT dari header dan mengambil claims pengguna.
 pub fn claims_from_headers(headers: &HeaderMap, jwt: &JwtService) -> Option<Claims> {
     jwt.verify_token(bearer_token(headers)?).ok()
 }
