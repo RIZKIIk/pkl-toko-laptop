@@ -1,4 +1,4 @@
-# Gambaran Proyek
+# Gambaran Projek
 
 > **Navigasi:** [Indeks catatan](README.md) · [README proyek](../README.md) · [Endpoint API](../endpoin.md)
 
