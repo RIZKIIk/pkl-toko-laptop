@@ -23,9 +23,9 @@ berikutnya menambah fitur baru. Tahap 11 adalah aplikasi lengkap final.
 | 08 | [`08-json-array/`](08-json-array/) | Mempertahankan modul tahap 07; menambah format daftar response JSON array. |
 | 09 | [`09-login-logout/`](09-login-logout/) | Mempertahankan fitur API sebelumnya; menambah login, logout, dan session cookie. |
 | 10 | [`10-session-cookie-middleware/`](10-session-cookie-middleware/) | Mempertahankan source modular tahap 09; menambah middleware pelindung endpoint. |
-| 11 | [`11-toko-laptop-app-curl/`](11-toko-laptop-app/) | Aplikasi REST API lengkap: CRUD, autentikasi, validasi, presenter, repository, migration, dokumentasi belajar, dan koleksi Postman. |
+| 11 | [`11-toko-laptop-app/`](11-toko-laptop-app/) | Aplikasi REST API lengkap: CRUD, autentikasi, validasi, presenter, repository, migration, dokumentasi belajar, dan koleksi Postman. |
 
 ## Dokumentasi tambahan
 
 Dokumentasi arsitektur, endpoint, contoh `curl`, dan Postman untuk aplikasi
-lengkap tersedia di [`11-toko-laptop-app-curl/`](11-toko-laptop-app-curl/README.md).
+lengkap tersedia di [`11-toko-laptop-app/`](11-toko-laptop-app/README.md).
