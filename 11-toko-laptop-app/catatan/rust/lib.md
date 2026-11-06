@@ -55,6 +55,18 @@ Tambahan `pub` membuka modul untuk pemakai di luar modul induk, termasuk binary 
 
 Pemisahan library dan binary membuat startup tetap kecil, sementara modul aplikasi dapat diuji terpisah. Modul validation/presenter dan unit test-nya dikompilasi melalui library ini.
 
+## Sintaks dan konsep Rust
+
+- File ini hanya berisi deklarasi `pub mod`; ia tidak memiliki fungsi yang perlu dijalankan satu per satu. Deklarasi modul bekerja saat kompilasi: ia menamai dan menghubungkan source, bukan mengeksekusi isinya.
+- `//!` adalah dokumentasi untuk crate/modul yang ditulis di awal file. Berbeda dari `///`, yang mendokumentasikan item setelahnya, dan `//`, komentar biasa yang tidak menjadi dokumentasi API.
+- `pub` mengatur visibilitas nama modul. Isi modul tetap punya visibilitas masing-masing: `pub mod routes;` tidak otomatis membuat setiap fungsi internal menjadi publik.
+- `crate::` berarti mulai dari akar library; `super::` berarti modul induk; path `toko_laptop_app::...` dipakai binary sebagai nama library package.
+- Tipe crate dapat memiliki atribut `#[derive(...)]` untuk menghasilkan implementasi trait seperti `Debug`, `Clone`, atau `Serialize`; atribut tersebut ditempatkan pada tipe, bukan pada deklarasi modul di file ini.
+
+## Struktur file module
+
+Deklarasi `pub mod auth;` menghubungkan modul bernama `auth` dengan `auth/mod.rs` pada struktur source ini. `pub mod config;` menghubungkan ke `config.rs`. Nama modul menjadi bagian path yang digunakan pemanggil—misalnya `toko_laptop_app::config::AppConfig`—dan compiler memeriksa visibilitas tiap bagian path.
+
 ## Hubungan dengan file lain
 
 [Main](main.md) adalah binary yang memakai modul ini. Halaman lain yang terkait dapat dibuka dari tabel di atas. Urutan request dari routes sampai response dijelaskan di [alur aplikasi](../02-alur-kerja-aplikasi.md).

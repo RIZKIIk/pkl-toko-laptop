@@ -41,11 +41,28 @@ handlers/
 ## Alur request umum
 
 1. Axum memilih handler berdasarkan route dan method di [routes.rs](routes.md).
-2. Extractor `State`, `Path`, dan `Json` mengambil pool, ID, atau payload.
-3. Handler meminta [validation](validation.md) memeriksa input yang relevan.
-4. Handler memanggil [repository](repositories.md) untuk operasi PostgreSQL.
-5. [Presenter](presenters.md) mengubah model hasil query ke format response API.
-6. Error aplikasi diteruskan sebagai [`ApiError`](error.md), lalu Axum mengubahnya ke status dan JSON.
+2. Axum menjalankan extractor yang tertulis di parameter fungsi, misalnya `State<PgPool>` untuk pool, `Path<i64>` untuk ID URL, dan `Json<T>` untuk body JSON bertipe `T`.
+3. Handler memanggil [validation](validation.md) bila ada input yang perlu diperiksa. Bila validator mengembalikan `Err`, operator `?` mengakhiri handler dan meneruskan error.
+4. Handler memanggil [repository](repositories.md) untuk operasi PostgreSQL. Pemanggilan asynchronous diikuti `.await`; `?` meneruskan kegagalan query.
+5. Untuk data laptop, [Presenter](presenters.md) mengubah model hasil query ke format response API.
+6. Nilai sukses dibungkus menjadi response Axum. Pada handler CRUD, error aplikasi diteruskan sebagai [`ApiError`](error.md), lalu diubah menjadi status dan JSON. Handler auth biasanya memilih status dan body sendiri, lalu mengembalikan `Response`.
+
+Jika body tidak dapat di-deserialize ke tipe parameter `Json<T>`—misalnya teks dikirim untuk field harga bertipe integer—fungsi handler belum berjalan. Axum menangani kegagalan extractor itu.
+
+## Membaca signature handler
+
+Contoh signature create laptop:
+
+```rust
+pub async fn create_laptop(
+    State(pool): State<PgPool>,
+    Json(payload): Json<CreateLaptopPayload>,
+) -> Result<(StatusCode, Json<Value>), ApiError>
+```
+
+`pub` membuka fungsi bagi router; `async` memungkinkan fungsi menunggu operasi I/O. Setiap parameter adalah extractor Axum, bukan argumen yang dikirim langsung oleh kode pemanggil. Pola `State(pool)` dan `Json(payload)` membongkar wrapper extractor sekaligus memberi nama pada nilai yang diambil. `->` memperkenalkan tipe hasil. `Result<T, E>` menyatakan fungsi dapat sukses dengan `T` atau gagal dengan `E`; di sini sukses membawa status HTTP dan JSON, sedangkan kegagalan membawa `ApiError`.
+
+Sebaliknya, sebagian handler auth mengembalikan `Response` langsung. Bentuk ini berguna ketika fungsi memilih status dan body yang berbeda melalui beberapa cabang `match` atau `return`.
 
 ## Sintaks yang sering muncul di handler
 
@@ -69,10 +86,12 @@ handlers/
 | Endpoint | Sukses | Bentuk body |
 | --- | --- | --- |
 | `GET /health` | 200 | Object status layanan. |
-| `POST /api/auth/register` | 201 | Username akun yang dibuat. |
-| `POST /api/auth/login` | 200 | Username, JWT, tipe token, dan masa berlaku; session cookie dikirim melalui header. |
-| `GET /api/auth/session` | 200 | Username dari JWT atau session aktif. |
-| `POST /api/auth/logout` | 200 | Pesan sukses; JWT yang digunakan dan session aktif dicabut. |
+| `POST /api/auth/register` | 201 | Username dan role buyer akun yang dibuat. |
+| `POST /api/auth/login` | 200 | Username, role, access token, dan masa berlaku; session cookie juga dikelola middleware session. |
+| `GET /api/auth/session` | 200 | Username dan role dari identitas JWT atau session yang diverifikasi. |
+| `POST /api/auth/logout` | 200 | Pesan sukses; token lama pengguna dicabut dan session aktif dihapus. |
+| `POST /api/admin/users` | 201 | Akun dengan role buyer atau restocker. |
+| `PATCH /api/admin/users/{username}/role` | 200 | Role pengguna yang berhasil diperbarui. |
 | `GET /api/laptops` | 200 | `data` berupa daftar array laptop. |
 | `GET /api/laptops/{id}` | 200 | `data` berupa satu array laptop. |
 | `POST /api/laptops` | 201 | `data` berupa object laptop serta pesan. |

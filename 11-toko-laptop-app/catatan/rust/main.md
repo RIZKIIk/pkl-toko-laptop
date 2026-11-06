@@ -193,3 +193,11 @@ server berakhir tanpa error.
                                       ↓
                             router + listener → Axum
 ```
+
+## Ownership dan alur error pada `main`
+
+`config` dimiliki oleh `main` selama startup. Pemanggilan `connect_database(&self)` hanya meminjamnya sehingga konfigurasi masih bisa dipakai untuk membuat router dan mencetak alamat. `pool` dipakai sebagai referensi `&pool` saat migration serta seed berjalan, lalu dipindahkan ke `create_router(pool, ...)`: sesudah itu pemilik pool adalah router. `config.jwt_secret.clone()` membuat salinan secret yang dimiliki untuk router karena konfigurasi masih diperlukan untuk membaca host/port.
+
+Hasil operasi startup dibungkus `Result`. `?` hanya boleh dipakai di fungsi yang tipe hasilnya dapat menerima error itu; di sini semua error dapat dikonversi ke `Box<dyn Error + Send + Sync>`. Tanpa `?`, setiap panggilan perlu ditangani manual dengan `match`. `.await` berbeda: ia menunggu sebuah `Future` asynchronous, sedangkan `?` menangani hasil `Ok`/`Err` setelah future selesai.
+
+`#[tokio::main]` adalah attribute macro yang menyiapkan runtime dan mengubah fungsi `async main` menjadi entry point yang dapat dijalankan sistem operasi. `println!` juga macro—tanda `!` membedakannya dari pemanggilan fungsi biasa. Macro `sqlx::migrate!` menyertakan migration pada build.

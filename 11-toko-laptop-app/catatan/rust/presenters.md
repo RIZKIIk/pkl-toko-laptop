@@ -11,6 +11,8 @@
 
 Presenter memisahkan bentuk model internal dari bentuk JSON yang diterima client. Di lapisan ini harga angka `i64` diformat sebagai teks Rupiah.
 
+`serde_json::Value` adalah representasi umum JSON: bisa berupa array, object, string, angka, boolean, atau `null`. Presenter tidak mengirim HTTP; handler membungkus `Value` ke `Json<Value>` dan memilih status response.
+
 ## Struktur
 
 ```text
@@ -35,7 +37,7 @@ presenters/
 | `PATCH /api/laptops/{id}` | `laptop_to_array`. | Array laptop terbaru. |
 | `POST /api/laptops` | `laptop_to_object`. | Object dengan nama field. |
 
-Array laptop selalu berurutan `[id, nama, merek, harga, stok]`. Nilai `harga` pada response berupa string Rupiah, walaupun disimpan dan diterima dari request sebagai angka.
+Array laptop selalu berurutan `[id, nama, merek, harga, stok]`. Nilai `harga` pada response berupa string Rupiah, walaupun model, database, dan request create menggunakan angka. Karena array dibaca berdasarkan posisi, client harus memakai urutan yang sama.
 
 Perbedaan bentuk response tersebut adalah kontrak API yang sudah ada, bukan pilihan yang dibuat oleh presenter secara otomatis.
 

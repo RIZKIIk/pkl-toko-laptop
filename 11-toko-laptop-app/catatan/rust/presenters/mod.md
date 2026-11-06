@@ -24,7 +24,7 @@ mod rupiah;
 | `pub mod laptop_response;` | `laptop_response.rs` | Bisa diakses handler melalui `presenters::laptop_response`. | Mengubah `Laptop` menjadi array atau object JSON. |
 | `mod rupiah;` | `rupiah.rs` | Detail internal modul presenter. | Mengubah integer harga menjadi teks Rupiah. |
 
-Kata `mod` mendaftarkan file sebagai modul. Kata `pub` pada `laptop_response` membuka jalur modul untuk handler. `rupiah` tetap privat; fungsi formatter-nya hanya diekspos ke modul induk dan turunannya dengan `pub(super)`.
+Kata `mod` mendaftarkan file sebagai modul. Kata `pub` pada `laptop_response` membuka jalur modul untuk handler. `rupiah` tetap privat; meskipun fungsi `formatkan_rupiah` sendiri bertanda `pub`, modul induknya tidak diekspor, sehingga pemanggil dari luar `presenters` tidak dapat mengaksesnya lewat jalur crate.
 
 ## Hubungan antar-presenter
 
@@ -37,6 +37,8 @@ rupiah::formatkan_rupiah
        ↓
 serde_json::Value untuk handler
 ```
+
+`pub mod` dan `pub fn` mengatur visibilitas, sedangkan `mod rupiah` membatasi jalur modul. `use` di file lain dapat mempersingkat jalur nama, tetapi tidak mengubah visibilitasnya. Kedua fungsi presenter menerima `&Laptop` (pinjaman, bukan mengambil alih entity) dan mengembalikan `serde_json::Value`; macro `json!` menyusun array/object JSON dari field model.
 
 GET daftar, GET detail, dan PATCH memakai array berurutan `[id, nama, merek, harga, stok]`. POST memakai object dengan nama field. Perbedaan tersebut adalah kontrak API saat ini; handler menentukan kapan setiap presenter dipakai.
 

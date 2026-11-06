@@ -28,10 +28,12 @@ pub mod user_repository;
 
 Dalam sintaks `pub mod nama;`:
 
-- `pub` mengatur visibilitas, sehingga modul dapat diakses melalui jalur publik.
+- `pub` mengatur visibilitas, sehingga modul dapat diakses dari bagian crate lain lewat jalur yang tersedia.
 - `mod` mendeklarasikan modul.
 - `nama` adalah nama modul dan umumnya sama dengan nama file tanpa `.rs`.
-- `;` menandakan isi modul berada di file terpisah.
+- `;` menandakan isi modul berada di file terpisah. Isi `laptop_repository.rs` dan `user_repository.rs` tidak ditulis ulang di file ini.
+
+Contohnya, `use crate::repositories::laptop_repository;` mengimpor modul agar kode dapat memanggil `laptop_repository::list_laptops(...)`. Deklarasi modul hanya mengatur nama dan akses kode; deklarasi itu tidak membuat koneksi atau menjalankan query. Fungsi repository tetap harus dipanggil dan hasilnya ditunggu dengan `.await`.
 
 | Modul | Tabel PostgreSQL | Kegunaan utama |
 | --- | --- | --- |

@@ -32,7 +32,7 @@ Rust mencari `auth.rs` dan `system.rs` di folder `handlers/`, serta `laptops/mod
 
 | Ekspor | Sumber | Dipakai untuk |
 | --- | --- | --- |
-| `current_user`, `login`, `logout`, `register` | `auth.rs` | Endpoint autentikasi. |
+| `create_user`, `current_user`, `login`, `logout`, `register`, `update_user_role` | `auth.rs` | Login, registrasi, pemeriksaan identitas, logout, dan pengelolaan akun. |
 | `create_laptop`, `delete_laptop`, `get_laptop`, `list_laptops`, `update_laptop` | `laptops/` | Endpoint CRUD laptop. |
 | `health` | `system.rs` | `GET /health`. |
 
@@ -40,4 +40,4 @@ Detail fungsi ada pada [auth](auth.md), [system](system.md), dan [operasi laptop
 
 ## Posisi dalam alur
 
-[routes.rs](../routes.md) menghubungkan URL dan method ke fungsi yang diekspor dari modul-modul ini. Setiap handler meneruskan validasi, query, dan pemformatan response ke lapisannya masing-masing.
+[routes.rs](../routes.md) menghubungkan URL dan method ke fungsi yang diekspor dari modul-modul ini. `pub mod` membuka submodul, sementara `pub use` hanya menyediakan jalur nama yang lebih pendek—fungsi tetap implementasi yang sama. Endpoint di `auth.rs` memerlukan autentikasi/otorisasi sesuai role melalui middleware, bukan karena re-export modul. Setiap handler meneruskan validasi, query, dan pemformatan response ke lapisannya masing-masing.

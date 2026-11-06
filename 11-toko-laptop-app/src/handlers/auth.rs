@@ -81,7 +81,7 @@ pub async fn login(
     }
 
     // Satu login menghasilkan JWT dan session cookie untuk dua cara autentikasi.
-    let (user_id, role) =
+    let (user_id, role, token_version) =
         match crate::repositories::user_repository::find_login_identity(&pool, username).await {
             Ok(Some(login_identity)) => login_identity,
             Ok(None) => {
@@ -99,7 +99,7 @@ pub async fn login(
             }
         };
 
-    let token = match jwt.issue_token(user_id, role) {
+    let token = match jwt.issue_token(user_id, role, token_version) {
         Ok(token) => token,
         Err(error) => {
             eprintln!("Gagal membuat JWT saat login: {error}");
@@ -251,22 +251,20 @@ pub async fn current_user(Extension(identity): Extension<session::AuthIdentity>)
     }))
 }
 
-/// Mencabut JWT yang dipakai request ini dan menghapus session aktif.
+/// Mencabut semua JWT pengguna dan menghapus session aktif.
 pub async fn logout(
     State(pool): State<PgPool>,
     Extension(identity): Extension<session::AuthIdentity>,
     session: Session,
 ) -> Response {
-    if let Some((jti, expires_at)) = &identity.token_to_revoke {
-        if let Err(error) =
-            crate::repositories::jwt_repository::revoke(&pool, jti, *expires_at).await
-        {
-            eprintln!("Gagal mencabut JWT saat logout: {error}");
-            return http::error_response(
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "Terjadi kesalahan saat logout",
-            );
-        }
+    if let Err(error) =
+        crate::repositories::user_repository::increment_token_version(&pool, identity.user_id).await
+    {
+        eprintln!("Gagal mencabut JWT saat logout: {error}");
+        return http::error_response(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Terjadi kesalahan saat logout",
+        );
     }
 
     if let Err(error) = auth::session::clear_session(&session).await {

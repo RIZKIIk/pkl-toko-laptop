@@ -16,9 +16,9 @@ pub const SESSION_USERNAME_KEY: &str = "username";
 
 #[derive(Clone, Debug)]
 pub struct AuthIdentity {
+    pub user_id: i64,
     pub username: String,
     pub role: UserRole,
-    pub token_to_revoke: Option<(String, u64)>,
 }
 
 #[derive(Clone, Debug)]
@@ -60,28 +60,19 @@ pub async fn require_auth(
     next: Next,
 ) -> Response {
     let identity = if let Some(claims) = super::jwt::claims_from_headers(request.headers(), &jwt) {
-        match crate::repositories::jwt_repository::is_revoked(&pool, &claims.jti).await {
-            Ok(true) => None,
-            Ok(false) => {
-                match crate::repositories::user_repository::find_user_by_id(&pool, claims.sub).await
-                {
-                    Ok(Some((username, role))) if role == claims.role => Some(AuthIdentity {
-                        username,
-                        role,
-                        token_to_revoke: Some((claims.jti, claims.exp)),
-                    }),
-                    Ok(_) => None,
-                    Err(error) => {
-                        eprintln!("Gagal memeriksa identitas JWT: {error}");
-                        return error_response(
-                            StatusCode::INTERNAL_SERVER_ERROR,
-                            "Terjadi kesalahan saat memeriksa autentikasi",
-                        );
-                    }
-                }
+        match crate::repositories::user_repository::find_user_by_id(&pool, claims.sub).await {
+            Ok(Some((username, role, token_version)))
+                if role == claims.role && token_version == claims.token_version =>
+            {
+                Some(AuthIdentity {
+                    user_id: claims.sub,
+                    username,
+                    role,
+                })
             }
+            Ok(_) => None,
             Err(error) => {
-                eprintln!("Gagal memeriksa pencabutan JWT: {error}");
+                eprintln!("Gagal memeriksa identitas JWT: {error}");
                 return error_response(
                     StatusCode::INTERNAL_SERVER_ERROR,
                     "Terjadi kesalahan saat memeriksa autentikasi",
@@ -102,10 +93,10 @@ pub async fn require_auth(
                 )
                 .await
                 {
-                    Ok(Some(role)) => AuthIdentity {
+                    Ok(Some((user_id, role))) => AuthIdentity {
+                        user_id,
                         username: identity.username,
                         role,
-                        token_to_revoke: None,
                     },
                     Ok(_) => return error_response(StatusCode::UNAUTHORIZED, "Login diperlukan"),
                     Err(error) => {

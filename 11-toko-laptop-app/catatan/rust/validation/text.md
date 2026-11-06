@@ -46,7 +46,7 @@ pub(super) fn validate_text(
 
 ### Deklarasi fungsi
 
-- `pub(super)` membuat helper ini dapat dipakai dari modul induk `validation` dan modul turunannya, tetapi tidak dipublikasikan ke seluruh crate.
+- `pub` membuat fungsi terbuka menurut aturan visibility Rust. Namun, modul induknya dideklarasikan `mod text;` (privat) dan tidak di-re-export, sehingga pemanggil normal memakai validator payload, bukan jalur `validation::text` dari luar modul.
 - `fn validate_text` mendeklarasikan fungsi bernama `validate_text`.
 - `value: String` adalah teks yang dimiliki fungsi. `String` merupakan teks yang dapat dimiliki dan disimpan.
 - `field: &str` adalah nama field yang dipinjam, misalnya `"Nama laptop"`, agar pesan error dapat menyebut field yang tepat.
@@ -60,7 +60,7 @@ pub(super) fn validate_text(
 3. `let value = ...` mengikat hasil bersih ke nama `value` yang sama. Ini *shadowing*: nama lama digantikan nama baru dengan nilai yang sudah dibersihkan.
 4. `if value.is_empty()` memeriksa apakah hasil bersih kosong. Contohnya, input `"   "` menjadi kosong setelah trim.
 5. `return Err(...)` langsung menghentikan fungsi dengan error. `format!("{field} ...")` menyusun pesan dinamis dengan memasukkan nilai `field`.
-6. `value.chars().count()` menghitung karakter Unicode, bukan jumlah byte UTF-8. Karena itu huruf `é` dihitung sebagai satu karakter.
+6. `value.chars().count()` menghitung Unicode scalar value, bukan jumlah byte UTF-8. Karena itu huruf `é` dihitung sebagai satu karakter; beberapa emoji gabungan dapat dihitung lebih dari satu scalar value meskipun terlihat seperti satu simbol.
 7. `> max_length` memeriksa apakah teks melampaui batas. Jika iya, fungsi mengembalikan pesan error yang menyebut batas tersebut.
 8. Jika kedua pemeriksaan lolos, `Ok(value)` mengembalikan teks yang sudah dibersihkan.
 

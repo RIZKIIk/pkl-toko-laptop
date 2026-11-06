@@ -16,7 +16,7 @@ Halaman ini menghubungkan file-file backend. Penjelasan isi setiap fungsi ada di
 1. [main.rs](rust/main.md) mencoba memuat `.env` dengan `dotenvy::dotenv().ok()`.
 2. `AppConfig::from_env()` di [config.rs](rust/config.md) membaca host, port, kredensial PostgreSQL/admin, dan secret JWT.
 3. `connect_database().await` membuat `PgPool`. Bila langkah ini gagal, server belum mulai menerima request.
-4. SQLx menjalankan seluruh migration dan mencatat migration yang sudah diaplikasikan di `_sqlx_migrations`.
+4. SQLx menjalankan migration yang belum diterapkan dan mencatatnya di `_sqlx_migrations`. Migration lama menjadi riwayat ber-checksum; jangan mengedit atau menghapusnya, tetapi buat migration baru untuk perubahan selanjutnya. Lihat [catatan skema database](rust/database/initial-schema.md).
 5. `migrate_legacy_passwords()` meng-hash password lama dengan Argon2id dan menghapus nilai lama; `initialize_admin_user()` menyimpan hash password akun dari environment.
 6. `routes::create_router(...)` di [routes.rs](rust/routes.md) memasang endpoint, middleware session/JWT, dan pool sebagai state router.
 7. Tokio membuat `TcpListener` pada `APP_HOST:APP_PORT`.
@@ -30,7 +30,7 @@ Halaman ini menghubungkan file-file backend. Penjelasan isi setiap fungsi ada di
 
 ```text
 Postman / client
-        ↓ HTTP method + URL + body
+        ↓ method + URL + headers + body HTTP
 routes.rs memilih handler
         ↓
 middleware menerima session cookie atau JWT bearer untuk endpoint laptop dan endpoint session/logout
@@ -45,7 +45,7 @@ Json response atau ApiError
 client menerima status HTTP + JSON
 ```
 
-`State(pool)` mengambil pool dari router. `Path(id)` membaca `{id}` dari URL. `Json(payload)` mencoba membaca body JSON menjadi struct. Bila JSON atau tipe path tidak dapat dibaca Axum, handler tidak dipanggil karena request gagal pada tahap extractor.
+`State(pool)` mengambil pool yang dipasang router; `Path(id)` membaca `{id}` dari URL; `Json(payload)` meminta Serde mengubah body JSON menjadi struct dengan field dan tipe yang sesuai. Extractor `Json`/`Path` menolak body atau parameter yang bentuknya tidak cocok sebelum handler dipanggil. Header, cookie, dan body adalah bagian request yang berbeda; login memberi client JWT serta session cookie.
 
 ## Alur login session
 
@@ -65,22 +65,28 @@ POST /api/auth/login + username/password
   -> SessionManagerLayer mengirim cookie session ke client
   -> client mengirim cookie session atau Authorization: Bearer <JWT>
   -> middleware require_auth memverifikasi JWT/session dan role pengguna di database
-  -> logout mencabut jti JWT yang dipakai dan menghapus session aktif
-  -> JWT itu dan session aktif ditolak
+  -> logout menaikkan token_version pengguna dan menghapus session aktif
+  -> semua JWT lama pengguna ditolak; session yang dipakai untuk logout dihapus
 ```
 
 Password di database berupa hash Argon2id dengan salt unik. Server-side session berarti browser atau `curl` membawa cookie sebagai penunjuk session; username disimpan di session store, bukan dipercayakan dari body request pada setiap endpoint.
+
+JWT membawa `token_version` yang dibandingkan dengan nilai terkini di database. Logout menaikkan nilai database, sehingga JWT lama pengguna tidak lagi cocok; ini mencabut semua JWT pengguna, bukan hanya token request logout. Logout menghapus session yang dipakai pada request tersebut, bukan session lain. Baca [penjelasan token_version](token_ver.md) untuk contoh nilai sebelum dan sesudah logout.
 
 ## Jalur error
 
 | Keadaan | Asal | Bentuk hasil |
 | --- | --- | --- |
-| ID nol/negatif, teks kosong, angka negatif, PATCH kosong | `validation/` | `ApiError::BadRequest` -> 400 JSON error. |
+| Input laptop tidak valid (ID nol/negatif, teks kosong, angka negatif, PATCH kosong) | `validation/` | `ApiError::BadRequest` -> 400 JSON error. Validasi username/password auth juga menghasilkan 400, melalui response auth. |
 | ID valid tetapi laptop tidak ada | Repository memberi `None` atau `false`. | `ApiError::NotFound` -> 404 JSON error. |
 | Koneksi/query database gagal | SQLx | `ApiError::Database` -> 500 JSON error; detail dicetak di server. |
 | Kredensial login salah atau tidak ada session/JWT valid | `auth` handler/middleware | 401 JSON error. |
+| Username registrasi sudah dipakai | Auth handler menerima `false` dari insert. | 409 `Conflict`. |
+| Role tidak diizinkan untuk endpoint | Middleware role | 403 `Forbidden`. |
 | Penyimpanan atau pembacaan session gagal | `auth` handler/middleware | 500 JSON error; detail dicatat di server. |
 | JSON request/path tidak sesuai tipe | Extractor Axum | Axum menghentikan request sebelum handler. |
+
+Status HTTP terpisah dari body JSON: `2xx` menunjukkan sukses, `4xx` masalah request/akses/resource, dan `5xx` kegagalan server. Misalnya `201 Created` dipakai saat insert berhasil, sementara body response membawa data yang dibuat.
 
 ## Alur setiap endpoint
 

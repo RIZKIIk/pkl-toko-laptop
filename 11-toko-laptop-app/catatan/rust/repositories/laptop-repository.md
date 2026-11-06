@@ -29,6 +29,7 @@ Semua fungsi bersifat `async` karena database adalah I/O yang perlu ditunggu. `.
 - `sqlx::query_as::<_, Laptop>(...)` meminta SQLx memetakan baris hasil ke `Laptop`. `_` berarti compiler menyimpulkan tipe argumen generik yang pertama.
 - `.bind(value)` mengisi placeholder `$1`, `$2`, dan seterusnya. Nilai request dikirim sebagai parameter terpisah dari teks SQL.
 - `fetch_all` membaca semua baris; `fetch_one` meminta satu baris; `fetch_optional` menerima nol atau satu baris; `execute` menjalankan query tanpa mengambil model.
+- `Result<T, sqlx::Error>` membungkus hasil sukses (`Ok(T)`) atau error (`Err`); `Option<T>` di dalamnya membedakan hasil query kosong (`None`) dari kegagalan query. Karena itu `Ok(None)` tidak sama dengan `Err(...)`.
 
 ## 1. `list_laptops`
 
@@ -82,6 +83,8 @@ pub async fn create_laptop(
 
 `INSERT` menambahkan satu baris. Nilai `$1` sampai `$4` diisi sesuai urutan pemanggilan `.bind(...)`. Referensi `&payload.nama` dan `&payload.merek` meminjam teks; harga dan stok bertipe angka. `RETURNING` meminta PostgreSQL mengirim kolom baris yang baru dibuat. `fetch_one` menghasilkan `Laptop` yang siap dipakai presenter.
 
+`query_as::<_, Laptop>` menyatakan tipe setiap baris hasil adalah `Laptop`; `_` membiarkan SQLx/compiler menyimpulkan parameter generik lainnya. Tanda `&` pada `payload: &CreateLaptopPayload` berarti payload hanya dipinjam selama query, tidak dipindahkan dari pemanggil.
+
 ## 4. `update_laptop`
 
 ```rust
@@ -111,7 +114,7 @@ pub async fn update_laptop(
 ```
 
 - `UpdateLaptopPayload` berisi field opsional. `as_deref()` mengubah `Option<String>` yang dipinjam menjadi `Option<&str>` tanpa memindahkan teks.
-- Jika placeholder berisi SQL `NULL`, `COALESCE(nilai_baru, nilai_lama)` memilih nilai lama. Dengan begitu field yang tidak dikirim tidak berubah.
+- Ketika field JSON tidak dikirim, field payload menjadi `None`; binding `Option` tersebut dikirim sebagai SQL `NULL`. `COALESCE(nilai_baru, nilai_lama)` lalu memilih nilai lama. Dengan begitu field yang tidak dikirim tidak berubah.
 - `$5` adalah ID target dan diisi oleh `.bind(id)`.
 - `CURRENT_TIMESTAMP` memperbarui waktu perubahan saat query berjalan.
 - `RETURNING` meminta baris terbaru. `fetch_optional` menghasilkan `None` jika tidak ada ID tersebut.
@@ -133,7 +136,7 @@ pub async fn delete_laptop(pool: &PgPool, id: i64) -> Result<bool, sqlx::Error> 
 
 ## Keamanan query
 
-Parameter request selalu diberikan melalui `.bind(...)`, bukan digabung ke teks SQL. Handler juga melakukan validasi sebelum query. Constraint database menjadi perlindungan tambahan; lihat [migration laptops](../database/0001-create-laptops.md).
+Parameter request selalu diberikan melalui `.bind(...)`, bukan digabung ke teks SQL. Handler juga melakukan validasi sebelum query. Constraint database menjadi perlindungan tambahan; lihat [skema database](../database/initial-schema.md).
 
 ## Ringkasan hasil fungsi
 

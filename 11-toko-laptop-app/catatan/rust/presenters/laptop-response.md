@@ -21,13 +21,13 @@ use super::rupiah::formatkan_rupiah;
 
 - `crate::models::Laptop` mengambil model dari akar crate.
 - `Value` adalah tipe umum nilai JSON.
-- `json!` menyusun array atau object JSON.
+- `json!` adalah macro `serde_json` yang menyusun array atau object JSON; macro ini bukan fungsi HTTP dan tidak mengirim response.
 - `super::rupiah::formatkan_rupiah` mengambil formatter dari modul `presenters` induk.
 
 ## 1. `laptop_to_array`
 
 ```rust
-pub(crate) fn laptop_to_array(laptop: &Laptop) -> Value {
+pub fn laptop_to_array(laptop: &Laptop) -> Value {
     json!([
         laptop.id,
         laptop.nama,
@@ -38,7 +38,7 @@ pub(crate) fn laptop_to_array(laptop: &Laptop) -> Value {
 }
 ```
 
-- `pub(crate)` membuka fungsi ke kode lain dalam crate yang sama, tetapi bukan pemakai crate dari luar.
+- `pub` membuat fungsi terlihat lewat modul yang menampungnya. Di aplikasi ini fungsi dipakai handler melalui jalur `presenters::laptop_response`.
 - `laptop: &Laptop` meminjam model; presenter tidak mengambil alih kepemilikan atau mengubah field-nya.
 - `-> Value` menyatakan bahwa fungsi menghasilkan nilai JSON.
 - `json!([ ... ])` membuat array JSON. Urutan nilai menjadi kontrak response: `[id, nama, merek, harga, stok]`.
@@ -96,6 +96,8 @@ Harga menjadi string Rupiah, walaupun model dan database menyimpannya sebagai an
 ## 3. Unit test
 
 `#[cfg(test)]` menyertakan modul test hanya saat test dijalankan. `sample_laptop()` membuat data contoh yang dipakai dua test; `assert_eq!` membandingkan hasil presenter dengan JSON yang diharapkan. Test memeriksa urutan array dan key object, termasuk format harga.
+
+`json!` mengubah nilai Rust menjadi `Value` JSON yang dapat dibungkus Axum sebagai `Json<Value>`. Jenis data tetap penting: `id` dan `stok` dikirim sebagai angka, sedangkan `harga` dikirim sebagai string hasil formatter. `Value` sendiri tidak menentukan HTTP status; handler memilihnya.
 
 ## Ilustrasi pemilihan bentuk
 

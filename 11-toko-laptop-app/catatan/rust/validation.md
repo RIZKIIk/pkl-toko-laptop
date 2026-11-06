@@ -34,7 +34,7 @@ validation/
 
 Validator mengembalikan `Result`. `Ok(...)` berisi nilai yang sudah valid dan/atau dinormalisasi. `Err(ApiError::BadRequest(...))` diteruskan handler dan dipetakan menjadi HTTP 400 oleh [error handler](error.md).
 
-Validasi aplikasi memberi pesan yang mudah dipahami client. Constraint pada PostgreSQL di [migration](database/0001-create-laptops.md) tetap menjadi perlindungan terakhir untuk data yang ditulis melalui jalur lain.
+Validasi aplikasi memberi pesan yang mudah dipahami client. Constraint pada PostgreSQL di [skema database](database/initial-schema.md) tetap menjadi perlindungan terakhir untuk data yang ditulis melalui jalur lain.
 
 ## Aturan yang diterapkan
 
@@ -47,7 +47,7 @@ Validasi aplikasi memberi pesan yang mudah dipahami client. Constraint pada Post
 | `stok` | Bilangan bulat nol atau lebih. | `400 Bad Request`. |
 | Body PATCH | Minimal satu dari empat field harus dikirim. | `400 Bad Request`. |
 
-`validate_text` menghitung karakter Unicode dengan `.chars().count()`, bukan byte UTF-8. Validator create memeriksa semua field; validator update hanya memeriksa field bernilai `Some`, sehingga `None` tetap berarti “jangan ubah”.
+`validate_text` menghitung Unicode scalar value dengan `.chars().count()`, bukan byte UTF-8 atau kelompok grapheme yang dilihat mata sebagai satu simbol. Validator create memeriksa semua field; validator update hanya memeriksa field bernilai `Some`, sehingga `None` tetap berarti “jangan ubah”.
 
 ## Urutan pada request laptop
 

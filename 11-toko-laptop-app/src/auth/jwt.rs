@@ -7,7 +7,6 @@ use std::{
 
 use axum::http::{HeaderMap, header::AUTHORIZATION};
 use jsonwebtoken::{Algorithm, DecodingKey, EncodingKey, Header, Validation, decode, encode};
-use rand_core::{OsRng, RngCore};
 use serde::{Deserialize, Serialize};
 
 use super::role::UserRole;
@@ -27,7 +26,7 @@ pub struct Claims {
     pub sub: i64,
     pub exp: u64,
     pub role: UserRole,
-    pub jti: String,
+    pub token_version: i64,
 }
 
 impl JwtService {
@@ -38,23 +37,20 @@ impl JwtService {
         }
     }
 
-    /// Menerbitkan token HS256 dengan ID dan role pengguna, berlaku satu jam.
+    /// Menerbitkan token HS256 dengan identitas dan versi token pengguna.
     pub fn issue_token(
         &self,
         user_id: i64,
         role: UserRole,
+        token_version: i64,
     ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
         // JWT memakai detik sejak Unix epoch untuk mengisi klaim expiry standar.
         let now = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
-        let mut token_id = [0_u8; 32];
-        let mut rng = OsRng;
-        rng.try_fill_bytes(&mut token_id)?;
-        let jti: String = token_id.iter().map(|byte| format!("{byte:02x}")).collect();
         let claims = Claims {
             sub: user_id,
             exp: now + TOKEN_EXPIRED_SECONDS,
             role,
-            jti,
+            token_version,
         };
         let key = EncodingKey::from_secret(self.secret.as_bytes());
 
@@ -101,18 +97,19 @@ mod tests {
     #[test]
     fn token_round_trip_returns_the_user_id_and_role() {
         let jwt = JwtService::new(SECRET.to_owned());
-        let token = jwt.issue_token(7, UserRole::Admin).unwrap();
+        let token = jwt.issue_token(7, UserRole::Admin, 3).unwrap();
 
         let claims = jwt.verify_token(&token).unwrap();
         assert_eq!(claims.sub, 7);
         assert_eq!(claims.role, UserRole::Admin);
+        assert_eq!(claims.token_version, 3);
     }
 
     #[test]
     fn token_rejects_tampering_and_a_different_secret() {
         let jwt = JwtService::new(SECRET.to_owned());
         let other_jwt = JwtService::new("another-test-secret-with-32-bytes".to_owned());
-        let token = jwt.issue_token(7, UserRole::Admin).unwrap();
+        let token = jwt.issue_token(7, UserRole::Admin, 0).unwrap();
         let tampered = format!("{token}x");
 
         assert!(jwt.verify_token(&tampered).is_err());

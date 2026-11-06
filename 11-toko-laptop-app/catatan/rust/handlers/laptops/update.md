@@ -24,14 +24,17 @@ pub async fn update_laptop(
 - `State(pool)` mengambil pool PostgreSQL dari router.
 - `Path(id)` mengambil ID dari URL.
 - `Json(payload)` membaca body sebagai `UpdateLaptopPayload`; tiap field menggunakan `Option`.
-- `Result<Json<Value>, ApiError>` menyatakan handler bisa menghasilkan JSON sukses atau meneruskan error aplikasi.
+- `Result<Json<Value>, ApiError>` menyatakan `Ok` berisi JSON sukses, sementara `Err` membawa error aplikasi.
+- `pub` membuat fungsi bisa dipasang router; `async` memungkinkan handler menunggu query database.
+
+`State(pool)`, `Path(id)`, dan `Json(payload)` adalah pola pembongkaran extractor Axum. Bagian sesudah titik dua menyatakan tipe wrapper yang diharapkan. Jika ID atau JSON tidak dapat diubah ke tipe yang diminta, Axum menolak request sebelum handler berjalan.
 
 ## Alur proses
 
 1. `validate_laptop_id(id)?` menolak ID nol atau negatif.
 2. `validate_update_laptop(payload)?` membersihkan field teks yang dikirim, memeriksa angka agar tidak negatif, dan menolak body tanpa field.
-3. `repository::update_laptop(&pool, id, &payload).await?` menjalankan UPDATE. Repository memakai `COALESCE` supaya parameter `None` mempertahankan nilai lama.
-4. Bila repository mengembalikan `None`, tidak ada baris dengan ID tersebut; `.ok_or_else(...)` membentuk error 404.
+3. `repository::update_laptop(&pool, id, &payload).await?` meminjam pool dan payload, lalu menunggu query asynchronous. Repository memakai `COALESCE` supaya parameter `None` mempertahankan nilai lama. Hasilnya bertipe `Result<Option<Laptop>, sqlx::Error>`.
+4. `?` meneruskan error query; setelah query sukses, `.ok_or_else(...)` mengubah `None` (ID tidak ditemukan) menjadi error 404 dan membuka `Some(Laptop)` menjadi laptop terbaru. Closure not-found dibuat/dijalankan hanya saat nilai adalah `None`.
 5. Presenter memformat data terbaru sebagai array; helper response menambahkan status dan pesan.
 
 ```text

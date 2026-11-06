@@ -11,7 +11,7 @@
 
 Modul ini menerbitkan dan memverifikasi access token JWT menggunakan HMAC-SHA256 (HS256). Token memberi client cara mengautentikasi request tanpa mengirim password lagi. Secret dibaca dari `JWT_SECRET`, yang harus berisi sedikitnya 32 byte.
 
-> **Ringkas:** login membuat JWT satu jam dengan ID pengguna (`sub`) dan `role`; route terlindungi memeriksa signature, expiry, pengguna, dan role terbaru.
+> **Ringkas:** login membuat JWT satu jam dengan ID pengguna (`sub`), `role`, dan `token_version`; route terlindungi memeriksa signature, expiry, serta nilai pengguna terbaru di database.
 
 ## Isi token
 
@@ -22,7 +22,7 @@ JWT aplikasi membawa empat klaim (*claims*):
 | `sub` | ID pengguna berupa angka. | Menyatakan identitas pemilik token (*subject*). |
 | `exp` | Waktu kedaluwarsa sebagai Unix timestamp dalam detik. | Menentukan kapan token tidak berlaku lagi. |
 | `role` | Role pengguna, misalnya `admin`. | Menentukan akses yang dimiliki token; middleware mencocokkannya dengan role terbaru di database. |
-| `jti` | ID acak unik untuk token ini. | Memungkinkan logout mencabut satu JWT. |
+| `token_version` | Versi kredensial JWT pengguna saat token diterbitkan. | Memungkinkan logout mencabut semua JWT pengguna tanpa tabel denylist. |
 
 Contoh payload setelah di-decode:
 
@@ -31,7 +31,7 @@ Contoh payload setelah di-decode:
   "sub": 7,
   "exp": 1793864943,
   "role": "admin",
-  "jti": "ID_ACAK_UNIK"
+  "token_version": 0
 }
 ```
 
@@ -40,11 +40,11 @@ Payload JWT ditandatangani, bukan dienkripsi. Client dapat membaca isinya. Janga
 ## Cara kerja di aplikasi
 
 1. Saat startup, `main.rs` memberikan `JWT_SECRET` ke `create_router`, lalu router membuat `JwtService`.
-2. Setelah kredensial login cocok, handler mengambil ID dan role pengguna dari database. `issue_token(user_id, role)` menyimpan keduanya bersama klaim expiry satu jam.
+2. Setelah kredensial login cocok, handler mengambil ID, role, dan `token_version` pengguna dari database. `issue_token(user_id, role, token_version)` menyimpan ketiganya bersama klaim expiry satu jam.
 3. `jsonwebtoken::encode` menandatangani claims dengan algoritma HS256 dan secret aplikasi.
 4. Client mengirim token melalui header `Authorization: Bearer <access_token>`.
 5. `bearer_token` membaca header dan mengambil token setelah skema `Bearer`. Header dengan format lain dianggap tidak memiliki bearer token.
-6. `verify_token` memeriksa algoritma, signature, dan expiry. Middleware menolak `jti` yang tercatat di tabel `revoked_jwts`, lalu mencari pengguna berdasarkan `sub` dan mencocokkan `role` dengan role terbaru di database.
+6. `verify_token` memeriksa algoritma, signature, dan expiry. Middleware mencari pengguna berdasarkan `sub`, lalu mencocokkan `role` dan `token_version` token dengan nilai terbaru di database.
 
 `JwtService` menyimpan secret sebagai `Arc<str>`. `Arc` memungkinkan service di-clone dengan biaya rendah saat dipakai bersama oleh handler dan middleware. Secret tidak dimasukkan ke claims atau response. `Claims` adalah bentuk data yang diserialisasi ke payload JWT. Role diserialisasi sebagai teks huruf kecil, misalnya `"admin"`.
 
@@ -75,24 +75,22 @@ Bagian ini menjelaskan konstruksi yang muncul di source, dari import sampai test
 | `#[derive(Clone)]` | Attribute meminta compiler membuat implementasi `Clone`, agar service dapat diduplikasi. Karena secret berada di `Arc`, clone hanya menambah hitungan pemilik, bukan menyalin seluruh secret. |
 | `pub struct JwtService { ... }` | `struct` mendefinisikan tipe yang menyimpan data. Field `secret` tidak diberi `pub`, jadi hanya module ini yang dapat membacanya langsung. |
 | `#[derive(Clone, Debug, Deserialize, Serialize)]` | Membuat implementasi trait secara otomatis. `Serialize` mengubah `Claims` menjadi payload token; `Deserialize` membentuk `Claims` dari payload. `Debug` membantu menampilkan nilai saat debugging dan `Clone` mengizinkan penyalinan nilai claims. |
-| `pub struct Claims { pub sub: i64, ... }` | Setiap field menyimpan satu claim. `i64` menyimpan ID pengguna, `u64` menyimpan waktu expiry, `UserRole` menyimpan role, dan `String` menyimpan `jti`. `pub` pada field memungkinkan module lain membaca field tersebut. |
+| `pub struct Claims { pub sub: i64, ... }` | Setiap field menyimpan satu claim: `sub: i64`, `exp: u64`, `role: UserRole`, dan `token_version: i64`. Tidak ada `jti` pada struktur yang digunakan proyek ini. `pub` pada field memungkinkan modul lain membaca nilainya. |
 | `pub fn new(secret: String) -> Self` | `fn` mendefinisikan fungsi. `String` adalah teks yang dimiliki pemanggil; `Self` berarti tipe yang sedang diimplementasikan, yaitu `JwtService`. |
 | `&self`, `&value`, `&mut value` | `&self` meminjam instance service selama method berjalan. `&value` meminjam nilai untuk dibaca; `&mut value` meminjamnya agar dapat diubah. Referensi mencegah fungsi mengambil kepemilikan nilai yang dipinjam. |
 | `Result<String, Box<dyn Error + Send + Sync>>` | Method mengembalikan token sebagai `String` atau error. `dyn Error` adalah trait object untuk beberapa jenis error; `Box` menyimpannya di heap. Batas `Send + Sync` membuat error aman dipindahkan dan dibagi antar thread. |
 
 ### Menerbitkan token dengan `issue_token`
 
-1. `let now = ...` membuat binding lokal. `SystemTime::now()` mengambil waktu saat ini; `.duration_since(UNIX_EPOCH)` mengubahnya menjadi durasi sejak 1 Januari 1970 UTC; `.as_secs()` mengambil jumlah detik sebagai `u64`.
-2. `?` setelah `duration_since` mengembalikan error dari `issue_token` jika jam sistem berada sebelum Unix epoch. Jika berhasil, operator itu mengambil nilai sukses dari `Result` agar dapat dipakai berikutnya.
-3. `let mut token_id = [0_u8; 32];` membuat array 32 byte yang diawali nol. `mut` mengizinkan isinya diubah. `0_u8` adalah literal angka nol bertipe byte (`u8`).
-4. `let mut rng = OsRng;` membuat generator angka acak yang menggunakan sumber acak sistem operasi. `RngCore` adalah trait yang menyediakan method `try_fill_bytes`; `try_` berarti pengisian bisa gagal dan error-nya diteruskan dengan `?`.
-5. `token_id.iter()` meminjam byte satu per satu. `.map(|byte| ...)` menjalankan closure untuk tiap byte; `|byte|` menuliskan parameter closure. `format!("{byte:02x}")` membuat dua digit heksadesimal. `{byte}` mengambil nilai dari variabel bernama sama, `02` meminta lebar minimal dua karakter, dan `x` memilih huruf heksadesimal kecil. `.collect()` menggabungkan potongan itu menjadi `String`, sehingga 32 byte menjadi 64 karakter. `: String` memberi tahu compiler tipe hasil yang dikumpulkan.
-6. `Claims { sub: user_id, exp: now + TOKEN_EXPIRED_SECONDS, role, jti }` membuat nilai struct. `role` dan `jti` memakai field initialization shorthand karena nama field sama dengan nama binding. `now + TOKEN_EXPIRED_SECONDS` membuat expiry satu jam setelah waktu saat ini.
-7. `EncodingKey::from_secret(self.secret.as_bytes())` membuat key HS256 dari byte secret. `.as_bytes()` memberi tampilan byte dari teks tanpa membuat string baru.
-8. `Header::new(Algorithm::HS256)` membuat header JWT yang menyatakan algoritma HMAC-SHA256. `encode(&header, &claims, &key)` menserialisasi claims dan menandatangani token.
-9. `Ok(encode(...)?)` membungkus token sukses dalam `Ok`. `?` di dalamnya meneruskan error encoding; `Box` pada tipe hasil memungkinkan error library dikembalikan sebagai error method ini.
+1. `let now = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs()` membaca waktu sebagai detik sejak Unix epoch. `duration_since` menghasilkan `Result`; `?` meneruskan error (misalnya jam sistem lebih awal dari epoch), sedangkan `.as_secs()` mengambil detik sebagai `u64`.
+2. `Claims { sub: user_id, exp: now + TOKEN_EXPIRED_SECONDS, role, token_version }` membuat nilai struct. `role` dan `token_version` memakai *field initialization shorthand*: nama field dan nama variabel sama. Expiry diset satu jam dari waktu sekarang.
+3. `EncodingKey::from_secret(self.secret.as_bytes())` membuat key HS256 dari byte secret. `.as_bytes()` meminjam representasi byte teks, tidak mencetak atau mengirim secret.
+4. `Header::new(Algorithm::HS256)` menyatakan algoritma tanda tangan. `encode(&Header::new(...), &claims, &key)` meminjam header, claims, dan key saat menserialisasi serta menandatangani token.
+5. `Ok(encode(...)?)` membungkus token sukses dalam `Ok`. `?` meneruskan error encoding; `Result<String, Box<dyn Error + Send + Sync>>` memungkinkan berbagai error dikembalikan melalui satu tipe hasil.
 
 ### Memverifikasi token dengan `verify_token`
+
+Signature fungsi `verify_token(&self, token: &str) -> Result<Claims, jsonwebtoken::errors::Error>` meminjam service dan teks token. Ia tidak mengubah token.
 
 1. `DecodingKey::from_secret(...)` membuat key untuk memeriksa signature dengan secret yang sama.
 2. `let mut validation = Validation::new(Algorithm::HS256);` membuat aturan verifikasi khusus HS256. `mut` diperlukan karena baris berikut mengubah aturan.
@@ -114,7 +112,17 @@ Bagian ini menjelaskan konstruksi yang muncul di source, dari import sampai test
 | `(scheme, token)` | Pola tuple yang menerima dua bagian hasil `split_once`: teks sebelum spasi dan teks setelah spasi. |
 | `jwt.verify_token(bearer_token(headers)?).ok()` | Mengekstrak bearer token; `?` berhenti jika tidak ada. Lalu token diverifikasi. `.ok()` mengubah `Result<Claims, Error>` menjadi `Option<Claims>`, sehingga error token diperlakukan sebagai tidak ada claims valid. |
 
-Pada signature `bearer_token(headers: &HeaderMap) -> Option<&str>`, tipe `Option<&str>` berarti hasilnya dapat berupa pinjaman teks token atau `None`. Rust menyimpulkan masa pinjaman teks berasal dari `headers`, sehingga token tidak dapat dipakai setelah header asalnya hilang.
+`bearer_token(headers: &HeaderMap) -> Option<&str>` meminjam map header dan mengembalikan token sebagai referensi, bukan menyalin teks. Token tidak boleh digunakan setelah header asalnya tidak tersedia. `claims_from_headers(headers, jwt) -> Option<Claims>` kemudian memverifikasi token; `.ok()` sengaja menyamakan kegagalan verifikasi dengan “tidak ada claims valid”. Perbedaan penting: `Option` menyatakan ada/tidaknya nilai, sementara `Result` menyatakan sukses/error beserta jenis error.
+
+## Fungsi dan metode lain
+
+- `JwtService::new(secret: String) -> Self` menerima kepemilikan secret, menyimpannya sebagai `Arc<str>`, dan mengembalikan service. `Self` berarti `JwtService`. `Arc` memungkinkan service di-clone antar handler/middleware tanpa menyalin isi secret setiap kali.
+- `issue_token(&self, user_id, role, token_version) -> Result<String, ...>` membuat claims ber-expiry satu jam dan menandatanganinya. Parameter teks/role/ID diberikan berdasarkan nilai; secret hanya dibaca lewat pinjaman `&self`.
+- `verify_token(&self, token) -> Result<Claims, Error>` membatasi algoritma pada HS256, mengatur `leeway = 0`, lalu memverifikasi signature dan expiry sebelum memberi claims.
+- `bearer_token` mengembalikan `Some(&str)` hanya jika header mempunyai skema Bearer dan token non-kosong tanpa whitespace. Rangkaian `?` di sini bekerja pada `Option`: jika salah satu langkah tidak menghasilkan nilai, fungsi langsung menghasilkan `None`.
+- `claims_from_headers` menghubungkan ekstraksi header dan verifikasi token; caller menerima `None` untuk token hilang maupun invalid.
+
+`#[derive(Clone)]` meminta compiler membuat implementasi trait `Clone` untuk service. `Claims` juga memakai `Debug`, `Deserialize`, dan `Serialize`: ini adalah trait untuk debug, membaca payload JSON, dan membuat payload JSON. Attribute `#[serde(rename_all = "lowercase")]` pada role (didefinisikan di `role.rs`) mengubah varian menjadi teks seperti `"admin"` ketika diserialisasi. `#[cfg(test)]` dan `#[test]` adalah attribute conditional compilation/test.
 
 ### Test di bagian bawah file
 
@@ -132,21 +140,21 @@ curl -i -H "Authorization: Bearer $TOKEN" \
   http://127.0.0.1:3001/api/laptops
 ```
 
-JWT dan cookie session dapat dipakai sendiri-sendiri. Middleware memeriksa JWT lebih dulu, lalu mencoba session jika token tidak ada atau tidak valid. Lihat [middleware session](session.md) untuk urutan lengkap.
+JWT dan cookie session dapat dipakai sendiri-sendiri. Middleware memeriksa JWT lebih dulu, lalu mencoba session jika JWT tidak menghasilkan identitas yang cocok (misalnya token tidak valid, user tidak ditemukan, atau versi/role berbeda). Lihat [middleware session](session.md) untuk urutan lengkap.
 
 ## Kapan token ditolak?
 
-Token tidak memberi akses jika header tidak ada atau salah format, isi token berubah, token ditandatangani dengan secret lain, algoritmanya bukan HS256, token sudah kedaluwarsa atau dicabut, pengguna tidak ditemukan, atau role di token berbeda dari role terbaru di database. Middleware menghentikan request dan mengirim `401 Unauthorized`.
+Token tidak memberi identitas jika header tidak ada atau salah format, isi token berubah, token ditandatangani dengan secret lain, algoritmanya bukan HS256, token sudah kedaluwarsa, pengguna tidak ditemukan, atau role/token version di token berbeda dari nilai terbaru di database. Middleware lalu mencoba session; jika tidak ada session yang sah, request berakhir dengan `401 Unauthorized`. Tidak ada tabel pencabutan per-token: `token_version` mencabut JWT secara kolektif per pengguna.
 
 ## Logout dan pencabutan token
 
-JWT tidak membawa `auth_version`. Setiap token punya `jti` acak; logout menyimpan `jti` JWT yang dipakai ke tabel `revoked_jwts`, sehingga token itu langsung ditolak sampai kedaluwarsa. Session cookie aktif juga dihapus. Token lain milik pengguna tidak ikut dicabut. Client tetap perlu menghapus token lokal setelah logout.
+Setiap JWT membawa `token_version` dari baris pengguna saat login. Logout menaikkan `users.token_version`, sehingga semua JWT lama milik pengguna langsung ditolak pada request berikutnya, termasuk token di perangkat lain. Session cookie yang dipakai untuk logout juga dihapus; session lain tidak ikut dicabut. Client tetap perlu menghapus token lokal setelah logout. Nilai ini diperiksa ke database pada setiap request JWT.
 
 ## File terkait
 
 - [Handler auth](../handlers/auth.md) menerbitkan token setelah login berhasil.
 - [Middleware session](session.md) memeriksa token sebelum meneruskan request protected.
-- [Source repository JWT](../../../src/repositories/jwt_repository.rs) menyimpan `jti` yang dicabut; [migration 0007](../database/0007-revoke-jwts.md) membuat tabelnya.
+- [Repository user](../repositories/user-repository.md) membaca dan menaikkan `token_version`; [skema database](../database/initial-schema.md) mendefinisikan kolom tersebut.
 - [Routes](../routes.md) memasang service JWT sebagai extension router.
 - [Konfigurasi](../config.md) memeriksa panjang secret dari environment.
 

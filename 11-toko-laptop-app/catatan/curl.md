@@ -7,6 +7,14 @@
 
 Panduan ini berisi contoh untuk semua endpoint API toko laptop. Contoh memakai Bash/Linux/macOS dan URL lokal `http://127.0.0.1:3001` secara langsung. Jika host atau port server berubah, ganti URL tersebut pada command yang digunakan. Untuk Windows PowerShell, gunakan `curl.exe` bila perintah `curl` mengarah ke alias PowerShell.
 
+### Cara membaca command
+
+- `curl` menjalankan HTTP request dari terminal; URL terakhir menentukan alamat server dan endpoint.
+- Garis miring terbalik `\` di akhir baris Bash menyambung command ke baris berikutnya. Jangan menaruh spasi setelahnya.
+- Teks JSON di dalam tanda kutip tunggal dikirim shell apa adanya. Kutip ganda di sekeliling JSON tetap merupakan sintaks JSON, bukan kutip shell.
+- `-H 'Content-Type: application/json'` memberi tahu server bahwa body berformat JSON; `-d '...'` mengirim body. Untuk request tanpa body, jangan menambahkan `-d`.
+- Ganti semua nilai contoh seperti `USERNAME_DI_ENV`, `PASSWORD_ANDA`, ID `1`, dan token dengan nilai lokal yang benar. Jangan menyimpan secret atau JWT nyata di catatan yang dibagikan.
+
 ## Di halaman ini
 
 [Urutan login](#urutan-pemakaian) · [Semua contoh endpoint](#semua-endpoint) · [Opsi curl](#penjelasan-opsi-curl) · [Error umum](#error-umum)
@@ -21,11 +29,20 @@ Contoh login di bawah memakai placeholder. Ganti nilainya dengan `ADMIN_USERNAME
 curl -i \
   -c cookies.txt \
   -H 'Content-Type: application/json' \
-  -d '{"username":"admin","password":"Rizki123!"}' \
+  -d '{"username":"USERNAME_DI_ENV","password":"PASSWORD_DI_ENV"}' \
   "http://127.0.0.1:3001/api/auth/login"
 ```
 
-Response sukses login berstatus `200 OK`, mengatur cookie session, dan mengembalikan JWT pada `data.access_token` yang berlaku satu jam. Setelah request lain, cek identitas dengan `GET /api/auth/session`. Logout mencabut JWT yang dipakai pada request itu dan menghapus session aktif; hapus token lokal setelah logout.
+Response sukses login berstatus `200 OK`, mengatur cookie session, dan mengembalikan JWT pada `data.access_token` yang berlaku satu jam. Setelah request lain, cek identitas dengan `GET /api/auth/session`. Logout mencabut semua JWT pengguna dan menghapus session yang dipakai; hapus token lokal setelah logout.
+
+Untuk memakai JWT alih-alih cookie, salin `data.access_token` dari response login ke shell variable. Header `Authorization` memakai skema `Bearer`; tanda kutip ganda memungkinkan Bash mengganti `$TOKEN` dengan isi variable:
+
+```bash
+TOKEN='tempel_jwt_di_sini'
+curl -i \
+  -H "Authorization: Bearer $TOKEN" \
+  "http://127.0.0.1:3001/api/auth/session"
+```
 
 ## Semua endpoint
 
@@ -303,6 +320,8 @@ Sesudah logout, endpoint yang dilindungi kembali menghasilkan `401` sampai login
 | URL lengkap | Menentukan alamat server dan path endpoint secara langsung. | Contoh memakai `http://127.0.0.1:3001`; ubah URL pada command jika host atau port server berbeda. |
 
 Catatan tentang `-X`: opsi ini hanya memilih/menimpa nama metode HTTP; ia tidak otomatis menambahkan body atau header JSON. Gunakan bersama `-H` dan/atau `-d` sesuai kebutuhan. Hindari menambahkan `-X GET` pada contoh GET karena tidak menambah fungsi.
+
+File `cookies.txt` berisi kredensial session aktif. Simpan hanya untuk percobaan lokal, jangan dibagikan atau di-commit, dan hapus setelah selesai. `-i` berguna untuk membaca status seperti `200 OK`, `201 Created`, `401 Unauthorized`, atau `404 Not Found`; status menunjukkan hasil HTTP, sedangkan JSON body biasanya menjelaskan data atau pesan error.
 
 ## Error umum
 

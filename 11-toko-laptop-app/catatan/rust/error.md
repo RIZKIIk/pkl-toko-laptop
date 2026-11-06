@@ -72,3 +72,13 @@ ApiError
 ├── NotFound(message)   → 404 + pesan resource
 └── Database(error)     → log server + 500 + pesan umum
 ```
+
+## Membaca `match`, `From`, dan ownership
+
+`ApiError` adalah `enum`: satu nilai hanya berada pada salah satu varian dan tiap varian dapat membawa data. `BadRequest(String)` serta `NotFound(String)` memiliki pesan; `Database(sqlx::Error)` membawa error database asli. Saat `into_response(self)` dipanggil, `self` dikonsumsi (dimiliki fungsi), lalu `match self` memindahkan nilai yang cocok ke variabel `message` atau `error`. Ini aman karena setelah diubah menjadi response, error aslinya tidak diperlukan lagi.
+
+Setiap lengan `match` menghasilkan tuple `(StatusCode, String)`. Semua lengan harus menghasilkan tipe tuple yang sama agar hasil `match` dapat diikat ke `let (status, message)`. Lengan database mencatat `error` di server tetapi membuat pesan client yang baru dan umum.
+
+`impl From<sqlx::Error> for ApiError` menerapkan trait konversi standar. Trait ini membuat `?` dapat mengubah `Err(sqlx::Error)` menjadi `Err(ApiError)` pada fungsi yang mengembalikan hasil `ApiError`. `impl IntoResponse for ApiError` menerapkan trait Axum; method `into_response(self)` mengonsumsi error lalu mengembalikan `Response`. Tipe parameter dan hasil pada trait harus persis cocok dengan kontrak trait tersebut.
+
+Perhatikan dua jalur kegagalan: error input/resource yang memang aman ditampilkan menjadi pesan spesifik 400/404; error database dilog internal dan disamarkan menjadi 500. Jangan mengirim `error.to_string()` untuk kegagalan internal.

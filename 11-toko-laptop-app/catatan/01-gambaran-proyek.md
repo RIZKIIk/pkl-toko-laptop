@@ -5,7 +5,7 @@
 ![Ilustrasi: Peta wilayah aplikasi](ilustrasi/halaman/02-01-gambaran-proyek.svg "Peta wilayah aplikasi")
 
 
-Toko Laptop App adalah REST API inventaris laptop. Kode aktif menyediakan operasi CRUD: melihat daftar laptop, melihat satu laptop, menambah, mengubah sebagian field, dan menghapus data. Aplikasi juga memiliki registrasi akun serta login berbasis cookie session dan JWT bearer. Repository ini tidak memiliki frontend, role pengguna, trigger PostgreSQL, atau function PostgreSQL aktif.
+Toko Laptop App adalah REST API inventaris laptop. Kode aktif menyediakan operasi CRUD: melihat daftar laptop, melihat satu laptop, menambah, mengubah sebagian field, dan menghapus data. Aplikasi juga memiliki registrasi akun, role `admin`/`buyer`/`restocker`, dan login berbasis cookie session serta JWT bearer. Repository ini tidak memiliki frontend, trigger PostgreSQL, atau function PostgreSQL aktif.
 
 ## Teknologi yang benar-benar dipakai
 
@@ -15,7 +15,7 @@ Toko Laptop App adalah REST API inventaris laptop. Kode aktif menyediakan operas
 | Axum | Router, handler, extractor, dan response HTTP. | `routes.rs`, `handlers/`, `error.rs`. |
 | Tokio | Runtime async dan listener TCP. | `#[tokio::main]`, `TcpListener`. |
 | SQLx | Pool dan query PostgreSQL. | `config.rs`, `repositories/`. |
-| PostgreSQL | Penyimpanan tabel `laptops` dan `users`. | migration `0001`–`0005`. |
+| PostgreSQL | Penyimpanan tabel `laptops` dan `users`, termasuk `token_version` untuk pencabutan JWT. | Migration berurutan yang mempertahankan riwayat database. |
 | Serde | Membaca JSON body ke payload Rust. | `#[derive(Deserialize)]`. |
 | serde_json | Membuat JSON response. | `json!`, `Value`. |
 | dotenvy | Mencoba memuat environment dari `.env`. | `main.rs`. |
@@ -35,7 +35,7 @@ Toko Laptop App adalah REST API inventaris laptop. Kode aktif menyediakan operas
 | `src/repositories/` | Query SQL dikelompokkan menurut resource. |
 | `src/presenters/` | Pemetaan response dan format Rupiah dipisah. |
 | `src/error.rs` | Memetakan error menjadi response HTTP JSON. |
-| `database/migrations/` | Membuat tabel laptop/user, hash password, dan daftar JWT yang dicabut. |
+| `database/migrations/` | Riwayat perubahan tabel laptop/user, hash password, role, dan versi pencabutan JWT. |
 | `.env` | Pengaturan lokal server dan PostgreSQL; tidak dibagikan sebagai dokumentasi. |
 | `postman/` | Collection serta environment untuk uji manual. |
 | `catatan/` | Penjelasan detail kode; tidak dijalankan oleh aplikasi. |
@@ -60,7 +60,9 @@ presenter membuat JSON object dan format Rupiah
 handler mengirim 201 Created
 ```
 
-Pemisahan folder dan file mengikuti tanggung jawab, bukan menambah lapisan bisnis baru. Setiap file tetap memiliki fokus kecil:
+Pemisahan folder dan file mengikuti tanggung jawab, bukan menambah lapisan bisnis baru. `Json<T>` dari Axum meminta body JSON dibaca menjadi tipe Rust `T` yang mendukung Serde `Deserialize`; `Json<Value>` mengubah nilai JSON yang disiapkan presenter menjadi body response. Jika JSON body tidak dapat diparse menjadi tipe yang diminta, extractor dapat mengirim error sebelum handler berjalan.
+
+Setiap file tetap memiliki fokus kecil:
 
 - Ingin tahu URL? Buka [routes](rust/routes.md).
 - Ingin tahu alur request? Buka [handlers](rust/handlers.md) lalu catatan tiap [operasi laptop](rust/handlers/laptops/mod.md).
@@ -80,5 +82,8 @@ Pemisahan folder dan file mengikuti tanggung jawab, bukan menambah lapisan bisni
 | `Option` | Nilai bisa ada (`Some`) atau tidak ada (`None`), dipakai untuk hasil query dan field PATCH. |
 | `?` | Meneruskan error dan menghentikan fungsi saat langkah sebelumnya gagal. |
 | `&T` | Meminjam nilai `T` tanpa memindahkan kepemilikannya. |
+| `Result<T, E>` | Mengandung `Ok(T)` saat berhasil atau `Err(E)` saat gagal; `Result` berbeda dari `Option`, yang menyatakan ada/tidaknya nilai. |
+
+Migration yang sudah diterapkan adalah riwayat: jangan mengedit atau menghapusnya karena SQLx memeriksa checksum. Tambahkan file migration baru untuk perubahan skema berikutnya. Detailnya ada di [catatan skema database](rust/database/initial-schema.md). Kolom `token_version` menaik saat pencabutan JWT; lihat penjelasan terpisah [dari login sampai logout](token_ver.md).
 
 Lanjutkan ke [alur kerja aplikasi](02-alur-kerja-aplikasi.md) untuk melihat istilah tersebut saat request benar-benar berjalan.

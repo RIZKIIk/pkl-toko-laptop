@@ -4,64 +4,119 @@
 
 ![Ilustrasi: Login: cek akun lalu terbitkan akses](../../ilustrasi/halaman/17-auth.svg "Login: cek akun lalu terbitkan akses")
 
-
 [Buka kode sumber `auth.rs`](../../../src/handlers/auth.rs)
 
-## Tanggung jawab
+## Tanggung jawab dan alur request
 
-Handler ini memproses registrasi dan login, menampilkan identitas dari session/JWT, dan menghapus session saat logout. Akses database user, pemeriksaan password latihan, pembuatan JWT, response HTTP, dan middleware dipisahkan ke [modul auth](../auth/mod.md).
-
-## Peta alur auth
+Handler ini menerima request akun, memeriksa input, memanggil layanan/repository auth, dan menyusun response HTTP. Query database, penerbitan JWT, verifikasi identitas, dan pengelolaan session berada di modul lain.
 
 ```text
-register → users table → 201 / 409
-login → verify credentials → session cookie + JWT with user ID and role
-protected request → validate JWT/session against current user and role
-logout → revoke current JWT jti + clear current session
+public register/login ──→ validasi input ──→ auth/repository ──→ response
+protected request ──→ middleware memverifikasi identitas ──→ current_user/logout/admin
 ```
 
-## Payload login
+Route login dan registrasi bersifat publik. Route identitas, logout, dan admin dilindungi middleware; middleware memasukkan `AuthIdentity` ke request sebelum memanggil handler. Session cookie tetap dikelola `tower-sessions`.
 
-`LoginPayload` adalah struct yang menerima `username` dan `password` dari JSON untuk login dan registrasi. Derive `Deserialize` meminta Serde mengubah body JSON menjadi struct ini. Atribut `#[serde(deny_unknown_fields)]` menolak body dengan field tambahan.
+Middleware tidak hanya memeriksa apakah pengguna login: ia juga memeriksa izin berdasarkan role dan HTTP method/path. Role admin dapat mengakses route terlindungi; buyer hanya dapat membaca laptop; restocker dapat membaca dan melakukan PATCH laptop. Operasi admin memerlukan role admin. Handler `create_user` dan `update_user_role` tetap melarang menetapkan role admin dari request.
 
-## Endpoint
+## Sintaks dan tipe yang dipakai
 
-| Method | Path | Fungsi |
-| --- | --- | --- |
-| POST | `/api/auth/register` | Membuat akun dengan username unik. |
-| POST | `/api/auth/login` | Memvalidasi kredensial, membuat session, dan menerbitkan JWT HS256 satu jam. |
-| GET | `/api/auth/session` | Mengembalikan username dari session atau JWT aktif. |
-| POST | `/api/auth/logout` | Mencabut semua session/JWT lama milik pengguna. |
+### Extractor dan signature
 
-## Fungsi dan alurnya
+Contoh parameter login:
+
+```rust
+pub async fn login(
+    State(pool): State<PgPool>,
+    Extension(jwt): Extension<JwtService>,
+    session: Session,
+    Json(payload): Json<LoginPayload>,
+) -> Response
+```
+
+- `pub` membuat fungsi tersedia bagi router; `async` memungkinkan operasi I/O ditunggu dengan `.await`.
+- `State<PgPool>` mengambil pool bersama dari state router. Pola `State(pool)` langsung membongkar wrapper dan mengikat isi ke variabel `pool`.
+- `Extension<JwtService>` mengambil layanan JWT yang dipasang sebagai extension oleh router. Pola `Extension(jwt)` juga membongkar wrapper.
+- `Session` adalah extractor session dari `tower-sessions`.
+- `Json<LoginPayload>` membaca body JSON dan mencoba men-deserialize-nya menjadi tipe payload. `Json(payload)` mengikat nilai hasil baca ke `payload`.
+- `-> Response` berarti fungsi mengembalikan response HTTP umum, bukan `Result` dengan satu tipe sukses. Bentuk ini cocok untuk handler yang memilih banyak status berbeda.
+
+Jika body tidak cocok dengan tipe payload, extractor `Json` menolak request sebelum badan fungsi berjalan. `Response` bukan `Result`: kegagalan dan keberhasilan dibentuk sebagai response secara eksplisit, biasanya melalui helper `http`.
+
+### Payload dan `derive`
+
+`LoginPayload` mempunyai field `username: String` dan `password: String`; `CreateUserPayload` juga mempunyai `role: UserRole`; `UpdateUserRolePayload` hanya mempunyai `role`. Atribut `#[derive(Deserialize)]` meminta Serde menghasilkan kode untuk membaca field JSON ke struct. `#[serde(deny_unknown_fields)]` membuat field JSON yang tidak dikenal ditolak. Field payload bersifat privat pada modul, tetapi fungsi handler di file yang sama dapat membacanya.
+
+Deserialize hanya memeriksa bentuk dan tipe JSON. Aturan seperti username tidak kosong, batas 100 karakter, password tidak kosong, dan larangan menetapkan role admin diperiksa oleh handler.
+
+### `Result`, `match`, `if let`, dan `await`
+
+Fungsi `validate_username` memakai `Result<&str, &'static str>`: `Ok(&str)` berisi potongan teks yang meminjam username asli, sedangkan `Err(&'static str)` berisi pesan statis dari string literal. Referensi `&str` pada hasil tetap mengacu ke string dalam payload yang masih hidup selama handler memakainya. Handler menggunakan `match` untuk menangani kedua kemungkinan secara eksplisit. Pada pemanggilan database, `.await` menunggu operasi asinkron. Handler auth biasanya memakai `match` atau `if let Err(...)` alih-alih `?`, karena perlu mencatat error dan mengubahnya menjadi pesan/status HTTP tertentu.
+
+`match` harus mencakup hasil yang mungkin, seperti `Ok(true)`, `Ok(false)`, dan `Err(error)`. `if let Err(error) = ...` menangani hanya bentuk error yang relevan; jika bukan error, bloknya dilewati.
+
+## Pemeriksaan username
+
+### `validate_username(username: &str) -> Result<&str, &'static str>`
+
+Fungsi privat ini meminjam teks (`&str`) alih-alih mengambil kepemilikan `String`. `trim()` menghasilkan potongan teks tanpa whitespace pinggir, lalu `chars().count()` menghitung karakter Unicode. Fungsi menolak username kosong dan yang panjangnya lebih dari 100 karakter; batas 100 diterima. Nilai `Ok(username)` mengembalikan potongan yang telah dibersihkan untuk digunakan handler.
+
+```text
+"  rizki  " → trim → Ok("rizki")
+"   "       → Err("Username wajib diisi")
+101 karakter → Err("Username maksimal 100 karakter")
+```
+
+## Fungsi handler, satu per satu
+
+### `login(State(pool), Extension(jwt), session, Json(payload))`
+
+1. Memanggil `validate_username` dan memakai `match`: username valid diteruskan, sedangkan `Err(message)` langsung menjadi `400 Bad Request`. Password kosong juga menghasilkan 400.
+2. Menunggu `auth::verify_credentials(&pool, username, &payload.password).await`. Hasil `Ok(false)` menjadi `401 Unauthorized`; `Err(error)` dicatat di log server dan menjadi 500. Username/password yang tidak cocok memakai pesan umum yang sama.
+3. Jika kredensial cocok, mencari tuple identitas dengan `find_login_identity(...).await`: nilai `Ok(Some(...))` berisi ID, role, dan `token_version`; `Ok(None)` tetap menghasilkan 401; error menjadi 500.
+4. Meminta `jwt.issue_token(user_id, role, token_version)` membuat token. Error penerbitan dicatat dan menghasilkan 500.
+5. Memanggil `session::start_session(&session, username).await`. Jika gagal, handler mengembalikan 500.
+6. Mengembalikan response sukses berisi username, role, access token, tipe `Bearer`, dan `expires_in`. Session manager mengurus cookie; handler tidak merakit header cookie sendiri.
+
+`match` dipakai untuk setiap operasi yang dapat gagal agar handler bisa memilih pesan yang sesuai untuk client sekaligus mencatat detail internal server. Kredensial, role, dan versi token diperiksa/dikelola di layanan auth dan repository, bukan lewat SQL di handler.
 
 ### `register(State(pool), Json(payload))`
 
-1. Memangkas spasi pinggir username dan menolak username kosong atau lebih dari 100 karakter; password kosong juga ditolak dengan `400 Bad Request`.
-2. Meminta auth service menyimpan akun baru. Username yang sudah ada menghasilkan `409 Conflict`; kegagalan database dicatat di server dan menghasilkan `500`.
-3. Jika berhasil, mengembalikan `201 Created` dengan username. Registrasi tidak membuat session; pengguna perlu login secara terpisah.
+Menggunakan `LoginPayload` (username dan password), memangkas serta memeriksa username, dan menolak password kosong dengan 400. Lalu `auth::register_user(...).await` menghasilkan:
 
-### `login(State(pool), session, Json(payload))`
+| Hasil | Arti | Response |
+| --- | --- | --- |
+| `Ok(true)` | Akun dibuat | `201 Created`, username dan role default buyer. |
+| `Ok(false)` | Username sudah terpakai | `409 Conflict`. |
+| `Err(error)` | Operasi gagal | Error dicatat, lalu `500 Internal Server Error`. |
 
-1. Memangkas spasi pinggir username dan menolak username kosong atau lebih dari 100 karakter; password kosong ditolak dengan `400 Bad Request`.
-2. Memanggil `auth::verify_credentials` untuk mencari username di tabel `users` dan mencocokkan password latihan.
-3. Mengembalikan `401 Unauthorized` jika username tidak ditemukan atau password tidak cocok. Kegagalan query dicatat di server dan menghasilkan `500`.
-4. Jika cocok, mengambil ID dan role pengguna. JWT HS256 berisi ID sebagai `sub`, `role`, expiry satu jam, dan `jti` acak.
-5. Memanggil `session::start_session`. Fungsi itu mengganti ID session lalu menyimpan username di session server-side.
-6. Mengembalikan JSON `200 OK` berisi username, `access_token`, `token_type`, dan `expires_in`. Cookie session dikelola oleh `SessionManagerLayer`, bukan dibuat manual oleh handler.
+Registrasi publik tidak menerima pilihan role dan tidak membuat login session.
 
-Untuk materi session, password registrasi disimpan langsung di database lokal dan dibandingkan secara langsung. Jangan gunakan implementasi ini untuk akun nyata atau produksi.
+### `create_user(State(pool), Json(payload))`
 
-### `current_user(identity)`
+Endpoint admin ini membaca `CreateUserPayload` yang berisi username, password, dan role. Ia menjalankan pemeriksaan username/password yang sama, lalu menolak `UserRole::Admin`: role admin hanya boleh diberikan melalui konfigurasi server. `register_user_with_role(...).await` menyimpan role buyer/restocker yang diminta. Cabang hasilnya sama seperti register: 201, 409, atau 500, dengan role pada data sukses.
 
-Mengembalikan username dari identitas yang sudah diverifikasi middleware. Middleware memeriksa `jti` JWT dan mencocokkan role-nya dengan role terbaru di database.
+### `update_user_role(State(pool), Extension(identity), Path(username), Json(payload))`
 
-### `logout(pool, identity, session)`
+Middleware menyediakan `identity`; `Path(username)` mengambil nama akun dari URL dan `Json(payload)` membaca role baru. Handler menolak username yang tidak valid, perubahan role untuk akun yang sedang dipakai, dan target role admin dengan 400. Kemudian `set_user_role(...).await` menghasilkan 200 saat berubah, 404 bila pengguna tidak ada, atau 500 bila query gagal. Repository menangani perubahan role dan pencabutan kredensial terkait.
 
-Mencatat `jti` JWT yang dipakai request ini ke tabel `revoked_jwts`, lalu memanggil `clear_session` untuk menghapus session aktif. JWT itu langsung ditolak; token lain milik pengguna tidak ikut dicabut. Jika query database atau penghapusan session gagal, handler mencatat detail error di server dan mengembalikan `500`.
+### `current_user(Extension(identity))`
 
-`login` menggunakan `State` untuk menerima pool database dan `Json` untuk membaca body. `current_user` menerima identitas yang sudah diverifikasi middleware, sedangkan `logout` juga menerima pool dan session; semuanya mengembalikan `Response` agar dapat menyusun status dan JSON yang berbeda pada tiap cabang.
+Tidak mencari identitas sendiri. Middleware sudah memverifikasi JWT atau session dan menyisipkan `AuthIdentity`; fungsi ini mengembalikan username dan role dari nilai tersebut dalam response sukses.
 
-`cycle_id()` mengganti ID session saat login untuk mengurangi risiko session fixation. Request tanpa session valid pada route yang dilindungi juga menghasilkan `401` melalui middleware.
+### `logout(State(pool), Extension(identity), session)`
 
-Session cookie dikelola `tower-sessions`, dan klien seperti `curl` dapat menyimpan cookie dengan `-c cookies.txt` lalu mengirimkannya dengan `-b cookies.txt`. Data session disimpan di memori server dan hilang saat proses server dimulai ulang. Rincian implementasi ada di [session](../auth/session.md), [response auth](../auth/http.md), dan [repository user](../repositories/user-repository.md).
+Pertama, menaikkan `token_version` pengguna di database menggunakan ID dari `identity`. Jika operasi gagal, handler langsung mengembalikan 500. Setelah berhasil, `clear_session(&session).await` menghapus session aktif; kegagalan ini juga menghasilkan 500. Jika keduanya sukses, response menyatakan logout berhasil. Perubahan versi token membuat JWT lama pengguna tidak lagi lolos verifikasi; penghapusan session hanya menghapus session yang dikirim request ini.
+
+## Ringkasan route
+
+| Method dan path | Handler | Akses dan hasil utama |
+| --- | --- | --- |
+| `POST /api/auth/register` | `register` | Publik; membuat akun buyer. |
+| `POST /api/auth/login` | `login` | Publik; membuat JWT dan session. |
+| `GET /api/auth/session` | `current_user` | Dilindungi; membaca identitas terverifikasi. |
+| `POST /api/auth/logout` | `logout` | Dilindungi; mencabut JWT lama dan menghapus session aktif. |
+| `POST /api/admin/users` | `create_user` | Dilindungi; membuat akun buyer/restocker. |
+| `PATCH /api/admin/users/{username}/role` | `update_user_role` | Dilindungi; mengubah role target yang diizinkan. |
+
+Untuk konfigurasi route, lihat [routes](../routes.md); untuk session dan response auth, lihat [session](../auth/session.md) dan [response auth](../auth/http.md).

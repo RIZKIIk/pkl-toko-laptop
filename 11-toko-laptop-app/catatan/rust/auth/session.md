@@ -37,7 +37,7 @@ Request ke endpoint protected
        └─ session kosong/kedaluwarsa/dicabut → 401 Unauthorized
 ```
 
-JWT diperiksa lebih dulu. Jika signature dan expiry valid, middleware memastikan `jti` belum dicabut, mencari user berdasarkan ID token, lalu mencocokkan role dengan database. Jika token tidak ada atau tidak valid, middleware mencoba session cookie dan mencari user berdasarkan username. Kegagalan teknis saat membaca session atau database menghasilkan `500`; kredensial yang kosong atau dicabut menghasilkan `401`.
+JWT diperiksa lebih dulu. Jika signature dan expiry valid, middleware mencari user berdasarkan ID `sub` lalu mencocokkan `role` dan `token_version` dengan database. Proyek ini tidak menyimpan atau memeriksa `jti`/daftar token yang dicabut. Jika JWT tidak ada, tidak valid, atau identitasnya tidak cocok, middleware mencoba session cookie dan mencari user berdasarkan username. Kegagalan teknis saat membaca session atau database menghasilkan `500`; tidak adanya identitas menghasilkan `401`. Role yang dikenali tetapi tidak diizinkan untuk URL/method tersebut menghasilkan `403`.
 
 ## Import dan konstanta
 
@@ -57,7 +57,7 @@ pub const SESSION_USERNAME_KEY: &str = "username";
 ```
 
 - `Extension<JwtService>` menerima verifier JWT yang dipasang router.
-- `State<PgPool>` menyediakan database untuk memeriksa pengguna dan daftar JWT yang dicabut.
+- `State<PgPool>` menyediakan database untuk memeriksa pengguna, role, dan `token_version`.
 - `Request` dan `Next` mewakili request saat ini dan langkah handler berikutnya.
 - `Session` memberi akses ke session server-side untuk request ini.
 - `error_response` membentuk body JSON error yang seragam.
@@ -72,31 +72,38 @@ session.cycle_id().await?;
 session.insert(SESSION_USERNAME_KEY, username).await
 ```
 
-Fungsi ini dipanggil setelah kredensial cocok. `cycle_id()` mengganti ID session untuk mengurangi risiko session fixation. Sesudah itu, `insert` menyimpan username. `?` meneruskan error jika operasi session gagal.
+Signature-nya meminjam `session: &Session` dan `username: &str`, lalu mengembalikan `Result<(), tower_sessions::session::Error>`. Fungsi ini dipanggil setelah kredensial cocok. `cycle_id()` mengganti ID session untuk mengurangi risiko session fixation. Sesudah itu, `insert` menyimpan username dengan key konstan. `.await` menunggu operasi asinkron; `?` langsung mengembalikan error jika operasi gagal. Baris terakhir tidak memakai `?`, sehingga hasil `insert` (yang juga `Result`) langsung dikembalikan.
 
 ### `session_identity(session)`
 
-Mengambil username dari session. Nilai `Some` berarti session memiliki identitas.
+Fungsi asinkron ini mengembalikan `Result<Option<SessionIdentity>, Error>`: `Err` berarti kegagalan membaca store, `Ok(None)` berarti belum ada username, dan `Ok(Some(...))` berarti identitas ditemukan. Pola `let Some(username) = ... else { ... }` mengambil nilai dari `Some` atau segera mengembalikan `Ok(None)`. `SessionIdentity` membungkus username agar tipe identitas session terpisah dari data akun database.
 
 ### `clear_session(session)`
 
-Memanggil `session.flush()` untuk menghapus data session aktif dari store dan membersihkan session request. Handler logout juga mencatat `jti` JWT yang dipakai ke tabel denylist agar token tersebut ditolak.
+Memanggil `session.flush()` untuk menghapus data session aktif dari store dan membersihkan session request. Signature-nya mengembalikan `Result<(), Error>`, jadi kegagalan flush diteruskan ke handler logout. Handler logout juga menaikkan `token_version` pengguna agar semua JWT lama pengguna ditolak.
 
 ## Middleware `require_auth`
 
 Signature fungsi menerima extension JWT, session, request, dan `Next`, lalu selalu menghasilkan Axum `Response`.
 
-1. Middleware memverifikasi signature/expiry JWT, memeriksa denylist `jti`, mencari pengguna dari ID `sub`, lalu mencocokkan role token dengan role terbaru di database.
-2. Jika JWT tidak valid atau tidak ada, `session_identity(&session).await` membaca username cookie dan mencari pengguna beserta role terbaru di database.
-3. Jika salah satu kredensial cocok, middleware menyimpan identitas terverifikasi pada request lalu meneruskannya ke handler.
-4. Jika tidak ada kredensial yang cocok, JWT dicabut, atau role JWT sudah berubah, middleware mengembalikan `401 Unauthorized`.
-5. Error database atau session dicatat memakai `eprintln!`, lalu client menerima `500` dengan pesan umum. Rincian internal tidak dikirim ke client.
+1. `claims_from_headers` mengurai bearer token dan memverifikasi JWT. Fungsi ini menghasilkan `Option<Claims>`; JWT yang hilang/salah format/tidak valid menghasilkan `None`.
+2. Bila claims ada, repository mencari user dari `sub`. Hanya jika user ditemukan dan role serta `token_version` cocok, middleware membuat `AuthIdentity`.
+3. Jika langkah JWT tidak menghasilkan identitas, middleware membaca session, lalu mencari user berdasarkan username. Role diambil dari database, bukan dari session.
+4. `match` membedakan identitas ada/tidak ada dan error. Request tanpa identitas menerima `401`; kesalahan database/session dicatat di log server dan menerima `500`.
+5. `identity.role.can_access(method, path)` memeriksa otorisasi. Identitas valid tetapi role tidak berhak menerima `403`.
+6. `request.extensions_mut().insert(identity)` memasang identitas yang sudah diverifikasi pada request. `next.run(request).await` meneruskan request ke handler berikutnya.
+
+Parameter `State(pool)`, `Extension(jwt)`, dan `mut request` memakai pola destructuring: state/extension dikeluarkan dari pembungkusnya, sementara `mut` mengizinkan extension request dimodifikasi. `require_auth` mengembalikan `Response` langsung, bukan `Result`, sehingga setiap cabang error membangun response secara eksplisit.
+
+`AuthIdentity` menyimpan `user_id`, `username`, dan role yang dipercaya setelah dicek ke database; `SessionIdentity` hanya membungkus username hasil baca session sebelum repository memastikan akun masih ada. Keduanya memiliki `#[derive(Clone, Debug)]`, yaitu attribute yang meminta compiler menghasilkan trait untuk menyalin nilai dan format debug. `SESSION_USERNAME_KEY` adalah `pub const`: konstanta teks bersama agar proses simpan dan baca session menggunakan key yang persis sama.
+
+Role menentukan izin sesudah autentikasi: `Admin` boleh semua route protected; `Buyer` boleh membaca daftar/detail laptop dan mengelola session sendiri; `Restocker` boleh membaca laptop serta melakukan `PATCH` pada laptop. Route session/logout diizinkan untuk semua role. Aturan ini berada pada `UserRole::can_access`, bukan di helper session.
 
 Middleware ini dipasang hanya pada grup route protected di [routes.rs](../routes.md). `/health`, registrasi, dan login tetap publik.
 
 ## Penyimpanan dan batasannya
 
-Router memakai `MemoryStore`. Session akan hilang ketika server dimulai ulang dan tidak dibagikan ke instance aplikasi lain. Saat logout dengan JWT, aplikasi menyimpan `jti` token itu ke PostgreSQL sehingga token langsung ditolak sampai kedaluwarsa. Token lain milik pengguna dan session pada perangkat lain tidak ikut dicabut.
+Router memakai `MemoryStore`. Session akan hilang ketika server dimulai ulang dan tidak dibagikan ke instance aplikasi lain. Logout menaikkan `token_version` di PostgreSQL sehingga semua JWT lama pengguna langsung ditolak. Hanya session yang dipakai untuk logout yang dihapus; session cookie di perangkat lain tidak dicabut oleh mekanisme versi token.
 
 ## Contoh memakai cookie
 

@@ -36,7 +36,17 @@ Setiap file operasi tetap menjadi modul internal (`mod create;`, dan seterusnya)
 | `success_response_with_message(message, data)` | Menambahkan `message` pada envelope sukses. | Create dan update. |
 | `not_found_laptop(id)` | `ApiError::NotFound` dengan ID pada pesan. | Detail, update, dan delete. |
 
-Helper menggunakan `serde_json::Value` agar dapat menerima array maupun object. `pub(super)` mengizinkan pemakaian dari `handlers` induk serta submodulnya, tanpa menjadikannya API publik crate.
+Helper menggunakan `serde_json::Value` agar dapat menerima array maupun object: `data` dapat berupa array atau object, sementara `message` adalah `&str`. Pada source, ketiga helper dideklarasikan `pub fn`, sehingga dapat dipanggil melalui jalur modul publik `handlers::laptops`. `pub` mengatur visibilitas item; ia tidak berarti fungsi otomatis menjadi endpoint HTTP.
+
+### Signature helper
+
+| Signature | Arti |
+| --- | --- |
+| `success_response(data: Value) -> Value` | Mengambil nilai JSON yang dimiliki fungsi dan membungkusnya dengan `status`. |
+| `success_response_with_message(message: &str, data: Value) -> Value` | Meminjam pesan teks, mengambil data JSON, lalu membuat envelope sukses dengan pesan. |
+| `not_found_laptop(id: i64) -> ApiError` | Membentuk error aplikasi `NotFound` untuk ID tertentu. |
+
+Ketiga fungsi sinkron (`fn`, bukan `async fn`), karena hanya menyusun nilai di memori dan tidak menunggu I/O. `json!` adalah macro yang membuat nilai JSON. `not_found_laptop` memakai `format!` untuk menyisipkan ID ke dalam pesan.
 
 ## Alur pemanggilan
 
@@ -44,4 +54,4 @@ Helper menggunakan `serde_json::Value` agar dapat menerima array maupun object. 
 routes.rs → handler operasi → helper bersama (jika dibutuhkan) → JSON/ApiError
 ```
 
-Handler tetap menentukan urutan validasi dan query. Helper di file ini hanya menyamakan bentuk response dan pesan not-found. Untuk alur tiap method, buka halaman [handlers](../../handlers.md) atau halaman operasi di tabel atas.
+Handler tetap menentukan urutan validasi dan query. Hasil query opsional biasanya dipetakan menjadi `Option<Laptop>`; bila tidak ada, handler memakai `not_found_laptop` untuk menghasilkan `ApiError::NotFound`. Helper di file ini hanya menyamakan bentuk response dan pesan not-found. Untuk alur tiap method, buka halaman [handlers](../../handlers.md) atau halaman operasi di tabel atas.

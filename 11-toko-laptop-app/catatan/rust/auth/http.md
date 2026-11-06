@@ -16,7 +16,7 @@ File ini menyediakan dua helper untuk membuat response HTTP autentikasi dalam fo
 | `error_response(status, message)` | Proses gagal | Ditentukan oleh pemanggil |
 | `success_response(body)` | Proses berhasil | Selalu `200 OK` |
 
-Kedua helper mengubah data yang diberikan menjadi `Response` Axum. Dengan begitu, handler tidak perlu menyusun response HTTP sendiri berulang kali.
+Kedua helper mengubah data yang diberikan menjadi `Response` Axum. Dengan begitu, handler tidak perlu menyusun response HTTP sendiri berulang kali. Keduanya adalah fungsi biasa, bukan `async`, karena hanya membentuk nilai di memori dan tidak menunggu I/O.
 
 ## Di halaman ini
 
@@ -72,7 +72,7 @@ pub(crate) fn error_response(status: StatusCode, message: &'static str) -> Respo
 ### Deklarasi fungsi `error_response`
 
 ```rust
-pub(crate) fn error_response(status: StatusCode, message: &'static str) -> Response
+pub fn error_response(status: StatusCode, message: &'static str) -> Response
 ```
 
 - `fn` menyatakan bahwa ini adalah fungsi.
@@ -81,13 +81,13 @@ pub(crate) fn error_response(status: StatusCode, message: &'static str) -> Respo
 - `message: &'static str` adalah parameter pesan berupa string yang dipinjam. `'static` berarti string itu dijamin tersedia selama program berjalan; string literal seperti `"Login diperlukan"` memenuhi syarat ini.
 - `-> Response` menyatakan tipe hasil yang dikembalikan fungsi.
 
-#### Kenapa memakai `pub(crate)`, bukan `pub`?
+#### Visibilitas fungsi
 
 - Tanpa `pub`, fungsi hanya dapat dipakai dari modul tempat fungsi itu didefinisikan.
-- `pub(crate)` membuat fungsi dapat dipakai oleh modul-modul lain **di dalam crate aplikasi yang sama**, misalnya handler auth dan middleware session.
-- `pub` dapat mengekspos fungsi sebagai bagian dari API crate untuk kode di luar crate, jika jalur modulnya juga publik.
+- `pub` membuat fungsi ini dapat diakses melalui modul publik, termasuk dari crate pemanggil.
+- Fungsi ini digunakan oleh middleware autentikasi dan handler; aturan visibilitas modul tetap berlaku, jadi `pub` pada fungsi saja tidak cukup jika modul induknya tidak diekspor.
 
-Helper ini hanya diperlukan oleh kode internal aplikasi, jadi `pub(crate)` sudah cukup dan tidak membuka akses lebih luas dari yang diperlukan.
+`pub` membuat fungsi dapat diakses melalui modul publik oleh kode pemanggil di luar crate. Kode internal juga dapat menggunakannya.
 
 ### Cara membaca isi fungsi `error_response`
 
@@ -156,14 +156,14 @@ Hasilnya: status `401 Unauthorized` dan body JSON berisi status `"error"` serta 
 Kode:
 
 ```rust
-pub(crate) fn success_response(body: Value) -> Response {
+pub fn success_response(body: Value) -> Response {
     (StatusCode::OK, Json(body)).into_response()
 }
 ```
 
 ### Deklarasi fungsi `success_response`
 
-- `pub(crate)` membuat fungsi tersedia bagi kode lain dalam crate yang sama, tetapi tidak mengeksposnya seluas `pub`.
+- `pub` membuat fungsi tersedia sebagai item publik pada modul ini.
 - `fn success_response` mendeklarasikan fungsi bernama `success_response`.
 - `body: Value` berarti pemanggil memberikan isi response dalam bentuk nilai JSON.
 - `-> Response` berarti fungsi menghasilkan response HTTP Axum.
@@ -207,3 +207,11 @@ data JSON + status HTTP
 ```
 
 Gunakan `error_response` jika perlu menentukan status error dan pesannya. Gunakan `success_response` jika proses berhasil dan statusnya `200 OK`.
+
+## Sintaks Rust yang perlu diketahui
+
+- `status: StatusCode` dan `body: Value` adalah parameter bernama beserta tipe datanya. Pemanggil harus memasok nilai yang cocok.
+- `&'static str` adalah referensi teks yang berlaku selama program berjalan. Pesan literal seperti `"Login diperlukan"` memenuhi syarat tersebut dan tidak perlu dialokasikan sebagai `String`.
+- `-> Response` menuliskan tipe hasil. Ekspresi terakhir tanpa `;` otomatis menjadi nilai hasil fungsi; jika diberi `;`, blok akan menghasilkan `()`, bukan `Response`.
+- `(status, Json(...))` adalah tuple. Axum menyediakan implementasi trait `IntoResponse` untuk mengubah pasangan status dan body menjadi response lengkap.
+- `Value` adalah nilai JSON yang dimiliki fungsi/pemanggil; `Json(body)` memindahkannya ke pembungkus response. Tidak ada peminjaman `&body` karena body perlu dimiliki response yang dikembalikan.

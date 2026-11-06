@@ -24,18 +24,20 @@ pub async fn create_laptop(
 | --- | --- |
 | `State(pool)` | Mengambil pool PostgreSQL yang dipasang pada router. |
 | `Json(payload)` | Membaca body JSON menjadi `CreateLaptopPayload`. |
-| `Result<..., ApiError>` | Mengembalikan response sukses atau error aplikasi. |
-| `(StatusCode, Json<Value>)` | Membawa kode status dan body JSON bersama-sama. |
+| `Result<T, ApiError>` | Mengembalikan `Ok(T)` saat berhasil atau `Err(ApiError)` saat input/query gagal. |
+| `(StatusCode, Json<Value>)` | Tuple hasil sukses berisi kode status dan body JSON; Axum mengubahnya menjadi response HTTP. |
+
+`State(pool): State<PgPool>` dan `Json(payload): Json<CreateLaptopPayload>` adalah parameter extractor. Bentuk `Extractor(nama)` membongkar wrapper extractor dan mengikat isi ke variabel lokal. `PgPool` adalah tipe pool SQLx, sedangkan `Value` adalah tipe JSON dinamis dari `serde_json`.
 
 Request wajib membawa `nama`, `merek`, `harga`, dan `stok`. Bentuk payload dan contoh JSON ada di [model create](../../models/laptop/create-payload.md).
 
 ## Alur proses
 
-1. `validate_create_laptop(payload)?` memangkas spasi pinggir nama/merek, menolak teks kosong atau terlalu panjang, dan menolak harga/stok negatif. Operator `?` langsung mengembalikan error validasi ke Axum.
-2. `repository::create_laptop(&pool, &payload).await?` mengirim parameter ke PostgreSQL. Repository memakai `INSERT ... RETURNING` sehingga hasil berisi laptop baru, termasuk ID database.
+1. `validate_create_laptop(payload)?` memangkas spasi pinggir nama/merek, menolak teks kosong atau terlalu panjang, dan menolak harga/stok negatif. Fungsi validator sendiri mengembalikan `Result<CreateLaptopPayload, ApiError>`. Operator `?` mengambil nilai dari `Ok`, atau langsung mengembalikan `Err` dari handler.
+2. `repository::create_laptop(&pool, &payload).await?` meminjam pool dan payload (`&`), lalu menunggu query asynchronous (`.await`). Repository memakai `INSERT ... RETURNING` sehingga hasil berisi laptop baru, termasuk ID database. `?` juga meneruskan error query yang dikonversi ke `ApiError`.
 3. `laptop_to_object(&laptop)` mengubah entity menjadi object JSON dengan key bernama.
 4. `success_response_with_message(...)` menambahkan `status: "success"` dan pesan berhasil.
-5. Handler memasangkan body dengan `StatusCode::CREATED`, sehingga client menerima `201 Created`.
+5. Handler memasangkan body dengan `StatusCode::CREATED`, sehingga client menerima `201 Created`. Ekspresi `Ok((..., Json(...)))` membentuk nilai sukses dari tipe `Result`; `Err` tidak ditulis di sini karena kegagalan sudah diteruskan menggunakan `?`.
 
 ```text
 Json<CreateLaptopPayload>

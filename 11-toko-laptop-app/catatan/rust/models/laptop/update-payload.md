@@ -36,7 +36,7 @@ pub struct UpdateLaptopPayload {
 - Setiap field menggunakan sintaks `nama_field: Tipe`.
 - `Option<T>` berarti nilai mungkin ada (`Some(value)`) atau tidak ada (`None`). Misalnya `Option<String>` dapat berisi teks atau kosong.
 
-| Field | Tipe | Jika tidak dikirim |
+| Field | Tipe | Jika tidak dikirim atau `null` |
 | --- | --- | --- |
 | `nama` | `Option<String>` | Nama lama tetap dipakai. |
 | `merek` | `Option<String>` | Merek lama tetap dipakai. |
@@ -49,7 +49,7 @@ Contoh body yang mengubah hanya stok:
 {"stok": 4}
 ```
 
-Field lain akan bernilai `None`. Validator kemudian memeriksa field yang ada dan menolak body tanpa perubahan. Lihat [validator update](../../validation/update.md) dan [query PATCH](../../repositories/laptop-repository.md).
+Field lain akan bernilai `None`. Untuk `Option<T>`, Serde juga membaca nilai JSON `null` sebagai `None`; jadi `null` tidak berarti mengosongkan kolom, melainkan tidak meminta perubahan pada field itu. Validator kemudian memeriksa field yang ada dan menolak body jika semua field menjadi `None`. Lihat [validator update](../../validation/update.md) dan [query PATCH](../../repositories/laptop-repository.md).
 
 ## Ilustrasi PATCH parsial
 

@@ -55,7 +55,7 @@ environment / .env
 | `db_user` | `String` | `DB_USER` | Pengguna PostgreSQL, bukan akun login aplikasi. |
 | `db_password` | `String` | `DB_PASSWORD` | Kata sandi koneksi PostgreSQL. |
 | `admin_username` | `String` | `ADMIN_USERNAME` | Username akun latihan yang disinkronkan ke tabel users saat startup. |
-| `admin_password` | `String` | `ADMIN_PASSWORD` | Password akun latihan yang disimpan langsung di database lokal. Jangan gunakan konfigurasi ini untuk produksi. |
+| `admin_password` | `String` | `ADMIN_PASSWORD` | Password akun latihan; modul auth meng-hash-nya dengan Argon2id sebelum menyimpan hash di database. Jangan gunakan konfigurasi akun latihan ini untuk produksi. |
 
 `String` dipakai karena nilai dibaca dari environment dan kemudian dimiliki oleh struct. Field `db_*` tidak diberi `pub`, jadi modul lain tidak bisa mengakses detail koneksi langsung.
 
@@ -86,6 +86,19 @@ environment / .env
 - `JWT_SECRET` tidak tersedia atau kurang dari 32 byte → konfigurasi ditolak.
 - `APP_PORT` atau `DB_PORT` bukan angka/di luar rentang `u16` → `.parse()` gagal.
 - Host, port, kredensial, atau database PostgreSQL salah → `connect_database` mengembalikan `sqlx::Error`.
+
+## Sintaks fungsi, hasil, dan peminjaman
+
+- `from_env() -> Result<Self, Box<dyn Error + Send + Sync>>` adalah fungsi pembuat konfigurasi, bukan method pada instance: tidak ada parameter `self`. `Self` adalah singkatan dari `AppConfig`.
+- `Result<T, E>` memiliki dua bentuk: `Ok(T)` untuk sukses dan `Err(E)` untuk gagal. Karena pembacaan beberapa variabel bisa gagal dengan jenis error berbeda, `Box<dyn Error + Send + Sync>` menyediakan satu tipe error umum.
+- `env::var("APP_PORT")?.parse()?` memiliki dua operasi fallible. `?` pertama berhenti jika environment tidak tersedia; yang kedua jika string tidak bisa diubah menjadi `u16`. Pada keberhasilan, nilai di dalam `Ok` dipakai untuk langkah selanjutnya.
+- `match env::var(...)` memeriksa varian `Result`: nilai yang ada diparse; `NotPresent` khusus untuk cookie mendapat default `false`; error lain dikembalikan. `match` harus mencakup semua pola yang mungkin.
+- `connect_database(&self)` hanya meminjam konfigurasi agar kredensial tetap tersedia sesudah pool dibuat. `async` diperlukan karena koneksi adalah I/O; `.await` menunggu operasi tersebut.
+- `database_name(&self) -> &str` mengembalikan referensi baca-saja ke nama database. Ini menghindari penyalinan `String` hanya untuk logging.
+
+`env::var("APP_HOST").unwrap_or_else(...)` adalah satu-satunya nilai default host: closure hanya dijalankan ketika variabel tidak dapat dibaca. Jangan menyimpulkan bahwa variabel database atau JWT juga memiliki default.
+
+Helper privat `required_non_empty_env(name: &str) -> Result<String, ...>` membaca variable wajib lalu menolak string kosong. Ia meminjam nama variabel tetapi mengembalikan `String` yang dimiliki, sehingga `AppConfig` dapat menyimpan nilainya. `Ok(value)` mengembalikan konfigurasi yang valid; `Err(...)` membawa error environment atau pesan validasi.
 
 ## Hubungan dengan file lain
 

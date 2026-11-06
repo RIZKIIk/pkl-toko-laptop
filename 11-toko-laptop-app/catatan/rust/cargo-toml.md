@@ -39,9 +39,9 @@ Cargo.toml
 | --- | --- | --- |
 | `axum = "0.8.9"` | Versi 0.8.9 | `Router`, route, extractor `Json`/`Path`/`State`, response, dan menjalankan server. |
 | `tokio` | `macros`, `rt-multi-thread`, `net` | `#[tokio::main]`, runtime async multi-thread, dan `TcpListener`. |
-| `sqlx` | `default-features = false`; `runtime-tokio`, `tls-rustls`, `postgres`, `macros`, `migrate` | Pool PostgreSQL, query, `FromRow`, migrasi database, dan runtime koneksi. |
+| `sqlx` | versi `0.9.0`; `default-features = false`; `runtime-tokio`, `tls-rustls`, `postgres`, `macros`, `migrate` | Pool PostgreSQL, query, derive `FromRow` untuk entity laptop, migrasi database, dan runtime koneksi. |
 | `dotenvy = "0.15"` | Versi 0.15 | Membaca `.env` pada startup. |
-| `serde` | fitur `derive` | Membuat derive `Deserialize` pada payload JSON. |
+| `serde` | versi `1`, fitur `derive` | Membuat implementasi `Deserialize` pada payload JSON dan `Serialize` pada claims JWT/role. |
 | `serde_json = "1"` | Versi major 1 | `Value` dan macro `json!` untuk response API. |
 | `tower-sessions = "0.15.0"` | Store memory dan middleware Axum | Cookie session serta penyimpanan session server-side. |
 | `jsonwebtoken = "9.3.1"` | JWT dengan dukungan HMAC | Menerbitkan dan memverifikasi access token HS256. |
@@ -60,3 +60,11 @@ Cargo.toml
 - `migrate`: mengaktifkan macro migrasi yang menerapkan file di `database/migrations/` saat startup.
 
 Autentikasi menerima session cookie atau JWT bearer HS256. Password di-hash menggunakan Argon2id; `tower` hanya diperlukan untuk tes. `Cargo.lock` menyimpan versi tepat dependency yang dipilih Cargo.
+
+## Membaca sintaks manifest
+
+- `[package]`, `[dependencies]`, dan `[dev-dependencies]` adalah tabel TOML. Package berisi metadata; dependencies diperlukan untuk build normal; dev-dependencies hanya dibutuhkan alat pengujian.
+- `name`, `version`, `edition`, dan `default-run` adalah key manifest, bukan kode Rust. Versi package (`0.1.0`) berbeda dari versi crate dependency.
+- `"1"` pada serde/serde_json adalah persyaratan versi semver untuk major 1, bukan selalu berarti Cargo mengunduh versi tepat 1.0. `Cargo.lock` mencatat resolusi tepat untuk aplikasi.
+- Bentuk inline seperti `{ version = "1", features = [...] }` memberi opsi tambahan. Daftar `features` mengaktifkan kemampuan crate secara selektif; fitur yang dipilih harus sesuai dengan API yang dipakai kode.
+- `#[derive(...)]` adalah sintaks attribute Rust pada source, bukan bagian manifest. Manifest menyediakan fitur crate yang memungkinkan derive/macro terkait.

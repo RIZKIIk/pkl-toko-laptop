@@ -20,7 +20,7 @@ pub(super) fn formatkan_rupiah(nilai: i64) -> String {
 }
 ```
 
-- `pub(super)` mengizinkan pemakaian dari modul induk `presenters` dan turunannya, tetapi tidak mengekspor helper ini ke seluruh crate.
+- `pub` membuat fungsi terlihat, tetapi file `rupiah` berada di modul privat (`mod rupiah`). Karena itu pemanggil dari luar `presenters` tidak dapat mengakses formatter melalui jalur modul.
 - `fn` mendeklarasikan fungsi.
 - `nilai: i64` menerima angka bertanda agar juga dapat menangani nilai negatif.
 - `-> String` berarti hasilnya teks yang dimiliki fungsi.

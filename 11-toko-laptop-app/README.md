@@ -46,7 +46,7 @@ Login melalui Postman atau `curl` untuk memperoleh session cookie dan JWT. Opera
 | `POST` | `/api/auth/register` | Mendaftarkan akun. | Publik |
 | `POST` | `/api/auth/login` | Login dan menerbitkan session serta JWT. | Publik |
 | `GET` | `/api/auth/session` | Melihat identitas pengguna aktif. | Login |
-| `POST` | `/api/auth/logout` | Mencabut semua session dan JWT milik pengguna. | Login |
+| `POST` | `/api/auth/logout` | Mencabut semua JWT milik pengguna dan session yang dipakai. | Login |
 | `POST` | `/api/admin/users` | Membuat akun buyer/restocker. | Admin |
 | `PATCH` | `/api/admin/users/{username}/role` | Mengubah role menjadi buyer/restocker. | Admin |
 | `GET` | `/api/laptops` | Melihat daftar laptop. | Admin, buyer, restocker |
@@ -59,7 +59,7 @@ Login melalui Postman atau `curl` untuk memperoleh session cookie dan JWT. Opera
 - Salin perintah terminal dari [panduan curl](catatan/curl.md).
 - Jalankan skenario terurut dari [panduan Postman](catatan/postman.md) memakai collection dan environment di folder `postman/`.
 
-Login memberi JWT yang berlaku satu jam. Logout mencabut JWT yang dipakai pada request itu dan menghapus session aktif. Token lain milik pengguna tidak ikut dicabut; client tetap perlu menghapus token lokal setelah selesai.
+Login memberi JWT yang berlaku satu jam. Logout menaikkan `token_version` sehingga semua JWT milik pengguna langsung tidak berlaku, lalu menghapus session yang dipakai untuk logout. Session lain tidak ikut dicabut; client tetap perlu menghapus token lokal setelah selesai.
 
 Password akun disimpan sebagai hash Argon2id dengan salt acak, bukan sebagai teks asli. Setelah update pertama kali, migration dan proses startup meng-upgrade password lama otomatis; akun yang sudah terdaftar tetap bisa login dengan password yang sama.
 
