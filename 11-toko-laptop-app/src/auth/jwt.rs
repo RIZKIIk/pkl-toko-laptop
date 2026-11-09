@@ -17,7 +17,7 @@ pub const TOKEN_EXPIRED_SECONDS: u64 = 60 * 60;
 /// Service untuk menerbitkan dan memverifikasi token JWT HS256.
 #[derive(Clone)]
 pub struct JwtService {
-    // Arc memungkinkan service murah untuk di-clone ke setiap request.
+    // Arc memungkinkan service mudah untuk di-clone ke setiap request.
     secret: Arc<str>,
 }
 
