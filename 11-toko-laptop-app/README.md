@@ -86,7 +86,7 @@ Presenter → Response JSON
 | `src/repositories/` | Menjalankan query PostgreSQL. |
 | `src/models/` | Mendefinisikan entity dan payload JSON. |
 | `src/presenters/` | Menyusun bentuk response, termasuk format Rupiah. |
-| `src/auth/` | Mengelola akun, session, JWT, dan response autentikasi. |
+| `src/auth/` | Memisahkan layanan akun, middleware autentikasi, session, JWT, dan response. |
 | `src/error.rs` | Mengubah error aplikasi menjadi response JSON. |
 | `database/migrations/` | Menyimpan perubahan skema database. |
 | `catatan/` | Panduan belajar per alur, lapisan, dan file source. |

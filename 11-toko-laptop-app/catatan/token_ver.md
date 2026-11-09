@@ -108,7 +108,7 @@ login lagi  -> JWT baru membawa 1
 ## File implementasi
 
 - [Pembuatan dan verifikasi JWT](rust/auth/jwt.md) mendefinisikan klaim `token_version`.
-- [Middleware autentikasi](rust/auth/session.md) membandingkan versi pada JWT dengan database.
+- [Middleware autentikasi](rust/auth/middleware.md) membandingkan versi pada JWT dengan database.
 - [Handler logout](rust/handlers/auth.md) memicu pencabutan token.
 - [Repository user](rust/repositories/user-repository.md) membaca dan menaikkan versinya.
 - [Skema database](rust/database/initial-schema.md) menjelaskan kolom `token_version`.

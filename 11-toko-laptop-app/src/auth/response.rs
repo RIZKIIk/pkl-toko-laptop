@@ -1,5 +1,5 @@
 //! Pembentuk response HTTP yang dipakai oleh flow autentikasi.
-//! Catatan: [Buka penjelasan](file:///home/rizki/projects/Rust/tugas/PKL/11-toko-laptop-app/catatan/rust/auth/http.md)
+//! Catatan: [Buka penjelasan](file:///home/rizki/projects/Rust/tugas/PKL/11-toko-laptop-app/catatan/rust/auth/response.md)
 use axum::{
     Json,
     http::StatusCode,

@@ -1,7 +1,8 @@
-//! Layanan autentikasi: seed akun, verifikasi password, session, dan JWT.
+//! Layanan autentikasi: akun, middleware, session, response, dan JWT.
 //! Catatan: [Buka penjelasan](file:///home/rizki/projects/Rust/tugas/PKL/11-toko-laptop-app/catatan/rust/auth/mod.md)
-pub mod http;
 pub mod jwt;
+pub mod middleware;
+pub mod response;
 pub mod role;
 pub mod session;
 
@@ -17,7 +18,7 @@ use sqlx::PgPool;
 use crate::repositories::user_repository;
 use role::UserRole;
 
-pub use session::require_auth;
+pub use middleware::require_auth;
 
 /// Menambahkan atau memperbarui akun admin dari environment dengan hash Argon2id.
 pub async fn initialize_admin_user(

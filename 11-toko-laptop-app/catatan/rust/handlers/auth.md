@@ -41,7 +41,7 @@ pub async fn login(
 - `Json<LoginPayload>` membaca body JSON dan mencoba men-deserialize-nya menjadi tipe payload. `Json(payload)` mengikat nilai hasil baca ke `payload`.
 - `-> Response` berarti fungsi mengembalikan response HTTP umum, bukan `Result` dengan satu tipe sukses. Bentuk ini cocok untuk handler yang memilih banyak status berbeda.
 
-Jika body tidak cocok dengan tipe payload, extractor `Json` menolak request sebelum badan fungsi berjalan. `Response` bukan `Result`: kegagalan dan keberhasilan dibentuk sebagai response secara eksplisit, biasanya melalui helper `http`.
+Jika body tidak cocok dengan tipe payload, extractor `Json` menolak request sebelum badan fungsi berjalan. `Response` bukan `Result`: kegagalan dan keberhasilan dibentuk sebagai response secara eksplisit, biasanya melalui helper `response`.
 
 ### Payload dan `derive`
 
@@ -102,7 +102,7 @@ Middleware menyediakan `identity`; `Path(username)` mengambil nama akun dari URL
 
 ### `current_user(Extension(identity))`
 
-Tidak mencari identitas sendiri. Middleware sudah memverifikasi JWT atau session dan menyisipkan `AuthIdentity`; fungsi ini mengembalikan username dan role dari nilai tersebut dalam response sukses.
+Tidak mencari identitas sendiri. Middleware di [`auth/middleware.rs`](../auth/middleware.md) sudah memverifikasi JWT atau session dan menyisipkan `AuthIdentity`; fungsi ini mengembalikan username dan role dari nilai tersebut dalam response sukses.
 
 ### `logout(State(pool), Extension(identity), session)`
 
@@ -119,4 +119,4 @@ Pertama, menaikkan `token_version` pengguna di database menggunakan ID dari `ide
 | `POST /api/admin/users` | `create_user` | Dilindungi; membuat akun buyer/restocker. |
 | `PATCH /api/admin/users/{username}/role` | `update_user_role` | Dilindungi; mengubah role target yang diizinkan. |
 
-Untuk konfigurasi route, lihat [routes](../routes.md); untuk session dan response auth, lihat [session](../auth/session.md) dan [response auth](../auth/http.md).
+Untuk konfigurasi route, lihat [routes](../routes.md); untuk helper session dan response auth, lihat [session](../auth/session.md) dan [response auth](../auth/response.md).

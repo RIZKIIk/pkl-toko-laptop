@@ -11,15 +11,16 @@
 
 Modul `auth` mengatur layanan autentikasi: menyiapkan akun admin, mendaftarkan akun, memeriksa username dan password, serta menyediakan middleware untuk melindungi request.
 
-Modul ini tidak menangani query SQL secara langsung. Operasi tabel `users` diteruskan ke [user repository](../repositories/user-repository.md). Pembuatan response HTTP auth berada di [`http.rs`](http.md), pengelolaan session berada di [`session.rs`](session.md), dan JWT HS256 berada di [`jwt.rs`](jwt.md).
+Modul ini tidak menangani query SQL secara langsung. Operasi tabel `users` diteruskan ke [user repository](../repositories/user-repository.md). Middleware autentikasi/otorisasi berada di [`middleware.rs`](middleware.md), pembentukan response HTTP berada di [`response.rs`](response.md), pengelolaan session berada di [`session.rs`](session.md), dan JWT HS256 berada di [`jwt.rs`](jwt.md).
 
 ```text
 src/auth/
-├── mod.rs      # Layanan akun dan pemeriksaan kredensial
-├── http.rs     # Pembentuk response JSON auth
-├── jwt.rs      # Penerbitan dan verifikasi JWT HS256
-├── role.rs     # Jenis role dan kebijakan akses method/path
-└── session.rs  # Helper session dan middleware autentikasi
+├── mod.rs         # Layanan akun dan pemeriksaan kredensial
+├── middleware.rs  # Autentikasi JWT/session dan otorisasi role
+├── session.rs     # Helper session
+├── jwt.rs         # Penerbitan dan verifikasi JWT HS256
+├── role.rs        # Jenis role dan kebijakan akses method/path
+└── response.rs    # Pembentuk response JSON auth
 ```
 
 ## Di halaman ini
@@ -31,19 +32,21 @@ src/auth/
 Di awal file:
 
 ```rust
-pub mod http;
+pub mod middleware;
 pub mod jwt;
 pub mod role;
+pub mod response;
 pub mod session;
 ```
 
-- `mod http;` memberi tahu Rust bahwa isi modul `http` ada di file `http.rs`.
+- `mod middleware;` mendaftarkan autentikasi request dan pemeriksaan izin role.
 - `mod jwt;` memberi tahu Rust bahwa penerbitan dan verifikasi token ada di `jwt.rs`.
 - `mod role;` mendaftarkan tipe `UserRole` dan aturan `can_access`.
 - `mod session;` memberi tahu Rust bahwa isi modul `session` ada di file `session.rs`.
-- `pub` membuat nama modul dapat diakses melalui jalur publik, misalnya `auth::http`.
+- `mod response;` mendaftarkan helper response JSON yang digunakan handler dan middleware.
+- `pub` membuat nama modul dapat diakses melalui jalur publik, misalnya `auth::response`.
 
-Setiap modul memiliki tanggung jawab berbeda. Lihat [catatan `http.rs`](http.md) untuk response JSON, [catatan `jwt.rs`](jwt.md) untuk access token, dan [catatan `session.rs`](session.md) untuk session serta pemeriksaan login.
+Setiap modul memiliki tanggung jawab berbeda. Lihat [catatan middleware](middleware.md), [catatan response](response.md), [catatan `jwt.rs`](jwt.md) untuk access token, dan [catatan `session.rs`](session.md) untuk helper session.
 
 ## 2. Import dan re-export
 
@@ -52,7 +55,7 @@ use std::error::Error;
 use sqlx::PgPool;
 use crate::repositories::user_repository;
 
-pub use session::require_auth;
+pub use middleware::require_auth;
 ```
 
 | Sintaks | Kegunaan |
@@ -60,7 +63,7 @@ pub use session::require_auth;
 | `use std::error::Error;` | Mengimpor trait `Error` dari pustaka standar Rust untuk menuliskan tipe error umum. |
 | `use sqlx::PgPool;` | Mengimpor pool koneksi PostgreSQL yang dipakai untuk mengakses database. Pool mengelola koneksi agar dapat digunakan kembali. |
 | `use crate::repositories::user_repository;` | Mengimpor modul repository user dari crate aplikasi ini. Modul tersebut menjalankan query ke tabel `users`. |
-| `pub use session::require_auth;` | Mengimpor sekaligus mengekspor ulang `require_auth` dari modul `session`. Kode lain dapat mengaksesnya melalui `auth::require_auth`, tanpa menulis `auth::session::require_auth`. |
+| `pub use middleware::require_auth;` | Mengimpor sekaligus mengekspor ulang `require_auth` dari modul `middleware`. Kode lain tetap dapat mengaksesnya melalui `auth::require_auth`. |
 
 `crate::` berarti jalur dimulai dari akar crate aplikasi ini. `use` membuat nama yang sering dipakai lebih ringkas. `pub use` juga menjadikan nama yang diimpor tersedia bagi pemanggil dari luar modul, sesuai batas visibilitas modul.
 
@@ -195,7 +198,7 @@ Helper privat `migrate_legacy_passwords_locked(pool)` menjalankan langkah migras
 
 `hash_password(password: &str) -> Result<String, ...>` menghasilkan salt acak baru untuk tiap password dan menggunakan `Argon2::default()` (Argon2id). `verify_password(password_hash: String, password: &str) -> Result<bool, ...>` menolak password kosong, mem-parsing hash, lalu membandingkan password menggunakan verifier Argon2. Keduanya menggunakan `spawn_blocking` agar kerja CPU tidak menghambat runtime async. `password.to_owned()` membuat `String` milik sendiri agar data dapat dipindahkan ke closure; `move` memindahkan nilai tersebut ke closure. `.await??` berarti menunggu task lalu meneruskan dua kemungkinan error: error join task dan error Argon2.
 
-Attribute `#[cfg(test)]` menyertakan modul test hanya saat `cargo test`; `#[tokio::test]` menyediakan runtime async untuk test fungsi `async`. `#[derive(Clone, Debug)]` pada tipe `AuthIdentity`/`SessionIdentity` di modul session meminta compiler membuat trait `Clone` dan `Debug`; derive hanya berlaku jika field-fieldnya juga mendukung trait tersebut.
+Attribute `#[cfg(test)]` menyertakan modul test hanya saat `cargo test`; `#[tokio::test]` menyediakan runtime async untuk test fungsi `async`. `AuthIdentity` berada di middleware, sedangkan `SessionIdentity` berada di session; keduanya meminta compiler membuat trait `Clone` dan `Debug`.
 
 ## 7. Unit test
 

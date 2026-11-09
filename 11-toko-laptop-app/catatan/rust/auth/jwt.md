@@ -140,7 +140,7 @@ curl -i -H "Authorization: Bearer $TOKEN" \
   http://127.0.0.1:3001/api/laptops
 ```
 
-JWT dan cookie session dapat dipakai sendiri-sendiri. Middleware memeriksa JWT lebih dulu, lalu mencoba session jika JWT tidak menghasilkan identitas yang cocok (misalnya token tidak valid, user tidak ditemukan, atau versi/role berbeda). Lihat [middleware session](session.md) untuk urutan lengkap.
+JWT dan cookie session dapat dipakai sendiri-sendiri. Middleware memeriksa JWT lebih dulu, lalu mencoba session jika JWT tidak menghasilkan identitas yang cocok (misalnya token tidak valid, user tidak ditemukan, atau versi/role berbeda). Lihat [middleware autentikasi](middleware.md) untuk urutan lengkap.
 
 ## Kapan token ditolak?
 
