@@ -7,7 +7,7 @@
 
 Folder ini menjelaskan cara kerja REST API toko laptop, dari startup server sampai response kembali ke client. Catatan ditulis dalam urutan sederhana: pahami gambaran proyek, ikuti satu request, lalu buka rincian file yang ingin dipelajari.
 
-> **Baru membuka proyek?** Mulai dari [gambaran proyek](01-gambaran-proyek.md), lanjutkan ke [alur aplikasi](02-alur-kerja-aplikasi.md), lalu gunakan tabel referensi pada halaman ini untuk masuk ke detail source.
+> **Baru membuka proyek?** Mulai dari [gambaran proyek](01-gambaran-proyek.md), lanjutkan ke [alur aplikasi](02-alur-kerja-aplikasi.md), lalu gunakan tabel referensi pada halaman ini untuk masuk ke detail source. Setelah selesai, baca [catatan akhir](03-catatan-akhir.md) sebagai rangkuman.
 
 ## Peta aplikasi
 
