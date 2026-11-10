@@ -1,0 +1,5 @@
+sesion yaitu: informasi login penguna yang langsung di simpan di server sedangkan client/browser
+menyimpan Session ID melalui Cookie.
+
+jwt: informasi login/identitas penguna yang di kemas menjadi sebuah token,di simpan oleh clien/browser
+dan di kirim ke server setiap melakukan request
