@@ -83,7 +83,7 @@ Centang setiap misi yang sudah bisa dijelaskan:
 
 ## Database dan autentikasi
 
-SQLx menerapkan migration yang belum tercatat saat startup. Migration adalah riwayat perubahan skema: jangan mengedit atau menghapus file yang sudah pernah diterapkan karena SQLx memeriksa checksum; buat migration baru untuk perubahan selanjutnya. Lihat [skema final dan aturan migration](rust/database/initial-schema.md). Kolom `token_version` dipakai untuk mencabut JWT lama; ikuti [penjelasan token_version dari login sampai logout](token_ver.md).
+SQLx menerapkan baseline skema final saat startup dan meng-upgrade database lama tanpa menghapus data. Setelah baseline diterapkan, jangan mengubah file migration; gunakan file baru untuk perubahan selanjutnya. Lihat [skema final dan aturan migration](rust/database/initial-schema.md). Kolom `token_version` dipakai untuk mencabut JWT lama; ikuti [penjelasan token_version dari login sampai logout](token_ver.md).
 
 ## Batasan yang perlu diingat
 

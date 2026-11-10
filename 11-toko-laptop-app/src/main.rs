@@ -13,8 +13,28 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let config = AppConfig::from_env()?;
     let pool = config.connect_database().await?;
 
-    // Menjalankan migrasi dan inisialisasi akun admin.
-    sqlx::migrate!("./database/migrations").run(&pool).await?;
+    // Baseline baru menggantikan riwayat lama setelah satu kali upgrade.
+    let has_migration_history: bool =
+        sqlx::query_scalar("SELECT to_regclass('public._sqlx_migrations') IS NOT NULL")
+            .fetch_one(&pool)
+            .await?;
+    let has_legacy_migrations = if has_migration_history {
+        sqlx::query_scalar(
+            "SELECT EXISTS (SELECT 1 FROM public._sqlx_migrations WHERE version < 10)",
+        )
+        .fetch_one(&pool)
+        .await?
+    } else {
+        false
+    };
+    let mut migrator = sqlx::migrate::Migrator::with_migrations(
+        sqlx::migrate!("./database/migrations")
+            .iter()
+            .cloned()
+            .collect(),
+    );
+    migrator.set_ignore_missing(has_legacy_migrations);
+    migrator.run(&pool).await?;
     toko_laptop_app::auth::migrate_legacy_passwords(&pool).await?;
     config.initialize_admin_user(&pool).await?;
 

@@ -8,11 +8,11 @@ REST API inventaris laptop yang dibuat dengan Rust, Axum, SQLx, dan PostgreSQL. 
 
 - Rust toolchain (edition 2024).
 - PostgreSQL yang sudah berjalan.
-- Database PostgreSQL untuk aplikasi; database harus kosong jika baru pertama kali disiapkan.
+- Database PostgreSQL kosong untuk aplikasi. Akun PostgreSQL aplikasi perlu izin membuat tabel dan menjalankan migration.
 
 ### Siapkan konfigurasi
 
-Salin `.env.example` menjadi `.env`, lalu sesuaikan nilainya dengan PostgreSQL lokal. Buat database dengan nama yang sama seperti `DB_NAME`.
+Salin `.env.example` menjadi `.env`, lalu sesuaikan nilainya dengan PostgreSQL lokal. Buat database kosong dengan nama yang sama seperti `DB_NAME`; tabel dan constraint akan dibuat otomatis oleh migration saat aplikasi pertama kali dijalankan. Tidak perlu menyalin skema secara manual.
 
 | Variabel | Wajib | Kegunaan |
 | --- | --- | --- |
@@ -32,9 +32,9 @@ Buat secret acak, misalnya dengan `openssl rand -base64 32`. Jangan membagikan `
 cargo run
 ```
 
-Migration diterapkan otomatis saat startup. Password lama yang masih tersimpan sebagai teks biasa akan di-hash dengan Argon2id lalu nilai lamanya dihapus. Aplikasi juga membuat atau memperbarui akun admin berdasarkan konfigurasi. Jika server berhasil dimulai, periksa [http://127.0.0.1:3001/health](http://127.0.0.1:3001/health) atau ubah alamat sesuai `APP_HOST` dan `APP_PORT`.
+Migration diterapkan otomatis saat startup. Pada database baru, urutan migration membentuk skema final yang sama, lalu aplikasi membuat akun admin berdasarkan konfigurasi. Password lama yang masih tersimpan sebagai teks biasa akan di-hash dengan Argon2id sebelum kolom lama dihapus. Untuk memindahkan aplikasi, siapkan PostgreSQL, database kosong, dan `.env` yang sesuai di mesin tujuan, lalu jalankan `cargo run`; skema tidak bergantung pada data lokal yang perlu disalin. Jika server berhasil dimulai, periksa [http://127.0.0.1:3001/health](http://127.0.0.1:3001/health) atau ubah alamat sesuai `APP_HOST` dan `APP_PORT`.
 
-Jangan mengubah file migration yang sudah pernah dijalankan. SQLx memeriksa checksum-nya dan menghentikan startup jika isi file berbeda; buat file migration baru untuk perubahan skema berikutnya.
+Migration aktif diringkas menjadi satu baseline, [0010_final_schema.sql](database/migrations/0010_final_schema.sql). Saat startup aplikasi mengenali dan meng-upgrade riwayat lama `0001`–`0009`, mempertahankan data, lalu menggantinya dengan baseline baru. Password lama yang belum di-hash tetap dipertahankan sampai proses startup meng-hash-nya. Setelah migration diterapkan, jangan mengubah file baseline; perubahan skema berikutnya harus ditambahkan sebagai migration baru.
 
 ## Coba API
 

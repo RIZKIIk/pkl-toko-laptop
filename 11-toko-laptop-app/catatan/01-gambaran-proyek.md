@@ -15,7 +15,7 @@ Toko Laptop App adalah REST API inventaris laptop. Kode aktif menyediakan operas
 | Axum | Router, handler, extractor, dan response HTTP. | `routes.rs`, `handlers/`, `error.rs`. |
 | Tokio | Runtime async dan listener TCP. | `#[tokio::main]`, `TcpListener`. |
 | SQLx | Pool dan query PostgreSQL. | `config.rs`, `repositories/`. |
-| PostgreSQL | Penyimpanan tabel `laptops` dan `users`, termasuk `token_version` untuk pencabutan JWT. | Migration berurutan yang mempertahankan riwayat database. |
+| PostgreSQL | Penyimpanan tabel `laptops` dan `users`, termasuk `token_version` untuk pencabutan JWT. | Satu baseline final dan upgrade otomatis riwayat lama. |
 | Serde | Membaca JSON body ke payload Rust. | `#[derive(Deserialize)]`. |
 | serde_json | Membuat JSON response. | `json!`, `Value`. |
 | dotenvy | Mencoba memuat environment dari `.env`. | `main.rs`. |
@@ -84,6 +84,6 @@ Setiap file tetap memiliki fokus kecil:
 | `&T` | Meminjam nilai `T` tanpa memindahkan kepemilikannya. |
 | `Result<T, E>` | Mengandung `Ok(T)` saat berhasil atau `Err(E)` saat gagal; `Result` berbeda dari `Option`, yang menyatakan ada/tidaknya nilai. |
 
-Migration yang sudah diterapkan adalah riwayat: jangan mengedit atau menghapusnya karena SQLx memeriksa checksum. Tambahkan file migration baru untuk perubahan skema berikutnya. Detailnya ada di [catatan skema database](rust/database/initial-schema.md). Kolom `token_version` menaik saat pencabutan JWT; lihat penjelasan terpisah [dari login sampai logout](token_ver.md).
+Migration aktif diringkas menjadi satu baseline final yang meng-upgrade database lama sambil mempertahankan datanya. Setelah baseline diterapkan, jangan mengubah file migration; tambahkan file baru untuk perubahan skema berikutnya. Detailnya ada di [catatan skema database](rust/database/initial-schema.md). Kolom `token_version` menaik saat pencabutan JWT; lihat penjelasan terpisah [dari login sampai logout](token_ver.md).
 
 Lanjutkan ke [alur kerja aplikasi](02-alur-kerja-aplikasi.md) untuk melihat istilah tersebut saat request benar-benar berjalan.

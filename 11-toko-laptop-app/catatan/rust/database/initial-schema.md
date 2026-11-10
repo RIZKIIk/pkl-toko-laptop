@@ -4,9 +4,11 @@
 
 ## Tujuan
 
-Skema final aplikasi terdiri dari tabel `laptops` dan `users`. File migration SQL mempertahankan urutan historis `0001`–`0008` agar database yang sudah berisi data dapat menjalankan migration lanjutan dengan checksum SQLx yang cocok. Jangan menghapus atau mengubah migration yang pernah diterapkan, dan jangan squash/menyatukan migration lama menjadi satu file baru: database yang telah mencatat migration lama perlu melihat nomor serta checksum historis yang sama. Perubahan berikutnya harus ditambahkan sebagai migration bernomor baru.
+Skema final aplikasi terdiri dari tabel `laptops` dan `users`. Database PostgreSQL kosong mendapat skema yang sama melalui urutan migration saat aplikasi dijalankan dengan `cargo run`; akun admin awal kemudian disinkronkan dari konfigurasi. Siapkan server PostgreSQL, database kosong, dan kredensial `.env` di mesin tujuan, lalu jalankan aplikasi—tidak perlu membuat tabel atau menyalin skema manual.
 
-SQLx mencatat migration yang sudah dijalankan dalam tabel riwayat migration. Saat startup, macro `sqlx::migrate!` menyertakan berkas SQL dalam build dan `.run(&pool)` menjalankan hanya migration yang belum tercatat. Urutan nomor membuat perubahan skema dapat diterapkan bertahap pada database baru maupun database lama.
+Migration aktif diringkas menjadi satu baseline, [0010_final_schema.sql](../../../database/migrations/0010_final_schema.sql). Saat startup, aplikasi mengenali database lama berdasarkan tabel riwayat SQLx, mengizinkan versi historis yang sudah diringkas, lalu menjalankan baseline untuk melengkapi skema tanpa menghapus data. Migration baseline juga membersihkan catatan versi lama setelah berhasil. Jika password legacy masih ada, kolom dipertahankan sementara agar proses startup dapat meng-hash datanya dengan Argon2id sebelum menghapus kolom tersebut.
+
+Database baru dan database lama memakai skema akhir yang sama. Setelah baseline diterapkan, jangan mengubah file migration; tambahkan migration bernomor baru untuk perubahan skema selanjutnya.
 
 ## Tabel `laptops`
 
@@ -31,7 +33,7 @@ Validasi di database menjadi lapisan perlindungan tambahan bagi [validasi Rust](
 | `token_version` | `BIGINT` | Versi JWT; logout menaikkannya untuk mencabut semua JWT lama pengguna. |
 | `created_at` | `TIMESTAMPTZ` | Waktu akun dibuat. |
 
-Migration `0008` menambahkan `token_version` (dengan nilai awal yang sesuai untuk akun yang ada) dan menghapus tabel `revoked_jwts`; database lama akan menerapkannya otomatis saat `cargo run`. Akun lama tetap dipertahankan, termasuk hash password-nya. Versi disimpan per pengguna; logout menaikkannya, lalu middleware membandingkan versi pada JWT dengan database. Ini mencabut semua JWT lama pengguna sekaligus, bukan session cookie lain.
+Baseline final memastikan `token_version` tersedia dan tidak negatif; tabel lama `revoked_jwts` tidak digunakan. Akun lama tetap dipertahankan, termasuk hash password-nya. Versi disimpan per pengguna; logout menaikkannya, lalu middleware membandingkan versi pada JWT dengan database. Ini mencabut semua JWT lama pengguna sekaligus, bukan session cookie lain.
 
 ## Istilah SQL dalam skema
 
