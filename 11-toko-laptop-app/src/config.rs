@@ -59,7 +59,7 @@ impl AppConfig {
         })
     }
 
-    /// Menyinkronkan akun latihan dari konfigurasi environment ke tabel users.
+    /// Menyinkronkan akun admin dari konfigurasi environment ke tabel users.
     pub async fn initialize_admin_user(
         &self,
         pool: &sqlx::PgPool,
