@@ -13,27 +13,45 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let config = AppConfig::from_env()?;
     let pool = config.connect_database().await?;
 
-    // Baseline baru menggantikan riwayat lama setelah satu kali upgrade.
+    // Baseline versi 1 menggantikan riwayat migration lama tanpa menghapus data aplikasi.
     let has_migration_history: bool =
         sqlx::query_scalar("SELECT to_regclass('public._sqlx_migrations') IS NOT NULL")
             .fetch_one(&pool)
             .await?;
-    let has_legacy_migrations = if has_migration_history {
-        sqlx::query_scalar(
-            "SELECT EXISTS (SELECT 1 FROM public._sqlx_migrations WHERE version < 10)",
+    let migrations = sqlx::migrate!("./database/migrations")
+        .iter()
+        .cloned()
+        .collect::<Vec<_>>();
+    let baseline = migrations
+        .iter()
+        .find(|migration| migration.version == 1)
+        .expect("baseline migration version 1 must exist");
+
+    if has_migration_history {
+        let baseline_is_applied: bool = sqlx::query_scalar(
+            "SELECT EXISTS (
+                SELECT 1 FROM public._sqlx_migrations
+                WHERE version = $1 AND checksum = $2 AND success
+            )",
         )
+        .bind(baseline.version)
+        .bind(baseline.checksum.as_ref().to_vec())
         .fetch_one(&pool)
-        .await?
-    } else {
-        false
-    };
-    let mut migrator = sqlx::migrate::Migrator::with_migrations(
-        sqlx::migrate!("./database/migrations")
-            .iter()
-            .cloned()
-            .collect(),
-    );
-    migrator.set_ignore_missing(has_legacy_migrations);
+        .await?;
+
+        if baseline_is_applied {
+            sqlx::query("DELETE FROM public._sqlx_migrations WHERE version <> $1")
+                .bind(baseline.version)
+                .execute(&pool)
+                .await?;
+        } else {
+            sqlx::query("DELETE FROM public._sqlx_migrations")
+                .execute(&pool)
+                .await?;
+        }
+    }
+
+    let migrator = sqlx::migrate::Migrator::with_migrations(migrations);
     migrator.run(&pool).await?;
     toko_laptop_app::auth::migrate_legacy_passwords(&pool).await?;
     config.initialize_admin_user(&pool).await?;

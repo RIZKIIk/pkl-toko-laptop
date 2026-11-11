@@ -4,6 +4,8 @@
 
 ![Ilustrasi siklus session cookie](../../ilustrasi/halaman/52-auth-session.svg "Cookie client menunjuk ke session sementara di server")
 
+[Bandingkan session dan JWT](sesi_jwt.md)
+
 [Buka source `session.rs`](../../../src/auth/session.rs)
 
 ## Tanggung jawab

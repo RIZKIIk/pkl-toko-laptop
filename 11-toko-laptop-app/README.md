@@ -36,7 +36,7 @@ cargo run
 
 Migration diterapkan otomatis saat startup. Pada database baru, urutan migration membentuk skema final yang sama, lalu aplikasi membuat akun admin berdasarkan konfigurasi. Password lama yang masih tersimpan sebagai teks biasa akan di-hash dengan Argon2id sebelum kolom lama dihapus. Untuk memindahkan aplikasi, siapkan PostgreSQL, database kosong, dan `.env` yang sesuai di mesin tujuan, lalu jalankan `cargo run`; skema tidak bergantung pada data lokal yang perlu disalin. Jika server berhasil dimulai, periksa [http://127.0.0.1:3001/health](http://127.0.0.1:3001/health) atau ubah alamat sesuai `APP_HOST` dan `APP_PORT`.
 
-Migration aktif diringkas menjadi satu baseline, [0010_final_schema.sql](database/migrations/0010_final_schema.sql). Saat startup aplikasi mengenali dan meng-upgrade riwayat lama `0001`–`0009`, mempertahankan data, lalu menggantinya dengan baseline baru. Password lama yang belum di-hash tetap dipertahankan sampai proses startup meng-hash-nya. Setelah migration diterapkan, jangan mengubah file baseline; perubahan skema berikutnya harus ditambahkan sebagai migration baru.
+Migration aktif diringkas menjadi satu baseline, [0001_final_schema.sql](database/migrations/0001_final_schema.sql). Saat startup aplikasi mengenali baseline dari versi dan checksum, merapikan metadata riwayat lama `0001`–`0010` bila perlu, lalu menerapkan baseline tanpa menghapus data. Password lama yang belum di-hash tetap dipertahankan sampai proses startup meng-hash-nya. Setelah migration diterapkan, jangan mengubah file baseline; perubahan skema berikutnya harus ditambahkan sebagai migration baru.
 
 ## Coba API
 

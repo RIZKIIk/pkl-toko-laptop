@@ -74,4 +74,4 @@ BEGIN
 END;
 $migration$;
 
-DELETE FROM public._sqlx_migrations WHERE version < 10;
+DELETE FROM public._sqlx_migrations WHERE version <> 1;

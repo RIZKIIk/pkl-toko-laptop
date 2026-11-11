@@ -8,7 +8,7 @@
 
 Skema final aplikasi terdiri dari tabel `laptops` dan `users`. Database PostgreSQL kosong mendapat skema yang sama melalui urutan migration saat aplikasi dijalankan dengan `cargo run`; akun admin awal kemudian disinkronkan dari konfigurasi. Siapkan server PostgreSQL, database kosong, dan kredensial `.env` di mesin tujuan, lalu jalankan aplikasi—tidak perlu membuat tabel atau menyalin skema manual.
 
-Migration aktif diringkas menjadi satu baseline, [0010_final_schema.sql](../../../database/migrations/0010_final_schema.sql). Saat startup, aplikasi mengenali database lama berdasarkan tabel riwayat SQLx, mengizinkan versi historis yang sudah diringkas, lalu menjalankan baseline untuk melengkapi skema tanpa menghapus data. Migration baseline juga membersihkan catatan versi lama setelah berhasil. Jika password legacy masih ada, kolom dipertahankan sementara agar proses startup dapat meng-hash datanya dengan Argon2id sebelum menghapus kolom tersebut.
+Migration aktif diringkas menjadi satu baseline, [0001_final_schema.sql](../../../database/migrations/0001_final_schema.sql). Saat startup, aplikasi mencocokkan versi dan checksum baseline pada riwayat SQLx. Jika belum cocok, metadata riwayat lama dibersihkan agar tidak bentrok dengan nomor versi baseline; data tabel aplikasi tidak dihapus, lalu baseline dijalankan untuk melengkapi skema. Migration baseline juga merapikan catatan versi lama. Jika password legacy masih ada, kolom dipertahankan sementara agar proses startup dapat meng-hash datanya dengan Argon2id sebelum menghapus kolom tersebut.
 
 Database baru dan database lama memakai skema akhir yang sama. Setelah baseline diterapkan, jangan mengubah file migration; tambahkan migration bernomor baru untuk perubahan skema selanjutnya.
 

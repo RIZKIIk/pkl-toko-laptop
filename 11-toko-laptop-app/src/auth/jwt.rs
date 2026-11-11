@@ -23,9 +23,14 @@ pub struct JwtService {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Claims {
+    /// ID pengguna pemilik token (`sub` = subject).
     pub sub: i64,
+    /// Waktu kedaluwarsa token dalam detik sejak Unix epoch (`exp`).
     pub exp: u64,
+    /// Peran pengguna untuk menentukan hak aksesnya.
     pub role: UserRole,
+    /// Versi token pengguna; dibandingkan dengan versi di database agar token lama
+    /// dapat ditolak setelah versi pengguna dinaikkan, misalnya saat logout.
     pub token_version: i64,
 }
 

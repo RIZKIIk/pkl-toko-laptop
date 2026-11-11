@@ -4,6 +4,8 @@
 
 ![Ilustrasi: Anatomi JWT dan masa hidup](../../ilustrasi/halaman/08-jwt.svg "Anatomi JWT dan masa hidup")
 
+[Bandingkan session dan JWT](sesi_jwt.md)
+
 
 [Buka kode sumber `jwt.rs`](../../../src/auth/jwt.rs)
 
@@ -15,14 +17,14 @@ Modul ini menerbitkan dan memverifikasi access token JWT menggunakan HMAC-SHA256
 
 ## Isi token
 
-JWT aplikasi membawa empat klaim (*claims*):
+`Claims` adalah struct Rust yang menjadi payload JWT. Saat login berhasil, aplikasi mengisi empat klaim berikut:
 
-| Klaim | Nilai | Kegunaan |
+| Klaim | Tipe di Rust | Arti dan cara digunakan |
 | --- | --- | --- |
-| `sub` | ID pengguna berupa angka. | Menyatakan identitas pemilik token (*subject*). |
-| `exp` | Waktu kedaluwarsa sebagai Unix timestamp dalam detik. | Menentukan kapan token tidak berlaku lagi. |
-| `role` | Role pengguna, misalnya `admin`. | Menentukan akses yang dimiliki token; middleware mencocokkannya dengan role terbaru di database. |
-| `token_version` | Versi kredensial JWT pengguna saat token diterbitkan. | Memungkinkan logout mencabut semua JWT pengguna tanpa tabel denylist. |
+| `sub` | `i64` | *Subject* atau ID pengguna pemilik token. Middleware memakai nilai ini untuk mencari pengguna di database. |
+| `exp` | `u64` | Waktu kedaluwarsa dalam detik sejak Unix epoch (1 Januari 1970 UTC). `issue_token` menetapkannya satu jam setelah token dibuat; `verify_token` menolak token yang sudah melewati waktu ini. |
+| `role` | `UserRole` | Salinan role pengguna saat token diterbitkan, misalnya `admin`. Middleware membandingkannya dengan role terbaru di database sebelum memakai identitas JWT. Role ini bukan pengganti pemeriksaan izin route. |
+| `token_version` | `i64` | Salinan versi token pada baris pengguna saat token diterbitkan. Middleware membandingkannya dengan versi terbaru di database. Jika versi dinaikkan saat logout, token-token lama pengguna tidak lagi cocok dan ditolak. |
 
 Contoh payload setelah di-decode:
 
@@ -35,7 +37,18 @@ Contoh payload setelah di-decode:
 }
 ```
 
-Payload JWT ditandatangani, bukan dienkripsi. Client dapat membaca isinya. Jangan masukkan password, secret, atau data sensitif ke dalam claims.
+Pada contoh tersebut, `sub: 7` menunjuk pengguna dengan ID 7, `role: "admin"` adalah role yang tercatat saat token dibuat, dan `token_version: 0` harus tetap sama dengan versi pengguna di database agar JWT diterima. Nilai `exp` adalah timestamp, bukan durasi; aplikasi menghitungnya dengan menambahkan 3.600 detik ke waktu sekarang.
+
+Signature JWT memastikan payload tidak diubah tanpa terdeteksi, tetapi payload **tidak dienkripsi**. Client yang memiliki token dapat membaca claims. Karena itu, jangan masukkan password, secret, atau data sensitif ke dalamnya.
+
+### Perbedaan `role` dan `token_version`
+
+Kedua klaim ini menyimpan nilai pengguna saat token diterbitkan, tetapi dipakai untuk tujuan berbeda:
+
+- `role` menyimpan peran untuk pemeriksaan akses. Middleware memastikan role di token masih sama dengan role terbaru di database; perubahan role membuat token lama tidak cocok.
+- `token_version` adalah penanda untuk mencabut token secara kolektif. Saat logout, aplikasi menaikkan versi di database. Semua JWT lama milik pengguna itu kemudian memiliki versi yang tidak cocok, termasuk JWT yang masih belum kedaluwarsa atau dipakai di perangkat lain.
+
+Pemeriksaan terhadap database ini dilakukan pada setiap request yang menggunakan JWT. Jadi, masa berlaku satu jam membatasi umur token, sedangkan pencocokan `role` dan `token_version` memungkinkan perubahan status pengguna berlaku sebelum token kedaluwarsa.
 
 ## Cara kerja di aplikasi
 
