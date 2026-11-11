@@ -2,6 +2,8 @@
 
 > **Navigasi:** [Indeks catatan](../../README.md) · [README proyek](../../../README.md) · [Endpoint API](../../../endpoin.md)
 
+![Ilustrasi siklus session cookie](../../ilustrasi/halaman/52-auth-session.svg "Cookie client menunjuk ke session sementara di server")
+
 [Buka source `session.rs`](../../../src/auth/session.rs)
 
 ## Tanggung jawab

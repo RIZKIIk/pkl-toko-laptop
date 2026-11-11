@@ -2,6 +2,8 @@
 
 > **Navigasi:** [Indeks catatan](../../README.md) · [README proyek](../../../README.md) · [Endpoint API](../../../endpoin.md)
 
+![Ilustrasi tabel inti PostgreSQL](../../ilustrasi/halaman/54-database-schema.svg "Tabel laptops dan users disiapkan oleh baseline migration")
+
 ## Tujuan
 
 Skema final aplikasi terdiri dari tabel `laptops` dan `users`. Database PostgreSQL kosong mendapat skema yang sama melalui urutan migration saat aplikasi dijalankan dengan `cargo run`; akun admin awal kemudian disinkronkan dari konfigurasi. Siapkan server PostgreSQL, database kosong, dan kredensial `.env` di mesin tujuan, lalu jalankan aplikasi—tidak perlu membuat tabel atau menyalin skema manual.

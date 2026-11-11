@@ -2,6 +2,8 @@
 
 > **Navigasi:** [Indeks catatan](README.md) · [JWT](rust/auth/jwt.md) · [Logout](rust/handlers/auth.md)
 
+![Ilustrasi pencabutan JWT melalui token_version](ilustrasi/halaman/55-token-version.svg "Logout menaikkan versi database sehingga JWT lama ditolak")
+
 ## Gampangnya
 
 `token_version` adalah nomor versi token milik seorang pengguna. Aplikasi menyimpan nomor terbaru di kolom `users.token_version`, dan menyalin nomor itu ke setiap JWT saat login.

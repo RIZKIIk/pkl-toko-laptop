@@ -2,6 +2,8 @@
 
 > **Navigasi:** [Indeks catatan](../../README.md) · [README proyek](../../../README.md) · [Endpoint API](../../../endpoin.md)
 
+![Ilustrasi pembentukan response autentikasi](../../ilustrasi/halaman/53-auth-response.svg "Helper menghasilkan JSON sukses atau error dengan status HTTP")
+
 [Buka source `response.rs`](../../../src/auth/response.rs)
 
 ## Tanggung jawab

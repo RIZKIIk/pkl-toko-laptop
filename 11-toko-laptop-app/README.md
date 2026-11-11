@@ -2,6 +2,8 @@
 
 REST API inventaris laptop yang dibuat dengan Rust, Axum, SQLx, dan PostgreSQL. Proyek ini cocok untuk belajar alur request API dari route sampai query database.
 
+![Ilustrasi alur request Toko Laptop App](catatan/ilustrasi/halaman/00-readme-overview.svg "Alur request dari client ke PostgreSQL dan kembali sebagai JSON")
+
 ## Mulai cepat
 
 ### Yang diperlukan

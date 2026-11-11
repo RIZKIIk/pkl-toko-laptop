@@ -2,6 +2,8 @@
 
 > **Navigasi:** [Indeks catatan](../../README.md) · [README proyek](../../../README.md) · [Endpoint API](../../../endpoin.md)
 
+![Ilustrasi pemeriksaan middleware autentikasi](../../ilustrasi/halaman/51-auth-middleware.svg "JWT atau session diperiksa bersama identitas dan role")
+
 [Buka source `middleware.rs`](../../../src/auth/middleware.rs)
 
 ## Tanggung jawab

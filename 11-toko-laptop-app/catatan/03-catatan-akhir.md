@@ -2,6 +2,8 @@
 
 > **Navigasi:** [Indeks catatan](README.md) · [README proyek](../README.md) · [Dokumentasi endpoint](../endpoin.md)
 
+![Ilustrasi ringkasan tanggung jawab lapisan aplikasi](ilustrasi/halaman/50-catatan-akhir.svg "Alur client melalui lapisan aplikasi hingga database")
+
 Halaman ini merangkum cara memahami dan menjalankan Toko Laptop App setelah mengikuti catatan per lapisan. Aplikasi ini adalah REST API inventaris laptop berbasis Rust, Axum, SQLx, dan PostgreSQL; tidak ada frontend dalam proyek ini.
 
 ## Peta tanggung jawab
@@ -77,6 +79,6 @@ Migration aktif sekarang satu baseline yang kompatibel dengan database lama. Set
 
 ## Hasil pemeriksaan catatan
 
-Ke-47 file Markdown yang sudah ada sebelum halaman penutup ini ditambahkan telah ditinjau untuk konsistensi struktur, tautan lokal, dan rujukan modul auth setelah refactoring. Pemeriksaan otomatis menemukan nol tautan atau anchor lokal yang tidak terselesaikan; rujukan lama ke `http.rs` dan middleware di `session.rs` juga tidak ditemukan. Ringkasan struktur dan alur di halaman ini dicocokkan dengan implementasi proyek.
+Seluruh halaman Markdown di `catatan/` kini memiliki ilustrasi SVG yang merangkum topiknya. Catatan auth mengikuti pembagian modul saat ini: middleware, session, JWT, dan response dijelaskan pada halaman masing-masing.
 
 Untuk menelusuri materi dari awal, mulai dari [gambaran proyek](01-gambaran-proyek.md), lanjutkan ke [alur kerja aplikasi](02-alur-kerja-aplikasi.md), lalu pilih catatan source dari [indeks](README.md).

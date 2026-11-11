@@ -2,6 +2,8 @@
 
 > **Navigasi:** [README proyek](README.md) · [Indeks catatan](catatan/README.md) · [Panduan curl](catatan/curl.md)
 
+![Ilustrasi peta endpoint dan hak akses](catatan/ilustrasi/halaman/49-endpoints.svg "Ringkasan endpoint publik, admin, dan operasi laptop berdasarkan role")
+
 ## Base URL
 
 Alamat server mengikuti `APP_HOST` dan `APP_PORT` di `.env` pada root proyek. Pada konfigurasi yang sedang berjalan, server tersedia di [http://127.0.0.1:3001](http://127.0.0.1:3001). Jika port atau host berubah, sesuaikan URL request dan variabel `baseUrl` di environment Postman. `APP_HOST` default-nya `127.0.0.1`, sedangkan `APP_PORT` wajib diatur.
