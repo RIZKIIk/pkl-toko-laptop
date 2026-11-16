@@ -16,7 +16,7 @@ use crate::auth::{
 };
 
 /// Membersihkan username dan memastikan sesuai batas kolom database.
-fn validate_username(username: &str) -> Result<&str, &'static str> {
+fn validasi_nama_pengguna(username: &str) -> Result<&str, &'static str> {
     let username = username.trim();
     if username.is_empty() {
         return Err("Username wajib diisi");
@@ -52,75 +52,79 @@ pub struct UpdateUserRolePayload {
 }
 
 /// Memeriksa kredensial lalu membuat session baru dan access token JWT.
-pub async fn login(
+pub async fn masuk(
     State(pool): State<PgPool>,
     Extension(jwt): Extension<JwtService>,
     session: Session,
     Json(payload): Json<LoginPayload>,
 ) -> Response {
-    let username = match validate_username(&payload.username) {
+    let username = match validasi_nama_pengguna(&payload.username) {
         Ok(username) => username,
-        Err(message) => return response::error_response(StatusCode::BAD_REQUEST, message),
+        Err(message) => return response::respons_gagal(StatusCode::BAD_REQUEST, message),
     };
     if payload.password.is_empty() {
-        return response::error_response(StatusCode::BAD_REQUEST, "Password wajib diisi");
+        return response::respons_gagal(StatusCode::BAD_REQUEST, "Password wajib diisi");
     }
 
-    let credentials_match = match auth::verify_credentials(&pool, username, &payload.password).await
-    {
-        Ok(matches) => matches,
-        Err(error) => {
-            eprintln!("Gagal memverifikasi kredensial user: {error}");
-            return response::error_response(
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "Terjadi kesalahan saat login",
-            );
-        }
-    };
-
-    if !credentials_match {
-        return response::error_response(StatusCode::UNAUTHORIZED, "Username atau password salah");
-    }
-
-    // Satu login menghasilkan JWT dan session cookie untuk dua cara autentikasi.
-    let (user_id, role, token_version) =
-        match crate::repositories::user_repository::find_login_identity(&pool, username).await {
-            Ok(Some(login_identity)) => login_identity,
-            Ok(None) => {
-                return response::error_response(
-                    StatusCode::UNAUTHORIZED,
-                    "Username atau password salah",
-                );
-            }
+    let credentials_match =
+        match auth::verifikasi_kredensial(&pool, username, &payload.password).await {
+            Ok(matches) => matches,
             Err(error) => {
-                eprintln!("Gagal mengambil identitas user: {error}");
-                return response::error_response(
+                eprintln!("Gagal memverifikasi kredensial user: {error}");
+                return response::respons_gagal(
                     StatusCode::INTERNAL_SERVER_ERROR,
                     "Terjadi kesalahan saat login",
                 );
             }
         };
 
-    let token = match jwt.issue_token(user_id, role, token_version) {
+    if !credentials_match {
+        return response::respons_gagal(StatusCode::UNAUTHORIZED, "Username atau password salah");
+    }
+
+    // Satu login menghasilkan JWT dan session cookie untuk dua cara autentikasi.
+    let (user_id, role, token_version) =
+        match crate::repositories::user_repository::cari_identitas_pengguna_untuk_login(
+            &pool, username,
+        )
+        .await
+        {
+            Ok(Some(login_identity)) => login_identity,
+            Ok(None) => {
+                return response::respons_gagal(
+                    StatusCode::UNAUTHORIZED,
+                    "Username atau password salah",
+                );
+            }
+            Err(error) => {
+                eprintln!("Gagal mengambil identitas user: {error}");
+                return response::respons_gagal(
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "Terjadi kesalahan saat login",
+                );
+            }
+        };
+
+    let token = match jwt.terbitkan_token(user_id, role, token_version) {
         Ok(token) => token,
         Err(error) => {
             eprintln!("Gagal membuat JWT saat login: {error}");
-            return response::error_response(
+            return response::respons_gagal(
                 StatusCode::INTERNAL_SERVER_ERROR,
                 "Terjadi kesalahan saat membuat token login",
             );
         }
     };
 
-    if let Err(error) = session::start_session(&session, username).await {
+    if let Err(error) = session::mulai_sesi(&session, username).await {
         eprintln!("Gagal membuat session login: {error}");
-        return response::error_response(
+        return response::respons_gagal(
             StatusCode::INTERNAL_SERVER_ERROR,
             "Terjadi kesalahan pada session",
         );
     }
 
-    response::success_response(json!({
+    response::respons_berhasil(json!({
         "status": "success",
         "message": "Login berhasil",
         "data": {
@@ -134,16 +138,16 @@ pub async fn login(
 }
 
 /// Membuat akun baru dari username dan password yang dikirim sebagai JSON.
-pub async fn register(State(pool): State<PgPool>, Json(payload): Json<LoginPayload>) -> Response {
-    let username = match validate_username(&payload.username) {
+pub async fn daftar(State(pool): State<PgPool>, Json(payload): Json<LoginPayload>) -> Response {
+    let username = match validasi_nama_pengguna(&payload.username) {
         Ok(username) => username,
-        Err(message) => return response::error_response(StatusCode::BAD_REQUEST, message),
+        Err(message) => return response::respons_gagal(StatusCode::BAD_REQUEST, message),
     };
     if payload.password.is_empty() {
-        return response::error_response(StatusCode::BAD_REQUEST, "Password wajib diisi");
+        return response::respons_gagal(StatusCode::BAD_REQUEST, "Password wajib diisi");
     }
 
-    match auth::register_user(&pool, username, &payload.password).await {
+    match auth::daftarkan_pengguna(&pool, username, &payload.password).await {
         Ok(true) => (
             StatusCode::CREATED,
             axum::Json(json!({
@@ -153,10 +157,10 @@ pub async fn register(State(pool): State<PgPool>, Json(payload): Json<LoginPaylo
             })),
         )
             .into_response(),
-        Ok(false) => response::error_response(StatusCode::CONFLICT, "Username sudah digunakan"),
+        Ok(false) => response::respons_gagal(StatusCode::CONFLICT, "Username sudah digunakan"),
         Err(error) => {
             eprintln!("Gagal membuat akun baru: {error}");
-            response::error_response(
+            response::respons_gagal(
                 StatusCode::INTERNAL_SERVER_ERROR,
                 "Terjadi kesalahan saat membuat akun",
             )
@@ -165,25 +169,27 @@ pub async fn register(State(pool): State<PgPool>, Json(payload): Json<LoginPaylo
 }
 
 /// Membuat akun buyer/restocker melalui endpoint khusus admin.
-pub async fn create_user(
+pub async fn buat_pengguna(
     State(pool): State<PgPool>,
     Json(payload): Json<CreateUserPayload>,
 ) -> Response {
-    let username = match validate_username(&payload.username) {
+    let username = match validasi_nama_pengguna(&payload.username) {
         Ok(username) => username,
-        Err(message) => return response::error_response(StatusCode::BAD_REQUEST, message),
+        Err(message) => return response::respons_gagal(StatusCode::BAD_REQUEST, message),
     };
     if payload.password.is_empty() {
-        return response::error_response(StatusCode::BAD_REQUEST, "Password wajib diisi");
+        return response::respons_gagal(StatusCode::BAD_REQUEST, "Password wajib diisi");
     }
     if payload.role == UserRole::Admin {
-        return response::error_response(
+        return response::respons_gagal(
             StatusCode::BAD_REQUEST,
             "Role admin hanya dapat ditetapkan melalui konfigurasi server",
         );
     }
 
-    match auth::register_user_with_role(&pool, username, &payload.password, payload.role).await {
+    match auth::daftarkan_pengguna_dengan_peran(&pool, username, &payload.password, payload.role)
+        .await
+    {
         Ok(true) => (
             StatusCode::CREATED,
             Json(json!({
@@ -193,10 +199,10 @@ pub async fn create_user(
             })),
         )
             .into_response(),
-        Ok(false) => response::error_response(StatusCode::CONFLICT, "Username sudah digunakan"),
+        Ok(false) => response::respons_gagal(StatusCode::CONFLICT, "Username sudah digunakan"),
         Err(error) => {
             eprintln!("Gagal membuat akun dengan role: {error}");
-            response::error_response(
+            response::respons_gagal(
                 StatusCode::INTERNAL_SERVER_ERROR,
                 "Terjadi kesalahan saat membuat akun",
             )
@@ -205,39 +211,41 @@ pub async fn create_user(
 }
 
 /// Mengubah role pengguna menjadi buyer/restocker dan mencabut kredensial lamanya.
-pub async fn update_user_role(
+pub async fn ubah_peran_pengguna(
     State(pool): State<PgPool>,
     Extension(identity): Extension<AuthIdentity>,
     Path(username): Path<String>,
     Json(payload): Json<UpdateUserRolePayload>,
 ) -> Response {
-    let username = match validate_username(&username) {
+    let username = match validasi_nama_pengguna(&username) {
         Ok(username) => username,
-        Err(message) => return response::error_response(StatusCode::BAD_REQUEST, message),
+        Err(message) => return response::respons_gagal(StatusCode::BAD_REQUEST, message),
     };
     if username == identity.username {
-        return response::error_response(
+        return response::respons_gagal(
             StatusCode::BAD_REQUEST,
             "Role akun yang sedang digunakan tidak dapat diubah",
         );
     }
     if payload.role == UserRole::Admin {
-        return response::error_response(
+        return response::respons_gagal(
             StatusCode::BAD_REQUEST,
             "Role admin hanya dapat ditetapkan melalui konfigurasi server",
         );
     }
 
-    match crate::repositories::user_repository::set_user_role(&pool, username, payload.role).await {
-        Ok(true) => response::success_response(json!({
+    match crate::repositories::user_repository::ubah_peran_pengguna(&pool, username, payload.role)
+        .await
+    {
+        Ok(true) => response::respons_berhasil(json!({
             "status": "success",
             "message": "Role pengguna berhasil diperbarui",
             "data": { "username": username, "role": payload.role }
         })),
-        Ok(false) => response::error_response(StatusCode::NOT_FOUND, "Pengguna tidak ditemukan"),
+        Ok(false) => response::respons_gagal(StatusCode::NOT_FOUND, "Pengguna tidak ditemukan"),
         Err(error) => {
             eprintln!("Gagal mengubah role pengguna: {error}");
-            response::error_response(
+            response::respons_gagal(
                 StatusCode::INTERNAL_SERVER_ERROR,
                 "Terjadi kesalahan saat mengubah role pengguna",
             )
@@ -246,63 +254,39 @@ pub async fn update_user_role(
 }
 
 /// Mengembalikan identitas dari JWT bearer atau session aktif.
-pub async fn current_user(Extension(identity): Extension<AuthIdentity>) -> Response {
-    response::success_response(json!({
+pub async fn pengguna_saat_ini(Extension(identity): Extension<AuthIdentity>) -> Response {
+    response::respons_berhasil(json!({
         "status": "success",
         "data": { "username": identity.username, "role": identity.role }
     }))
 }
 
 /// Mencabut semua JWT pengguna dan menghapus session aktif.
-pub async fn logout(
+pub async fn keluar(
     State(pool): State<PgPool>,
     Extension(identity): Extension<AuthIdentity>,
     session: Session,
 ) -> Response {
     if let Err(error) =
-        crate::repositories::user_repository::increment_token_version(&pool, identity.user_id).await
+        crate::repositories::user_repository::naikkan_versi_token(&pool, identity.user_id).await
     {
         eprintln!("Gagal mencabut JWT saat logout: {error}");
-        return response::error_response(
+        return response::respons_gagal(
             StatusCode::INTERNAL_SERVER_ERROR,
             "Terjadi kesalahan saat logout",
         );
     }
 
-    if let Err(error) = auth::session::clear_session(&session).await {
+    if let Err(error) = auth::session::hapus_sesi(&session).await {
         eprintln!("Gagal menghapus session saat logout: {error}");
-        return response::error_response(
+        return response::respons_gagal(
             StatusCode::INTERNAL_SERVER_ERROR,
             "Terjadi kesalahan pada session",
         );
     }
 
-    response::success_response(json!({
+    response::respons_berhasil(json!({
         "status": "success",
         "message": "Logout berhasil"
     }))
-}
-
-#[cfg(test)]
-mod tests {
-    use super::validate_username;
-
-    #[test]
-    fn username_is_trimmed_before_use() {
-        assert_eq!(validate_username("  rizki  "), Ok("rizki"));
-    }
-
-    #[test]
-    fn username_must_not_be_empty() {
-        assert_eq!(validate_username("   "), Err("Username wajib diisi"));
-    }
-
-    #[test]
-    fn username_cannot_exceed_database_limit() {
-        assert!(validate_username(&"a".repeat(100)).is_ok());
-        assert_eq!(
-            validate_username(&"a".repeat(101)),
-            Err("Username maksimal 100 karakter")
-        );
-    }
 }

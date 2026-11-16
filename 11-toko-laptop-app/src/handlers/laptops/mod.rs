@@ -3,23 +3,25 @@
 use crate::error::ApiError;
 use serde_json::{Value, json};
 
+mod buy;
 mod create;
 mod delete;
 mod read;
 mod update;
 
-pub use create::create_laptop;
-pub use delete::delete_laptop;
-pub use read::{get_laptop, list_laptops};
-pub use update::update_laptop;
+pub use buy::beli_laptop;
+pub use create::tambah_laptop;
+pub use delete::hapus_laptop;
+pub use read::{ambil_laptop, daftar_laptop};
+pub use update::ubah_laptop;
 
 /// Membentuk response sukses yang membawa data.
-pub fn success_response(data: Value) -> Value {
+pub fn respons_berhasil(data: Value) -> Value {
     json!({"status": "success", "data": data})
 }
 
 /// Membentuk response sukses dengan pesan dan data.
-pub fn success_response_with_message(message: &str, data: Value) -> Value {
+pub fn respons_berhasil_dengan_pesan(message: &str, data: Value) -> Value {
     json!({
         "status": "success",
         "message": message,
@@ -28,6 +30,6 @@ pub fn success_response_with_message(message: &str, data: Value) -> Value {
 }
 
 /// Membuat error 404 dengan pesan laptop yang konsisten.
-pub fn not_found_laptop(id: i64) -> ApiError {
+pub fn laptop_tidak_ditemukan(id: i64) -> ApiError {
     ApiError::NotFound(format!("Laptop dengan ID {id} tidak ditemukan"))
 }

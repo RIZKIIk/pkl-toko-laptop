@@ -32,14 +32,14 @@ Tidak adanya `pub` berarti modul-modul ini tidak dibuka langsung ke pemakai crat
 ## 2. Ekspor fungsi validator
 
 ```rust
-pub use create::validate_create_laptop;
-pub use id::validate_laptop_id;
-pub use update::validate_update_laptop;
+pub use create::validasi_laptop_baru;
+pub use id::validasi_id_laptop;
+pub use update::validasi_perubahan_laptop;
 ```
 
 - `use` membawa nama dari modul sumber ke namespace `validation`.
 - `pub use` juga mengekspor ulang nama itu agar dapat dipakai modul lain.
-- Contohnya, `pub use id::validate_laptop_id;` memungkinkan handler memanggil `crate::validation::validate_laptop_id(...)`, tanpa menyebut jalur internal `crate::validation::id::...`.
+- Contohnya, `pub use id::validasi_id_laptop;` memungkinkan handler memanggil `crate::validation::validasi_id_laptop(...)`, tanpa menyebut jalur internal `crate::validation::id::...`.
 
 Hanya fungsi yang diperlukan handler yang diekspor. Helper teks tetap detail internal karena tidak ada `pub use text::...`.
 
@@ -47,7 +47,7 @@ Hanya fungsi yang diperlukan handler yang diekspor. Helper teks tetap detail int
 
 ```text
 handler
-  -> crate::validation::validate_create_laptop(...)
+  -> crate::validation::validasi_laptop_baru(...)
      -> validator create memakai helper text secara internal
   -> lanjut ke repository hanya jika hasilnya Ok
 ```
@@ -65,8 +65,8 @@ Jika fungsi validasi menghasilkan `Err(ApiError)`, handler umumnya memakai opera
 
 | Fungsi pada `crate::validation` | Modul implementasi | Dipakai oleh |
 | --- | --- | --- |
-| `validate_laptop_id` | `id.rs` | Handler detail, update, dan delete. |
-| `validate_create_laptop` | `create.rs` | Handler `POST /api/laptops`. |
-| `validate_update_laptop` | `update.rs` | Handler `PATCH /api/laptops/{id}`. |
+| `validasi_id_laptop` | `id.rs` | Handler detail, update, dan delete. |
+| `validasi_laptop_baru` | `create.rs` | Handler `POST /api/laptops`. |
+| `validasi_perubahan_laptop` | `update.rs` | Handler `PATCH /api/laptops/{id}`. |
 
-Helper `validate_text` sengaja tetap internal. Validator create dan update memakainya agar aturan trim dan batas panjang tidak berbeda.
+Helper `validasi_teks` sengaja tetap internal. Validator create dan update memakainya agar aturan trim dan batas panjang tidak berbeda.

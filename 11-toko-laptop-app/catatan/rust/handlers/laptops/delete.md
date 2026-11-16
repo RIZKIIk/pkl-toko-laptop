@@ -30,17 +30,17 @@ use sqlx::PgPool;
 
 Import `crate::{...}` di bawah file mengimpor `ApiError`, helper pesan not-found, repository laptop (diberi nama lokal `repository`), dan validator ID. `as repository` adalah alias agar nama panjang repository lebih ringkas di fungsi.
 
-## Fungsi `delete_laptop`
+## Fungsi `hapus_laptop`
 
 ```rust
-pub async fn delete_laptop(
+pub async fn hapus_laptop(
     State(pool): State<PgPool>,
     Path(id): Path<i64>,
 ) -> Result<Json<Value>, ApiError> {
-    validate_laptop_id(id)?;
+    validasi_id_laptop(id)?;
 
-    if !repository::delete_laptop(&pool, id).await? {
-        return Err(not_found_laptop(id));
+    if !repository::hapus_laptop(&pool, id).await? {
+        return Err(laptop_tidak_ditemukan(id));
     }
 
     Ok(Json(
@@ -59,10 +59,10 @@ pub async fn delete_laptop(
 
 ### Urutan proses
 
-1. `validate_laptop_id(id)?` menolak ID nol atau negatif. Operator `?` menghentikan handler dan meneruskan error validasi.
-2. `repository::delete_laptop(&pool, id)` meminta repository menghapus baris. `&pool` meminjam pool yang sama; `.await` menunggu query selesai.
+1. `validasi_id_laptop(id)?` menolak ID nol atau negatif. Operator `?` menghentikan handler dan meneruskan error validasi.
+2. `repository::hapus_laptop(&pool, id)` meminta repository menghapus baris. `&pool` meminjam pool yang sama; `.await` menunggu query selesai.
 3. Repository mengembalikan `Result<bool, sqlx::Error>`. Operator `?` meneruskan error database jika query gagal; jika sukses, `bool` menunjukkan apakah ada baris terhapus.
-4. `if !...` memakai `!` untuk membalik boolean. Jika tidak ada baris yang terhapus (`false`), fungsi mengembalikan `Err(not_found_laptop(id))`.
+4. `if !...` memakai `!` untuk membalik boolean. Jika tidak ada baris yang terhapus (`false`), fungsi mengembalikan `Err(laptop_tidak_ditemukan(id))`.
 5. Jika baris berhasil dihapus, `json!({...})` menyusun object dengan tiga field: status, pesan, dan ID.
 6. `Json(...)` menandai nilai tersebut sebagai JSON. `Ok(...)` menandai bahwa handler selesai sukses.
 

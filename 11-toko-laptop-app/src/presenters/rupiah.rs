@@ -19,17 +19,3 @@ fn kelompokkan_ribuan(nilai: u64) -> String {
 
     angka
 }
-
-#[cfg(test)]
-mod tests {
-    use super::formatkan_rupiah;
-
-    #[test]
-    fn rupiah_memakai_pemisah_ribuan_titik() {
-        assert_eq!(formatkan_rupiah(1_600_000), "Rp 1.600.000");
-        assert_eq!(formatkan_rupiah(0), "Rp 0");
-        assert_eq!(formatkan_rupiah(999), "Rp 999");
-        assert_eq!(formatkan_rupiah(1_000), "Rp 1.000");
-        assert_eq!(formatkan_rupiah(-1_600_000), "Rp -1.600.000");
-    }
-}

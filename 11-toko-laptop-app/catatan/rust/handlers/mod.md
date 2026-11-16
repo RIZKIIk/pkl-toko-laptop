@@ -32,9 +32,9 @@ Rust mencari `auth.rs` dan `system.rs` di folder `handlers/`, serta `laptops/mod
 
 | Ekspor | Sumber | Dipakai untuk |
 | --- | --- | --- |
-| `create_user`, `current_user`, `login`, `logout`, `register`, `update_user_role` | `auth.rs` | Login, registrasi, pemeriksaan identitas, logout, dan pengelolaan akun. |
-| `create_laptop`, `delete_laptop`, `get_laptop`, `list_laptops`, `update_laptop` | `laptops/` | Endpoint CRUD laptop. |
-| `health` | `system.rs` | `GET /health`. |
+| `buat_pengguna`, `pengguna_saat_ini`, `masuk`, `keluar`, `daftar`, `ubah_peran_pengguna` | `auth.rs` | Login, registrasi, pemeriksaan identitas, logout, dan pengelolaan akun. |
+| `tambah_laptop`, `hapus_laptop`, `ambil_laptop`, `daftar_laptop`, `ubah_laptop` | `laptops/` | Endpoint CRUD laptop. |
+| `cek_kesehatan` | `system.rs` | `GET /health`. |
 
 Detail fungsi ada pada [auth](auth.md), [system](system.md), dan [operasi laptop](laptops/mod.md).
 

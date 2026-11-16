@@ -19,12 +19,12 @@ use crate::error::ApiError;
 
 `crate::` menunjuk akar crate aplikasi. `ApiError` dipakai untuk mengembalikan kesalahan input sebagai `BadRequest` (HTTP 400).
 
-## Fungsi `validate_text`
+## Fungsi `validasi_teks`
 
 Kode:
 
 ```rust
-pub(super) fn validate_text(
+pub(super) fn validasi_teks(
     value: String,
     field: &str,
     max_length: usize,
@@ -47,7 +47,7 @@ pub(super) fn validate_text(
 ### Deklarasi fungsi
 
 - `pub` membuat fungsi terbuka menurut aturan visibility Rust. Namun, modul induknya dideklarasikan `mod text;` (privat) dan tidak di-re-export, sehingga pemanggil normal memakai validator payload, bukan jalur `validation::text` dari luar modul.
-- `fn validate_text` mendeklarasikan fungsi bernama `validate_text`.
+- `fn validasi_teks` mendeklarasikan fungsi bernama `validasi_teks`.
 - `value: String` adalah teks yang dimiliki fungsi. `String` merupakan teks yang dapat dimiliki dan disimpan.
 - `field: &str` adalah nama field yang dipinjam, misalnya `"Nama laptop"`, agar pesan error dapat menyebut field yang tepat.
 - `max_length: usize` adalah batas jumlah karakter. `usize` adalah tipe bilangan bulat yang biasa dipakai untuk ukuran atau indeks.

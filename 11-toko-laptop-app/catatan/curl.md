@@ -199,7 +199,23 @@ Contoh response `200 OK`:
 
 ID tidak valid menghasilkan `400 Bad Request`; ID positif yang tidak ditemukan menghasilkan `404 Not Found`.
 
-### 8. Update sebagian field — `PATCH /api/laptops/{id}`
+### 8. Beli laptop — `POST /api/laptops/{id}/buy`
+
+Login memakai akun buyer, lalu gunakan cookie buyer atau JWT dari login buyer. Jumlah harus lebih dari nol. Jika stok tidak mencukupi, server mengembalikan `409 Conflict` dan stok tidak dikurangi.
+
+```bash
+BUYER_TOKEN='JWT_DARI_LOGIN_BUYER'
+
+curl -i \
+  -H "Authorization: Bearer $BUYER_TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{"jumlah":1}' \
+  "http://127.0.0.1:3001/api/laptops/1/buy"
+```
+
+Response sukses `200 OK` menyertakan jumlah pembelian dan laptop dengan stok terbaru.
+
+### 9. Update sebagian field — `PATCH /api/laptops/{id}`
 
 Wajib login. PATCH mengirim satu atau beberapa field yang ingin diubah; field lain tidak berubah. Di sini `-X PATCH` diperlukan karena `-d` sendiri secara default memilih POST, bukan PATCH.
 
@@ -224,7 +240,7 @@ Contoh response `200 OK`:
 
 Body tanpa field yang dapat diubah ditolak dengan `400 Bad Request`.
 
-### 9. Hapus laptop — `DELETE /api/laptops/{id}`
+### 10. Hapus laptop — `DELETE /api/laptops/{id}`
 
 Wajib login. Karena tidak ada body, `-X DELETE` dipakai untuk memilih metode HTTP DELETE.
 
@@ -247,7 +263,7 @@ Contoh response `200 OK`:
 
 Jika ID tidak ditemukan, response `404 Not Found`.
 
-### 10. Lihat session aktif — `GET /api/auth/session`
+### 11. Lihat session aktif — `GET /api/auth/session`
 
 Wajib login. Endpoint ini mengembalikan username dan role akun yang terautentikasi. GET tidak memerlukan `-X`.
 
@@ -281,7 +297,7 @@ Contoh response `200 OK`:
 
 JWT digunakan untuk autentikasi. Server mengambil role terbaru pengguna dari database, jadi role tidak perlu dibaca dari token. Tanpa cookie session atau bearer JWT yang valid, server mengembalikan `401 Unauthorized`.
 
-### 11. Logout — `POST /api/auth/logout`
+### 12. Logout — `POST /api/auth/logout`
 
 Wajib memakai cookie session atau JWT bearer yang valid. Tidak ada body, maka metode ditentukan eksplisit memakai `-X POST`. Logout mencabut JWT bearer yang dipakai pada request itu dan menghapus session aktif.
 

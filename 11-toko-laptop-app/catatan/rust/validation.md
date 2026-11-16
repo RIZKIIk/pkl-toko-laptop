@@ -47,7 +47,7 @@ Validasi aplikasi memberi pesan yang mudah dipahami client. Constraint pada Post
 | `stok` | Bilangan bulat nol atau lebih. | `400 Bad Request`. |
 | Body PATCH | Minimal satu dari empat field harus dikirim. | `400 Bad Request`. |
 
-`validate_text` menghitung Unicode scalar value dengan `.chars().count()`, bukan byte UTF-8 atau kelompok grapheme yang dilihat mata sebagai satu simbol. Validator create memeriksa semua field; validator update hanya memeriksa field bernilai `Some`, sehingga `None` tetap berarti “jangan ubah”.
+`validasi_teks` menghitung Unicode scalar value dengan `.chars().count()`, bukan byte UTF-8 atau kelompok grapheme yang dilihat mata sebagai satu simbol. Validator create memeriksa semua field; validator update hanya memeriksa field bernilai `Some`, sehingga `None` tetap berarti “jangan ubah”.
 
 ## Urutan pada request laptop
 

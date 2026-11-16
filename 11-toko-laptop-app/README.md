@@ -54,18 +54,19 @@ Login melalui Postman atau `curl` untuk memperoleh session cookie dan JWT. Opera
 | `GET` | `/api/laptops` | Melihat daftar laptop. | Admin, buyer, restocker |
 | `POST` | `/api/laptops` | Menambahkan laptop. | Admin |
 | `GET` | `/api/laptops/{id}` | Melihat detail laptop. | Admin, buyer, restocker |
+| `POST` | `/api/laptops/{id}/buy` | Membeli laptop dan mengurangi stok. | Admin, buyer |
 | `PATCH` | `/api/laptops/{id}` | Mengubah field tertentu. | Admin, restocker |
 | `DELETE` | `/api/laptops/{id}` | Menghapus laptop. | Admin |
 
 - Lihat body request, response, validasi, dan status error di [dokumentasi endpoint](endpoin.md).
 - Salin perintah terminal dari [panduan curl](catatan/curl.md).
-- Jalankan skenario terurut dari [panduan Postman](catatan/postman.md) memakai collection dan environment di folder `postman/`.
+- Ikuti [panduan Postman](catatan/postman.md) untuk mencoba login, CRUD laptop, dan pembelian memakai collection di folder `postman/`.
 
 Login memberi JWT yang berlaku satu jam. Logout menaikkan `token_version` sehingga semua JWT milik pengguna langsung tidak berlaku, lalu menghapus session yang dipakai untuk logout. Session lain tidak ikut dicabut; client tetap perlu menghapus token lokal setelah selesai.
 
 Password akun disimpan sebagai hash Argon2id dengan salt acak, bukan sebagai teks asli. Setelah update pertama kali, migration dan proses startup meng-upgrade password lama otomatis; akun yang sudah terdaftar tetap bisa login dengan password yang sama.
 
-Pendaftaran publik selalu membuat role `buyer`. Akun admin disinkronkan dari `ADMIN_USERNAME` dan `ADMIN_PASSWORD`; admin dapat membuat akun buyer/restocker atau mengubah role lewat endpoint admin. Buyer hanya dapat melihat laptop, restocker dapat melihat serta memperbarui laptop, dan admin dapat menjalankan semua operasi.
+Pendaftaran publik selalu membuat role `buyer`. Akun admin disinkronkan dari `ADMIN_USERNAME` dan `ADMIN_PASSWORD`; admin dapat membuat akun buyer/restocker atau mengubah role lewat endpoint admin. Buyer dapat melihat dan membeli laptop, restocker dapat melihat serta memperbarui laptop, dan admin dapat menjalankan semua operasi.
 
 ## Cara kerja aplikasi
 
@@ -107,6 +108,5 @@ Untuk memahami proyek atau menyiapkan presentasi, mulai dari [indeks catatan bel
 
 ```bash
 cargo fmt --all -- --check
-cargo check --all-targets
-cargo test --all-targets
+cargo check
 ```

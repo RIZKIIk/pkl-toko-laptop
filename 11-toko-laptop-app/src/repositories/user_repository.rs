@@ -5,7 +5,7 @@ use sqlx::PgPool;
 use crate::auth::role::UserRole;
 
 /// Mengambil hash password yang tersimpan untuk username.
-pub async fn find_password_hash(
+pub async fn cari_hash_kata_sandi(
     pool: &PgPool,
     username: &str,
 ) -> Result<Option<String>, sqlx::Error> {
@@ -16,7 +16,7 @@ pub async fn find_password_hash(
 }
 
 /// Mengambil password lama yang belum di-hash untuk proses upgrade startup.
-pub async fn find_legacy_passwords(pool: &PgPool) -> Result<Vec<(i64, String)>, sqlx::Error> {
+pub async fn cari_kata_sandi_lama(pool: &PgPool) -> Result<Vec<(i64, String)>, sqlx::Error> {
     sqlx::query_as(
         "SELECT id, legacy_password FROM public.users \
          WHERE password_hash IS NULL AND legacy_password IS NOT NULL ORDER BY id",
@@ -26,7 +26,7 @@ pub async fn find_legacy_passwords(pool: &PgPool) -> Result<Vec<(i64, String)>, 
 }
 
 /// Memeriksa apakah upgrade skema password lama masih perlu diselesaikan.
-pub async fn has_legacy_password_column(pool: &PgPool) -> Result<bool, sqlx::Error> {
+pub async fn punya_kolom_kata_sandi_lama(pool: &PgPool) -> Result<bool, sqlx::Error> {
     sqlx::query_scalar(
         "SELECT EXISTS ( \
              SELECT 1 FROM information_schema.columns \
@@ -40,7 +40,7 @@ pub async fn has_legacy_password_column(pool: &PgPool) -> Result<bool, sqlx::Err
 }
 
 /// Mengganti password lama dengan hash tanpa menimpa hasil migrasi paralel.
-pub async fn replace_legacy_password(
+pub async fn perbarui_hash_kata_sandi_lama(
     pool: &PgPool,
     id: i64,
     password_hash: &str,
@@ -59,7 +59,7 @@ pub async fn replace_legacy_password(
 }
 
 /// Memastikan semua akun memiliki hash dan menghapus kolom legacy.
-pub async fn finalize_password_hash_migration(pool: &PgPool) -> Result<(), sqlx::Error> {
+pub async fn tuntaskan_migrasi_hash_kata_sandi(pool: &PgPool) -> Result<(), sqlx::Error> {
     sqlx::query("ALTER TABLE public.users ALTER COLUMN password_hash SET NOT NULL")
         .execute(pool)
         .await?;
@@ -71,7 +71,7 @@ pub async fn finalize_password_hash_migration(pool: &PgPool) -> Result<(), sqlx:
 }
 
 /// Mengambil ID dan role aktif untuk username session.
-pub async fn find_user_by_username(
+pub async fn cari_pengguna_berdasarkan_nama(
     pool: &PgPool,
     username: &str,
 ) -> Result<Option<(i64, UserRole)>, sqlx::Error> {
@@ -94,7 +94,7 @@ pub async fn find_user_by_username(
 }
 
 /// Mengambil ID, role, dan versi token untuk membuat JWT saat login.
-pub async fn find_login_identity(
+pub async fn cari_identitas_pengguna_untuk_login(
     pool: &PgPool,
     username: &str,
 ) -> Result<Option<(i64, UserRole, i64)>, sqlx::Error> {
@@ -118,7 +118,7 @@ pub async fn find_login_identity(
 }
 
 /// Mengambil username, role, dan versi token berdasarkan ID pengguna.
-pub async fn find_user_by_id(
+pub async fn cari_pengguna_berdasarkan_id(
     pool: &PgPool,
     user_id: i64,
 ) -> Result<Option<(String, UserRole, i64)>, sqlx::Error> {
@@ -142,7 +142,7 @@ pub async fn find_user_by_id(
 }
 
 /// Mencabut seluruh JWT pengguna dengan menaikkan versi yang tersimpan.
-pub async fn increment_token_version(pool: &PgPool, user_id: i64) -> Result<(), sqlx::Error> {
+pub async fn naikkan_versi_token(pool: &PgPool, user_id: i64) -> Result<(), sqlx::Error> {
     sqlx::query("UPDATE public.users SET token_version = token_version + 1 WHERE id = $1")
         .bind(user_id)
         .execute(pool)
@@ -152,7 +152,7 @@ pub async fn increment_token_version(pool: &PgPool, user_id: i64) -> Result<(), 
 }
 
 /// Mengubah role; middleware menolak JWT yang membawa role berbeda.
-pub async fn set_user_role(
+pub async fn ubah_peran_pengguna(
     pool: &PgPool,
     username: &str,
     role: UserRole,
@@ -166,7 +166,7 @@ pub async fn set_user_role(
          RETURNING existing_user.username",
     )
     .bind(username)
-    .bind(role.as_str())
+    .bind(role.sebagai_teks())
     .fetch_optional(pool)
     .await?;
 
@@ -174,7 +174,7 @@ pub async fn set_user_role(
 }
 
 /// Memasukkan atau menyinkronkan akun latihan dengan nilai environment.
-pub async fn upsert_user(
+pub async fn simpan_atau_perbarui_pengguna(
     pool: &PgPool,
     username: &str,
     password_hash: &str,
@@ -192,7 +192,7 @@ pub async fn upsert_user(
     )
     .bind(username)
     .bind(password_hash)
-    .bind(role.as_str())
+    .bind(role.sebagai_teks())
     .execute(pool)
     .await?;
 
@@ -200,7 +200,7 @@ pub async fn upsert_user(
 }
 
 /// Membuat akun baru; `false` berarti username sudah digunakan.
-pub async fn insert_user(
+pub async fn simpan_pengguna_baru(
     pool: &PgPool,
     username: &str,
     password_hash: &str,
@@ -213,7 +213,7 @@ pub async fn insert_user(
     )
     .bind(username)
     .bind(password_hash)
-    .bind(role.as_str())
+    .bind(role.sebagai_teks())
     .fetch_optional(pool)
     .await?;
 

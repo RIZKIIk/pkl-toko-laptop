@@ -8,9 +8,9 @@
 
 ## Tujuan dan cakupan
 
-`require_auth` adalah middleware autentikasi sekaligus otorisasi untuk endpoint protected. Tugasnya memastikan request memiliki identitas pengguna yang masih berlaku, memastikan role pengguna boleh menjalankan method pada path tersebut, lalu meneruskan request ke handler.
+`wajibkan_autentikasi` adalah middleware autentikasi sekaligus otorisasi untuk endpoint protected. Tugasnya memastikan request memiliki identitas pengguna yang masih berlaku, memastikan role pengguna boleh menjalankan method pada path tersebut, lalu meneruskan request ke handler.
 
-Middleware tidak dipasang ke seluruh aplikasi. [`create_router`](../routes.md) menerapkannya dengan `route_layer` pada grup route protected: endpoint session dan logout, endpoint laptop, serta endpoint admin untuk pengguna. Endpoint health, login, dan register berada di luar grup tersebut.
+Middleware tidak dipasang ke seluruh aplikasi. [`buat_router`](../routes.md) menerapkannya dengan `route_layer` pada grup route protected: endpoint session dan logout, endpoint laptop, serta endpoint admin untuk pengguna. Endpoint health, login, dan register berada di luar grup tersebut.
 
 Pemeriksaan dibagi ke beberapa bagian:
 
@@ -18,12 +18,12 @@ Pemeriksaan dibagi ke beberapa bagian:
 | --- | --- |
 | [JWT](jwt.md) | Membaca bearer token serta memeriksa signature dan expiry. |
 | [Session](session.md) | Membaca username dari session cookie. |
-| `require_auth` | Memilih identitas, memeriksa ulang ke database, mengotorisasi role, dan meneruskan request. |
-| [`UserRole::can_access`](../../../src/auth/role.rs) | Menentukan akses berdasarkan role, HTTP method, dan path. |
+| `wajibkan_autentikasi` | Memilih identitas, memeriksa ulang ke database, mengotorisasi role, dan meneruskan request. |
+| [`UserRole::boleh_mengakses`](../../../src/auth/role.rs) | Menentukan akses berdasarkan role, HTTP method, dan path. |
 
 ## Data yang diterima middleware
 
-Axum menyediakan dependency berikut saat memanggil `require_auth`:
+Axum menyediakan dependency berikut saat memanggil `wajibkan_autentikasi`:
 
 | Extractor | Sumber | Kegunaan |
 | --- | --- | --- |
@@ -37,11 +37,11 @@ Identitas yang diteruskan ke handler berbentuk `AuthIdentity`, berisi `user_id`,
 
 ## Urutan pemeriksaan
 
-1. **Coba autentikasi JWT.** Middleware meminta claims dari header `Authorization` melalui `jwt::claims_from_headers`. Header harus memakai skema `Bearer` dan diikuti token tanpa spasi. Detail signature, expiry, dan claims ada di [catatan JWT](jwt.md).
+1. **Coba autentikasi JWT.** Middleware meminta claims dari header `Authorization` melalui `jwt::ambil_klaim_dari_header`. Header harus memakai skema `Bearer` dan diikuti token tanpa spasi. Detail signature, expiry, dan claims ada di [catatan JWT](jwt.md).
 2. **Cocokkan claims JWT dengan database.** Jika token lolos verifikasi, middleware mencari pengguna berdasarkan `sub`. Identitas diterima hanya jika pengguna masih ada, role dari database sama dengan role pada claims, dan `token_version` database sama dengan versi di token.
 3. **Gunakan session bila JWT tidak menghasilkan identitas.** Token yang hilang, tidak valid/kedaluwarsa, tidak lagi cocok dengan data pengguna, atau pengguna tidak ditemukan tidak menghasilkan identitas JWT. Middleware lalu mencoba membaca username dari session. Username tersebut dicari kembali ke database; `user_id` dan role yang dipakai berasal dari database, bukan session.
 4. **Tolak request tanpa identitas.** Jika session tidak berisi username atau pengguna session sudah tidak ditemukan, middleware mengembalikan `401 Unauthorized`.
-5. **Periksa otorisasi role.** Middleware memanggil `UserRole::can_access` dengan role tepercaya, HTTP method request, dan path request. Query string tidak termasuk path karena yang dipakai adalah `request.uri().path()`.
+5. **Periksa otorisasi role.** Middleware memanggil `UserRole::boleh_mengakses` dengan role tepercaya, HTTP method request, dan path request. Query string tidak termasuk path karena yang dipakai adalah `request.uri().path()`.
 6. **Teruskan request yang diizinkan.** Middleware menyimpan `AuthIdentity` pada request extensions, lalu memanggil `next.run(request)` agar handler berikutnya dapat memproses request.
 
 ### Perilaku fallback dan kegagalan
@@ -75,15 +75,15 @@ Semua baris di bawah tetap mensyaratkan identitas yang valid. Matriks ini berlak
 | Role | Akses yang diizinkan |
 | --- | --- |
 | `admin` | Semua method pada route protected. |
-| `buyer` | `GET /api/laptops` dan path yang diawali `/api/laptops/`. |
+| `buyer` | `GET /api/laptops`, detail laptop, dan `POST /api/laptops/{id}/buy`. |
 | `restocker` | `GET` pada path laptop tersebut dan `PATCH` pada path yang diawali `/api/laptops/`. |
 | Semua role terautentikasi | `GET /api/auth/session` dan `POST /api/auth/logout`. |
 
-Dengan demikian, `buyer` tidak dapat membuat, memperbarui, atau menghapus laptop. `restocker` dapat membaca dan memperbarui laptop, tetapi tidak dapat membuat atau menghapusnya. Role non-admin juga tidak dapat mengakses route admin. Aturan rinci beserta test-nya berada di [`role.rs`](../../../src/auth/role.rs).
+Dengan demikian, `buyer` dapat membaca laptop dan membeli stok yang tersedia, tetapi tidak dapat mengubah atau menghapus data laptop. `restocker` dapat membaca dan memperbarui laptop, tetapi tidak dapat membuat atau menghapusnya. Role non-admin juga tidak dapat mengakses route admin. Aturan role berada di [`role.rs`](../../../src/auth/role.rs).
 
 ## Integrasi dengan route dan handler
 
-`routes.rs` memasang middleware melalui `middleware::from_fn_with_state(pool.clone(), auth::require_auth)` pada grup protected. `State` membawa pool database; router juga memasang `JwtService` sebagai `Extension` dan `SessionManagerLayer` untuk menyediakan session. `auth::require_auth` diekspor ulang dari `auth/mod.rs`, sehingga router tidak perlu mengimpor jalur modul internal.
+`routes.rs` memasang middleware melalui `middleware::from_fn_with_state(pool.clone(), auth::wajibkan_autentikasi)` pada grup protected. `State` membawa pool database; router juga memasang `JwtService` sebagai `Extension` dan `SessionManagerLayer` untuk menyediakan session. `auth::wajibkan_autentikasi` diekspor ulang dari `auth/mod.rs`, sehingga router tidak perlu mengimpor jalur modul internal.
 
 Setelah lolos, handler dapat mengambil `AuthIdentity` dari request extensions untuk mengetahui pengguna yang sudah diverifikasi. Handler tidak perlu memeriksa ulang header JWT atau cookie session. Kegagalan terjadi sebelum handler dijalankan, sehingga handler protected hanya menerima request yang telah melewati autentikasi dan otorisasi.
 

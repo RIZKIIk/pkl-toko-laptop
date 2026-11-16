@@ -26,13 +26,13 @@ GET /health → health() → JSON status → 200 OK
 
 ## Fungsi
 
-### `health()`
+### `cek_kesehatan()`
 
-Deklarasi `pub async fn health() -> Json<Value>` dibaca seperti ini:
+Deklarasi `pub async fn cek_kesehatan() -> Json<Value>` dibaca seperti ini:
 
 - `pub` membuat fungsi dapat dipanggil dari modul route.
 - `async` menandai fungsi asynchronous agar cocok dengan handler Axum. Fungsi ini tidak memiliki `.await` karena tidak menunggu operasi lain.
-- `fn health()` mendeklarasikan fungsi bernama `health` tanpa argumen. Karena tidak ada `State`, parameter path, atau payload, handler ini tidak membaca database maupun body request.
+- `fn cek_kesehatan()` mendeklarasikan fungsi tanpa argumen. Karena tidak ada `State`, parameter path, atau payload, handler ini tidak membaca database maupun body request.
 - `-> Json<Value>` menyatakan tipe hasil: JSON Axum yang berisi nilai JSON umum, bukan struct khusus.
 - `Json(json!({...}))` membuat object dari macro `json!`, lalu membungkusnya sebagai response JSON. Field `status` dan `service` adalah pasangan nama dan nilai.
 

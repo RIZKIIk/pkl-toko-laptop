@@ -25,7 +25,7 @@ src/auth/
 
 ## Di halaman ini
 
-[Modul](#1-deklarasi-modul) · [Re-export](#2-import-dan-re-export) · [Seed akun](#3-initialize_admin_user) · [Registrasi](#4-register_user) · [Verifikasi](#5-verify_credentials) · [Hash password](#6-hash-password) · [Alur ringkas](#ringkasan-alur)
+[Modul](#1-deklarasi-modul) · [Re-export](#2-import-dan-re-export) · [Seed akun](#3-siapkan_pengguna_admin) · [Registrasi](#4-daftarkan_pengguna) · [Verifikasi](#5-verifikasi_kredensial) · [Hash password](#6-hash-password) · [Alur ringkas](#ringkasan-alur)
 
 ## 1. Deklarasi modul
 
@@ -41,7 +41,7 @@ pub mod session;
 
 - `mod middleware;` mendaftarkan autentikasi request dan pemeriksaan izin role.
 - `mod jwt;` memberi tahu Rust bahwa penerbitan dan verifikasi token ada di `jwt.rs`.
-- `mod role;` mendaftarkan tipe `UserRole` dan aturan `can_access`.
+- `mod role;` mendaftarkan tipe `UserRole` dan aturan `boleh_mengakses`.
 - `mod session;` memberi tahu Rust bahwa isi modul `session` ada di file `session.rs`.
 - `mod response;` mendaftarkan helper response JSON yang digunakan handler dan middleware.
 - `pub` membuat nama modul dapat diakses melalui jalur publik, misalnya `auth::response`.
@@ -55,7 +55,7 @@ use std::error::Error;
 use sqlx::PgPool;
 use crate::repositories::user_repository;
 
-pub use middleware::require_auth;
+pub use middleware::wajibkan_autentikasi;
 ```
 
 | Sintaks | Kegunaan |
@@ -63,29 +63,29 @@ pub use middleware::require_auth;
 | `use std::error::Error;` | Mengimpor trait `Error` dari pustaka standar Rust untuk menuliskan tipe error umum. |
 | `use sqlx::PgPool;` | Mengimpor pool koneksi PostgreSQL yang dipakai untuk mengakses database. Pool mengelola koneksi agar dapat digunakan kembali. |
 | `use crate::repositories::user_repository;` | Mengimpor modul repository user dari crate aplikasi ini. Modul tersebut menjalankan query ke tabel `users`. |
-| `pub use middleware::require_auth;` | Mengimpor sekaligus mengekspor ulang `require_auth` dari modul `middleware`. Kode lain tetap dapat mengaksesnya melalui `auth::require_auth`. |
+| `pub use middleware::wajibkan_autentikasi;` | Mengimpor sekaligus mengekspor ulang `wajibkan_autentikasi` dari modul `middleware`. Kode lain tetap dapat mengaksesnya melalui `auth::wajibkan_autentikasi`. |
 
 `crate::` berarti jalur dimulai dari akar crate aplikasi ini. `use` membuat nama yang sering dipakai lebih ringkas. `pub use` juga menjadikan nama yang diimpor tersedia bagi pemanggil dari luar modul, sesuai batas visibilitas modul.
 
 `use argon2::password_hash::{PasswordHasher, PasswordVerifier, ...}` juga membawa **trait** ke cakupan file. Trait mendefinisikan perilaku yang dapat dipakai pada tipe: `PasswordHasher` menyediakan `.hash_password(...)`, sedangkan `PasswordVerifier` menyediakan `.verify_password(...)`.
 
-## 3. `initialize_admin_user`
+## 3. `siapkan_pengguna_admin`
 
 Kode:
 
 ```rust
-pub async fn initialize_admin_user(
+pub async fn siapkan_pengguna_admin(
     pool: &PgPool,
     username: &str,
     password: &str,
 ) -> Result<(), Box<dyn Error + Send + Sync>> {
-    if verify_credentials(pool, username, password).await? {
-        user_repository::set_user_role(pool, username, UserRole::Admin).await?;
+    if verifikasi_kredensial(pool, username, password).await? {
+        user_repository::ubah_peran_pengguna(pool, username, UserRole::Admin).await?;
         return Ok(());
     }
 
-    let password_hash = hash_password(password).await?;
-    user_repository::upsert_user(pool, username, &password_hash, UserRole::Admin).await?;
+    let password_hash = buat_hash_kata_sandi(password).await?;
+    user_repository::simpan_atau_perbarui_pengguna(pool, username, &password_hash, UserRole::Admin).await?;
     Ok(())
 }
 ```
@@ -98,7 +98,7 @@ Fungsi ini menyiapkan akun admin dari konfigurasi saat startup. Jika password ko
 
 - `pub` membuat fungsi bisa dipanggil dari bagian lain crate maupun pemakai crate melalui jalur publik.
 - `async` menandai fungsi asinkron. Operasi database dapat menunggu I/O tanpa memblokir thread secara langsung.
-- `fn initialize_admin_user` mendeklarasikan fungsi bernama `initialize_admin_user`.
+- `fn siapkan_pengguna_admin` mendeklarasikan fungsi bernama `siapkan_pengguna_admin`.
 - `pool: &PgPool` adalah referensi ke pool koneksi; tanda `&` berarti fungsi meminjamnya, bukan mengambil alih kepemilikannya.
 - `username: &str` dan `password: &str` adalah referensi ke teks username dan password.
 - `-> Result<(), Box<dyn Error + Send + Sync>>` berarti fungsi dapat berhasil tanpa mengembalikan data (`()`), atau gagal dengan error umum.
@@ -108,30 +108,30 @@ Fungsi ini menyiapkan akun admin dari konfigurasi saat startup. Jika password ko
 
 ### Cara membaca isi fungsi
 
-1. `verify_credentials(...)` mempertahankan hash lama jika password admin masih cocok.
-2. `hash_password(...)` menghasilkan hash Argon2id baru jika akun perlu dibuat atau password berubah.
-3. `user_repository::upsert_user(..., UserRole::Admin)` menyimpan hash dan role melalui query berparameter.
+1. `verifikasi_kredensial(...)` mempertahankan hash lama jika password admin masih cocok.
+2. `buat_hash_kata_sandi(...)` menghasilkan hash Argon2id baru jika akun perlu dibuat atau password berubah.
+3. `user_repository::simpan_atau_perbarui_pengguna(..., UserRole::Admin)` menyimpan hash dan role melalui query berparameter.
 4. `Ok(())` menyatakan sinkronisasi akun selesai sukses.
 
 Fungsi ini dipanggil saat startup setelah migration dan migrasi password lama selesai. Repository memakai `ON CONFLICT` sehingga username yang sudah ada tidak dibuat sebagai baris duplikat.
 
-## 4. `register_user`
+## 4. `daftarkan_pengguna`
 
 Kode:
 
 ```rust
-pub async fn register_user(
+pub async fn daftarkan_pengguna(
     pool: &PgPool,
     username: &str,
     password: &str,
 ) -> Result<bool, Box<dyn Error + Send + Sync>> {
-    register_user_with_role(pool, username, password, UserRole::Buyer).await
+    daftarkan_pengguna_dengan_peran(pool, username, password, UserRole::Buyer).await
 }
 ```
 
-Fungsi publik ini memilih role default `Buyer`, lalu mendelegasikan pekerjaan ke `register_user_with_role`. Fungsi tidak meng-hash password secara langsung; helper berikut yang melakukannya. Pemisahan ini mencegah endpoint registrasi umum menentukan role admin.
+Fungsi publik ini memilih role default `Buyer`, lalu mendelegasikan pekerjaan ke `daftarkan_pengguna_dengan_peran`. Fungsi tidak meng-hash password secara langsung; helper berikut yang melakukannya. Pemisahan ini mencegah endpoint registrasi umum menentukan role admin.
 
-- Parameter `pool`, `username`, dan `password` memiliki arti yang sama seperti di `initialize_admin_user`.
+- Parameter `pool`, `username`, dan `password` memiliki arti yang sama seperti di `siapkan_pengguna_admin`.
 - `Result<bool, Box<dyn Error + Send + Sync>>` menyatakan ada dua tingkat hasil:
   - `Ok(true)`: akun berhasil dibuat.
   - `Ok(false)`: username sudah digunakan, jadi tidak ada akun baru yang dibuat.
@@ -140,25 +140,25 @@ Fungsi publik ini memilih role default `Buyer`, lalu mendelegasikan pekerjaan ke
 
 Baris terakhir tidak diakhiri titik koma, sehingga `Result<bool, ...>` langsung menjadi hasil fungsi.
 
-### `register_user_with_role(pool, username, password, role)`
+### `daftarkan_pengguna_dengan_peran(pool, username, password, role)`
 
-Fungsi asinkron ini meng-hash password, lalu memanggil `user_repository::insert_user` dengan role tepercaya yang diberikan pemanggil. Hasil `bool` menyatakan apakah username berhasil dibuat (`true`) atau sudah digunakan (`false`); error hashing/query menjadi `Err`. Role harus dipilih oleh pemanggil tepercaya, bukan diterima bebas dari endpoint registrasi publik.
+Fungsi asinkron ini meng-hash password, lalu memanggil `user_repository::simpan_pengguna_baru` dengan role tepercaya yang diberikan pemanggil. Hasil `bool` menyatakan apakah username berhasil dibuat (`true`) atau sudah digunakan (`false`); error hashing/query menjadi `Err`. Role harus dipilih oleh pemanggil tepercaya, bukan diterima bebas dari endpoint registrasi publik.
 
-## 5. `verify_credentials`
+## 5. `verifikasi_kredensial`
 
 Kode:
 
 ```rust
-pub async fn verify_credentials(
+pub async fn verifikasi_kredensial(
     pool: &PgPool,
     username: &str,
     password: &str,
 ) -> Result<bool, Box<dyn Error + Send + Sync>> {
-    let Some(password_hash) = user_repository::find_password_hash(pool, username).await? else {
+    let Some(password_hash) = user_repository::cari_hash_kata_sandi(pool, username).await? else {
         return Ok(false);
     };
 
-    verify_password(password_hash, password).await
+    verifikasi_kata_sandi(password_hash, password).await
 }
 ```
 
@@ -168,7 +168,7 @@ Fungsi ini mencari password yang tersimpan untuk username yang diberikan, lalu m
 
 ### Alur baris demi baris
 
-1. `user_repository::find_password_hash(pool, username)` meminta repository mencari hash berdasarkan username.
+1. `user_repository::cari_hash_kata_sandi(pool, username)` meminta repository mencari hash berdasarkan username.
 2. `.await` menunggu query database selesai.
 3. `?` meneruskan error database ke pemanggil jika query gagal.
 4. Hasil query berbentuk `Option<String>`:
@@ -176,27 +176,27 @@ Fungsi ini mencari password yang tersimpan untuk username yang diberikan, lalu m
    - `None` berarti username tidak ditemukan.
 5. Sintaks `let Some(password_hash) = ... else { ... };` adalah *let-else*. Jika hasilnya `Some`, hash dimasukkan ke `password_hash` dan fungsi melanjutkan. Jika hasilnya `None`, blok `else` dijalankan.
 6. `return Ok(false);` menghentikan fungsi dengan hasil “kredensial tidak cocok”. Username yang tidak ditemukan bukan error database.
-7. Jika username ditemukan, `verify_password(...)` menjalankan verifikasi Argon2id pada blocking thread.
+7. Jika username ditemukan, `verifikasi_kata_sandi(...)` menjalankan verifikasi Argon2id pada blocking thread.
 8. `Ok(...)` membungkus hasil pemeriksaan sebagai keberhasilan fungsi. Nilai `false` di dalam `Ok` artinya kredensialnya tidak cocok.
 
 Jadi `Ok(false)` berbeda dari `Err(error)`: yang pertama berarti login tidak cocok secara normal, sedangkan yang kedua berarti pemeriksaan gagal karena masalah seperti error database.
 
 ## Migrasi password lama
 
-`migrate_legacy_passwords(pool) -> Result<(), Box<dyn Error + Send + Sync>>` mengamankan perubahan password lama secara berurutan:
+`migrasikan_kata_sandi_lama(pool) -> Result<(), Box<dyn Error + Send + Sync>>` mengamankan perubahan password lama secara berurutan:
 
 1. Meminjam satu koneksi dan memperoleh PostgreSQL advisory lock bernama tetap agar dua proses startup tidak memigrasikan password bersamaan.
-2. Menjalankan `migrate_legacy_passwords_locked(pool)`, yang memeriksa apakah kolom password legacy masih ada. Jika ada, fungsi membaca pasangan ID/password, meng-hash tiap password, lalu mengganti nilainya dengan hash.
-3. Memanggil `finalize_password_hash_migration` untuk menyelesaikan pembersihan kolom lama.
+2. Menjalankan `migrasikan_kata_sandi_lama_dengan_lock(pool)`, yang memeriksa apakah kolom password legacy masih ada. Jika ada, fungsi membaca pasangan ID/password, meng-hash tiap password, lalu mengganti nilainya dengan hash.
+3. Memanggil `tuntaskan_migrasi_hash_kata_sandi` untuk menyelesaikan pembersihan kolom lama.
 4. Selalu berusaha melepas lock, lalu memakai `match (migration_result, unlock_result)` untuk menangani hasil migrasi dan unlock secara terpisah. Jika kedua langkah gagal, error gabungan menjelaskan keduanya.
 
-Helper privat `migrate_legacy_passwords_locked(pool)` menjalankan langkah migrasi tanpa mengambil lock sendiri: ia berhenti cepat jika kolom legacy sudah tidak ada; jika masih ada, ia mengambil password lama, membuat hash baru satu per satu, mengganti password per ID, lalu meminta repository menyelesaikan migrasi kolom. Helper ini privat karena hanya dipanggil saat lock sudah dipegang.
+Helper privat `migrasikan_kata_sandi_lama_dengan_lock(pool)` menjalankan langkah migrasi tanpa mengambil lock sendiri: ia berhenti cepat jika kolom legacy sudah tidak ada; jika masih ada, ia mengambil password lama, membuat hash baru satu per satu, mengganti password per ID, lalu meminta repository menyelesaikan migrasi kolom. Helper ini privat karena hanya dipanggil saat lock sudah dipegang.
 
 `match` mencocokkan pola dari nilai `Result`/tuple: `Err(error)` membawa nilai error ke dalam binding, sedangkan `Ok(())` berarti sukses tanpa nilai tambahan. Operator `?` pada operasi database menghentikan fungsi pada error dan mengubahnya ke tipe error umum yang dapat dikembalikan.
 
 ## 6. Hash password
 
-`hash_password(password: &str) -> Result<String, ...>` menghasilkan salt acak baru untuk tiap password dan menggunakan `Argon2::default()` (Argon2id). `verify_password(password_hash: String, password: &str) -> Result<bool, ...>` menolak password kosong, mem-parsing hash, lalu membandingkan password menggunakan verifier Argon2. Keduanya menggunakan `spawn_blocking` agar kerja CPU tidak menghambat runtime async. `password.to_owned()` membuat `String` milik sendiri agar data dapat dipindahkan ke closure; `move` memindahkan nilai tersebut ke closure. `.await??` berarti menunggu task lalu meneruskan dua kemungkinan error: error join task dan error Argon2.
+`buat_hash_kata_sandi(password: &str) -> Result<String, ...>` menghasilkan salt acak baru untuk tiap password dan menggunakan `Argon2::default()` (Argon2id). `verifikasi_kata_sandi(password_hash: String, password: &str) -> Result<bool, ...>` menolak password kosong, mem-parsing hash, lalu membandingkan password menggunakan verifier Argon2. Keduanya menggunakan `spawn_blocking` agar kerja CPU tidak menghambat runtime async. `password.to_owned()` membuat `String` milik sendiri agar data dapat dipindahkan ke closure; `move` memindahkan nilai tersebut ke closure. `.await??` berarti menunggu task lalu meneruskan dua kemungkinan error: error join task dan error Argon2.
 
 Attribute `#[cfg(test)]` menyertakan modul test hanya saat `cargo test`; `#[tokio::test]` menyediakan runtime async untuk test fungsi `async`. `AuthIdentity` berada di middleware, sedangkan `SessionIdentity` berada di session; keduanya meminta compiler membuat trait `Clone` dan `Debug`.
 
@@ -209,12 +209,12 @@ Di bagian akhir file:
 mod tests {
     #[tokio::test]
     async fn argon2_password_hash_is_salted_and_verifies_only_matching_password() {
-        let hash = super::hash_password("secret").await.unwrap();
-        let another_hash = super::hash_password("secret").await.unwrap();
+        let hash = super::buat_hash_kata_sandi("secret").await.unwrap();
+        let another_hash = super::buat_hash_kata_sandi("secret").await.unwrap();
         assert_ne!(hash, another_hash);
         assert!(hash.starts_with("$argon2id$"));
-        assert!(super::verify_password(hash.clone(), "secret").await.unwrap());
-        assert!(!super::verify_password(hash, "wrong").await.unwrap());
+        assert!(super::verifikasi_kata_sandi(hash.clone(), "secret").await.unwrap());
+        assert!(!super::verifikasi_kata_sandi(hash, "wrong").await.unwrap());
     }
 }
 ```
@@ -230,14 +230,14 @@ Test juga membuat dua hash dari password yang sama dan memastikan salt acak meng
 ## Ringkasan alur
 
 ```text
-Startup ──> initialize_admin_user ──> upsert akun admin di database
+Startup ──> siapkan_pengguna_admin ──> upsert akun admin di database
 
-Registrasi ──> register_user ──> coba insert akun baru
+Registrasi ──> daftarkan_pengguna ──> coba insert akun baru
                                 ├─ Ok(true): berhasil dibuat
                                 ├─ Ok(false): username sudah dipakai
                                 └─ Err: ada masalah database
 
-Login ──> verify_credentials ──> cari password ──> bandingkan
+Login ──> verifikasi_kredensial ──> cari password ──> bandingkan
                                 ├─ Ok(true): cocok
                                 ├─ Ok(false): username/password tidak cocok
                                 └─ Err: pemeriksaan mengalami error

@@ -81,10 +81,10 @@ Pencocokan database ini dilakukan oleh middleware pada request JWT. Karena itu, 
 Setelah login memverifikasi username dan password, handler membaca ID, role, dan `token_version` pengguna dari database. Handler memanggil:
 
 ```rust
-jwt.issue_token(user_id, role, token_version)
+jwt.terbitkan_token(user_id, role, token_version)
 ```
 
-Di dalam `issue_token`, prosesnya adalah:
+Di dalam `terbitkan_token`, prosesnya adalah:
 
 1. `SystemTime::now()` mengambil waktu sistem saat ini.
 2. `duration_since(UNIX_EPOCH)?` mengubahnya menjadi durasi sejak Unix epoch. Operator `?` meneruskan error jika perhitungan gagal.
@@ -99,7 +99,7 @@ Handler login mengembalikan token tersebut pada `data.access_token`, bersama tip
 
 ## 5. Alur verifikasi token
 
-Ketika middleware menerima request, ia mencoba mengambil bearer token dari header, lalu memanggil `verify_token`. Verifikasi meliputi:
+Ketika middleware menerima request, ia mencoba mengambil bearer token dari header, lalu memanggil `verifikasi_token`. Verifikasi meliputi:
 
 1. Membuat `DecodingKey` dari secret layanan.
 2. Membuat konfigurasi `Validation` yang membatasi algoritma ke HS256.
@@ -117,7 +117,7 @@ Client mengirim token pada header HTTP berikut:
 Authorization: Bearer <access-token>
 ```
 
-`bearer_token` melakukan pemeriksaan berurutan:
+`ambil_token_bearer` melakukan pemeriksaan berurutan:
 
 1. `headers.get(AUTHORIZATION)` mencari header. Jika tidak ada, hasilnya `None`.
 2. `.to_str()` mencoba membaca nilai header sebagai teks.
@@ -126,7 +126,7 @@ Authorization: Bearer <access-token>
 5. Token harus tidak kosong dan tidak boleh berisi whitespace tambahan.
 6. Jika semua kondisi lolos, fungsi mengembalikan `Some(token)`; selain itu `None`.
 
-Fungsi `claims_from_headers` menghubungkan ekstraksi header dengan verifikasi. Ia mengembalikan `Some(Claims)` jika keduanya berhasil dan `None` jika header tidak dapat dipakai atau token gagal diverifikasi. Bentuk ini memungkinkan middleware mencoba session sebagai jalur autentikasi berikutnya.
+Fungsi `ambil_klaim_dari_header` menghubungkan ekstraksi header dengan verifikasi. Ia mengembalikan `Some(Claims)` jika keduanya berhasil dan `None` jika header tidak dapat dipakai atau token gagal diverifikasi. Bentuk ini memungkinkan middleware mencoba session sebagai jalur autentikasi berikutnya.
 
 ## 7. Pembahasan sintaks Rust di source
 
@@ -247,18 +247,18 @@ impl JwtService {
 - `impl JwtService { ... }` mengelompokkan fungsi dan method yang berhubungan dengan tipe `JwtService`.
 - `fn` mendeklarasikan fungsi.
 - `pub fn` membuat fungsi dapat dipanggil dari module lain.
-- `new` tidak menerima parameter `self`, sehingga merupakan associated function dan dipanggil dengan `JwtService::new(...)`.
+- `new` tidak menerima parameter `self`, sehingga merupakan associated function dan dipanggil dengan `JwtService::buat(...)`.
 - `Self` adalah nama tipe yang sedang di-`impl`, yaitu `JwtService`.
 - `String` adalah teks dengan kepemilikan data sendiri. `new` menerima kepemilikan secret dari pemanggil.
 
-Sebaliknya, `issue_token` dan `verify_token` menerima `&self`. Tanda `&` berarti meminjam instance untuk dibaca, tanpa memindahkan kepemilikannya. Pemanggil dapat memakai service kembali setelah method selesai.
+Sebaliknya, `terbitkan_token` dan `verifikasi_token` menerima `&self`. Tanda `&` berarti meminjam instance untuk dibaca, tanpa memindahkan kepemilikannya. Pemanggil dapat memakai service kembali setelah method selesai.
 
 ### 7.6 Parameter, reference, dan nilai return
 
 Signature berikut menunjukkan cara membaca bentuk fungsi:
 
 ```rust
-pub fn issue_token(
+pub fn terbitkan_token(
     &self,
     user_id: i64,
     role: UserRole,
@@ -277,7 +277,7 @@ pub fn issue_token(
 Method verifikasi memiliki tipe hasil berbeda:
 
 ```rust
-pub fn verify_token(
+pub fn verifikasi_token(
     &self,
     token: &str,
 ) -> Result<Claims, jsonwebtoken::errors::Error>
@@ -322,7 +322,7 @@ let now = SystemTime::now()
 - `.as_secs()` mengambil durasi dalam detik sebagai `u64`.
 - Method chaining menghubungkan hasil satu pemanggilan ke pemanggilan berikutnya.
 
-Pada `issue_token`, error waktu dapat diteruskan karena tipe hasil fungsi memuat error yang dapat dikonversi ke boxed error. Operator `?` tidak sama dengan `unwrap()`: `?` mengembalikan error kepada pemanggil, sedangkan `unwrap()` akan menghentikan eksekusi ketika menemukan error.
+Pada `terbitkan_token`, error waktu dapat diteruskan karena tipe hasil fungsi memuat error yang dapat dikonversi ke boxed error. Operator `?` tidak sama dengan `unwrap()`: `?` mengembalikan error kepada pemanggil, sedangkan `unwrap()` akan menghentikan eksekusi ketika menemukan error.
 
 ### 7.9 Key, encoding, dan peminjaman argumen
 
@@ -342,7 +342,7 @@ let token = encode(&header, &claims, &key)?;
 
 Kode sesungguhnya membuat header langsung di dalam pemanggilan `encode`; variable `header` di atas hanya ditulis untuk memecah contoh agar lebih mudah dibaca.
 
-Pada akhir fungsi, bentuk `Ok(encode(...)?)` memiliki dua lapis peran: `?` mengeluarkan token dari `Result` jika sukses atau meneruskan error, lalu `Ok(...)` menandai token sebagai hasil sukses dari `issue_token`.
+Pada akhir fungsi, bentuk `Ok(encode(...)?)` memiliki dua lapis peran: `?` mengeluarkan token dari `Result` jika sukses atau meneruskan error, lalu `Ok(...)` menandai token sebagai hasil sukses dari `terbitkan_token`.
 
 ### 7.10 `mut` dan konfigurasi validasi
 
@@ -373,7 +373,7 @@ Hasil `decode` memuat data yang berhasil diverifikasi. `.claims` mengakses field
 Fungsi ekstraksi header:
 
 ```rust
-pub fn bearer_token(headers: &HeaderMap) -> Option<&str> {
+pub fn ambil_token_bearer(headers: &HeaderMap) -> Option<&str> {
     let value = headers.get(AUTHORIZATION)?.to_str().ok()?;
     let (scheme, token) = value.split_once(' ')?;
 
@@ -412,17 +412,17 @@ Pemeriksaan menerima skema `Bearer` tanpa membedakan kapitalisasi ASCII. Token h
 ### 7.13 Mengubah `Result` menjadi `Option`
 
 ```rust
-pub fn claims_from_headers(
+pub fn ambil_klaim_dari_header(
     headers: &HeaderMap,
     jwt: &JwtService,
 ) -> Option<Claims> {
-    jwt.verify_token(bearer_token(headers)?).ok()
+    jwt.verifikasi_token(ambil_token_bearer(headers)?).ok()
 }
 ```
 
 - `headers: &HeaderMap` dan `jwt: &JwtService` dipinjam untuk dibaca.
-- `bearer_token(headers)?` menghentikan fungsi dengan `None` bila header tidak berisi bearer token yang dapat dipakai.
-- Jika token ada, `verify_token(...)` menghasilkan `Result<Claims, Error>`.
+- `ambil_token_bearer(headers)?` menghentikan fungsi dengan `None` bila header tidak berisi bearer token yang dapat dipakai.
+- Jika token ada, `verifikasi_token(...)` menghasilkan `Result<Claims, Error>`.
 - `.ok()` mengubah `Ok(claims)` menjadi `Some(claims)` dan `Err(error)` menjadi `None`.
 
 Dengan demikian, pemanggil fungsi ini tidak menerima detail penyebab kegagalan JWT. Pada alur aplikasi, middleware dapat melanjutkan pemeriksaan melalui session. Perbedaan umum tipe hasil:
@@ -480,14 +480,14 @@ Untuk menghubungkan istilah di atas dengan struktur source, file dapat dibaca da
 
 1. **Dokumentasi dan import:** komentar `//!`, `use`, path module, dan nama dependency.
 2. **Konstanta dan model:** `TOKEN_EXPIRED_SECONDS`, `JwtService`, `Claims`, field, tipe, dan derive.
-3. **Implementasi service:** `impl`, associated function `new`, method `issue_token`/`verify_token`, waktu, `Result`, key, encode, serta decode.
+3. **Implementasi service:** `impl`, associated function `new`, method `terbitkan_token`/`verifikasi_token`, waktu, `Result`, key, encode, serta decode.
 4. **Pembacaan header dan test:** `Option`, `?`, tuple, `if/else`, method chaining, attribute test, serta macro assertion.
 
 Beberapa tanda baca Rust yang sering terlihat di file:
 
 | Tanda | Fungsi |
 | --- | --- |
-| `::` | Memisahkan path module/item atau memanggil associated function, misalnya `JwtService::new`. |
+| `::` | Memisahkan path module/item atau memanggil associated function, misalnya `JwtService::buat`. |
 | `.` | Mengakses field atau memanggil method, misalnya `self.secret.as_bytes()`. |
 | `:` | Memisahkan nama dari tipe pada deklarasi, atau nama field dari nilainya pada struct. |
 | `->` | Memisahkan parameter fungsi dari tipe return. |
@@ -515,13 +515,13 @@ Contoh tersebut menunjukkan header request, bukan kode Rust. Jangan menaruh toke
 
 ## 10. Kondisi JWT tidak diterima
 
-`verify_token` dapat mengembalikan error, antara lain ketika token tidak dapat di-decode, signature tidak cocok, algoritma tidak sesuai, atau token kedaluwarsa. `claims_from_headers` juga mengembalikan `None` jika header hilang atau format bearer tidak cocok.
+`verifikasi_token` dapat mengembalikan error, antara lain ketika token tidak dapat di-decode, signature tidak cocok, algoritma tidak sesuai, atau token kedaluwarsa. `ambil_klaim_dari_header` juga mengembalikan `None` jika header hilang atau format bearer tidak cocok.
 
 Setelah JWT tidak menghasilkan identitas, middleware mencoba session. Jika session valid, request dapat tetap terautentikasi melalui session. Jika session juga tidak memberi identitas, middleware mengembalikan `401 Unauthorized`. Bila JWT lolos verifikasi, middleware masih harus memastikan pengguna ada dan `role` serta `token_version` cocok dengan database. Untuk detail hasil HTTP dan otorisasi, lihat [middleware](middleware.md).
 
 ## 11. Secret dan batas keamanan
 
-Konfigurasi aplikasi membaca secret dari `JWT_SECRET` dan menolak secret yang panjangnya kurang dari 32 byte. Pemeriksaan konfigurasi berada di [config](../config.md); `JwtService::new` sendiri hanya menyimpan secret yang diberikan.
+Konfigurasi aplikasi membaca secret dari `JWT_SECRET` dan menolak secret yang panjangnya kurang dari 32 byte. Pemeriksaan konfigurasi berada di [config](../config.md); `JwtService::buat` sendiri hanya menyimpan secret yang diberikan.
 
 Hal yang perlu dijaga:
 
@@ -533,7 +533,7 @@ Hal yang perlu dijaga:
 
 ## 12. Hubungan dengan file lain
 
-- [Handler auth](../handlers/auth.md) memanggil `issue_token` setelah kredensial login benar.
+- [Handler auth](../handlers/auth.md) memanggil `terbitkan_token` setelah kredensial login benar.
 - [Middleware autentikasi](middleware.md) membaca dan memverifikasi JWT, memeriksa database, lalu mengotorisasi request.
 - [Session](session.md) menjelaskan metode autentikasi cookie yang menjadi fallback.
 - [Perbandingan session dan JWT](sesi_jwt.md) membahas perbedaan serta perilaku logout.

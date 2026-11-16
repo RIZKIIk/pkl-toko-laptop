@@ -5,6 +5,6 @@ mod id;
 mod text;
 mod update;
 
-pub use create::validate_create_laptop;
-pub use id::validate_laptop_id;
-pub use update::validate_update_laptop;
+pub use create::validasi_laptop_baru;
+pub use id::validasi_id_laptop;
+pub use update::validasi_perubahan_laptop;

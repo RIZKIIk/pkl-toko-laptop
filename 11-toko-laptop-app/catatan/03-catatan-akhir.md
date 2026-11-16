@@ -30,7 +30,7 @@ request -> handler -> validation -> repository -> PostgreSQL
 ## Alur utama
 
 1. Saat startup, aplikasi membaca environment, membuat koneksi PostgreSQL, menerapkan migration, meng-upgrade password legacy bila perlu, dan menyinkronkan akun admin dari konfigurasi.
-2. Router mendaftarkan endpoint publik dan protected. `auth::require_auth` memeriksa identitas serta izin sebelum request protected mencapai handler.
+2. Router mendaftarkan endpoint publik dan protected. `auth::wajibkan_autentikasi` memeriksa identitas serta izin sebelum request protected mencapai handler.
 3. Handler mengambil input, menjalankan validasi bila diperlukan, memanggil layanan/repository, lalu mengirim response dengan status HTTP yang sesuai.
 4. Repository mengakses PostgreSQL. Presenter mengubah hasil laptop ke bentuk response yang ditetapkan API, termasuk format Rupiah.
 

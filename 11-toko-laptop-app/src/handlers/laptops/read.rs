@@ -9,30 +9,30 @@ use sqlx::PgPool;
 
 use crate::{
     error::ApiError,
-    handlers::laptops::{not_found_laptop, success_response},
-    presenters::laptop_response::laptop_to_array,
+    handlers::laptops::{laptop_tidak_ditemukan, respons_berhasil},
+    presenters::laptop_response::laptop_ke_array,
     repositories::laptop_repository as repository,
-    validation::validate_laptop_id,
+    validation::validasi_id_laptop,
 };
 
 /// Mengambil seluruh laptop dan mengubahnya menjadi response JSON.
-pub async fn list_laptops(State(pool): State<PgPool>) -> Result<Json<Value>, ApiError> {
-    let laptops = repository::list_laptops(&pool).await?;
-    let data = laptops.iter().map(laptop_to_array).collect::<Vec<_>>();
+pub async fn daftar_laptop(State(pool): State<PgPool>) -> Result<Json<Value>, ApiError> {
+    let laptops = repository::daftar_laptop(&pool).await?;
+    let data = laptops.iter().map(laptop_ke_array).collect::<Vec<_>>();
 
-    Ok(Json(success_response(json!(data))))
+    Ok(Json(respons_berhasil(json!(data))))
 }
 
 /// Mengambil satu laptop berdasarkan ID.
-pub async fn get_laptop(
+pub async fn ambil_laptop(
     State(pool): State<PgPool>,
     Path(id): Path<i64>,
 ) -> Result<Json<Value>, ApiError> {
-    validate_laptop_id(id)?;
+    validasi_id_laptop(id)?;
 
-    let laptop = repository::get_laptop(&pool, id)
+    let laptop = repository::ambil_laptop(&pool, id)
         .await?
-        .ok_or_else(|| not_found_laptop(id))?;
+        .ok_or_else(|| laptop_tidak_ditemukan(id))?;
 
-    Ok(Json(success_response(laptop_to_array(&laptop))))
+    Ok(Json(respons_berhasil(laptop_ke_array(&laptop))))
 }

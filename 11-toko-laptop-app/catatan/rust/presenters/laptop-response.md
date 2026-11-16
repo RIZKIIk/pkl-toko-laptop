@@ -24,10 +24,10 @@ use super::rupiah::formatkan_rupiah;
 - `json!` adalah macro `serde_json` yang menyusun array atau object JSON; macro ini bukan fungsi HTTP dan tidak mengirim response.
 - `super::rupiah::formatkan_rupiah` mengambil formatter dari modul `presenters` induk.
 
-## 1. `laptop_to_array`
+## 1. `laptop_ke_array`
 
 ```rust
-pub fn laptop_to_array(laptop: &Laptop) -> Value {
+pub fn laptop_ke_array(laptop: &Laptop) -> Value {
     json!([
         laptop.id,
         laptop.nama,
@@ -46,10 +46,10 @@ pub fn laptop_to_array(laptop: &Laptop) -> Value {
 
 GET daftar, GET detail, dan PATCH menggunakan format array ini. Client bergantung pada posisi field, jadi urutannya harus tetap konsisten.
 
-## 2. `laptop_to_object`
+## 2. `laptop_ke_objek`
 
 ```rust
-pub(crate) fn laptop_to_object(laptop: &Laptop) -> Value {
+pub(crate) fn laptop_ke_objek(laptop: &Laptop) -> Value {
     json!({
         "id": laptop.id,
         "nama": laptop.nama,
@@ -88,10 +88,10 @@ Harga menjadi string Rupiah, walaupun model dan database menyimpannya sebagai an
 
 | Operasi | Presenter | Bentuk `data` |
 | --- | --- | --- |
-| GET daftar | `laptop_to_array` untuk setiap baris. | Array berisi array laptop. |
-| GET detail | `laptop_to_array`. | Satu array `[id, nama, merek, harga, stok]`. |
-| PATCH | `laptop_to_array`. | Array laptop setelah perubahan. |
-| POST | `laptop_to_object`. | Object dengan key bernama. |
+| GET daftar | `laptop_ke_array` untuk setiap baris. | Array berisi array laptop. |
+| GET detail | `laptop_ke_array`. | Satu array `[id, nama, merek, harga, stok]`. |
+| PATCH | `laptop_ke_array`. | Array laptop setelah perubahan. |
+| POST | `laptop_ke_objek`. | Object dengan key bernama. |
 
 ## 3. Unit test
 

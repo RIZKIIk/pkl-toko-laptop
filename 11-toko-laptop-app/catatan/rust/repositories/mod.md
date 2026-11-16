@@ -33,7 +33,7 @@ Dalam sintaks `pub mod nama;`:
 - `nama` adalah nama modul dan umumnya sama dengan nama file tanpa `.rs`.
 - `;` menandakan isi modul berada di file terpisah. Isi `laptop_repository.rs` dan `user_repository.rs` tidak ditulis ulang di file ini.
 
-Contohnya, `use crate::repositories::laptop_repository;` mengimpor modul agar kode dapat memanggil `laptop_repository::list_laptops(...)`. Deklarasi modul hanya mengatur nama dan akses kode; deklarasi itu tidak membuat koneksi atau menjalankan query. Fungsi repository tetap harus dipanggil dan hasilnya ditunggu dengan `.await`.
+Contohnya, `use crate::repositories::laptop_repository;` mengimpor modul agar kode dapat memanggil `laptop_repository::daftar_laptop(...)`. Deklarasi modul hanya mengatur nama dan akses kode; deklarasi itu tidak membuat koneksi atau menjalankan query. Fungsi repository tetap harus dipanggil dan hasilnya ditunggu dengan `.await`.
 
 | Modul | Tabel PostgreSQL | Kegunaan utama |
 | --- | --- | --- |

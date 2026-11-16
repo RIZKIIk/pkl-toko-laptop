@@ -29,10 +29,11 @@ Untuk seluruh contoh perintah terminal dan penjelasan opsi seperti `-X`, `-d`, `
 | `GET` | [`/api/laptops`](http://127.0.0.1:3001/api/laptops) | Melihat semua laptop | Admin, buyer, restocker | `200 OK` |
 | `POST` | `/api/laptops` | Menambah laptop | Admin | `201 Created` |
 | `GET` | `/api/laptops/{id}` | Melihat detail laptop | Admin, buyer, restocker | `200 OK` |
+| `POST` | `/api/laptops/{id}/buy` | Membeli laptop dan mengurangi stok | Admin, buyer | `200 OK` |
 | `PATCH` | `/api/laptops/{id}` | Mengubah sebagian field laptop | Admin, restocker | `200 OK` |
 | `DELETE` | `/api/laptops/{id}` | Menghapus laptop | Admin | `200 OK` |
 
-`{id}` harus berupa ID positif laptop yang ada di database. Collection Postman menyediakan request registrasi dan login, serta lima request CRUD; setelah request tambah berhasil, collection menyimpan ID sebagai `laptopId` untuk request detail, ubah, dan hapus.
+`{id}` harus berupa ID positif laptop yang ada di database. Collection Postman menyediakan request registrasi, login, dan operasi laptop.
 
 **Urutan mencoba API:** periksa `/health` → registrasi akun atau siapkan akun admin → login untuk mendapat cookie → kirim request laptop → logout setelah selesai. Contoh siap salin tersedia di [panduan curl](catatan/curl.md); skenario otomatis tersedia di [panduan Postman](catatan/postman.md).
 
@@ -42,7 +43,9 @@ Untuk seluruh contoh perintah terminal dan penjelasan opsi seperti `-X`, `-d`, `
 /health
   -> register/login
   -> cookie session dan/atau JWT bearer
-  -> GET/POST/PATCH/DELETE /api/laptops
+  -> GET /api/laptops
+  -> POST /api/laptops/{id}/buy (buyer)
+  -> POST/PATCH/DELETE /api/laptops (admin/restocker)
   -> logout
 ```
 
@@ -74,7 +77,7 @@ curl -i -b cookies.txt \
 
 Role akun yang sudah ada dapat diubah dengan `PATCH /api/admin/users/{username}/role`, memakai body `{"role":"buyer"}` atau `{"role":"restocker"}`. Role `admin` hanya dapat ditetapkan melalui konfigurasi startup, dan admin tidak dapat mengubah role akunnya sendiri. Perubahan role mencabut session dan JWT lama pengguna tersebut.
 
-Role menentukan akses endpoint laptop: buyer hanya dapat `GET`, restocker dapat `GET` dan `PATCH`, sedangkan admin dapat melakukan semua operasi. Endpoint login, session, dan logout tetap tersedia untuk semua role yang sudah login. Request terautentikasi tanpa izin mendapat `403 Forbidden`.
+Role menentukan akses endpoint laptop: buyer dapat `GET` dan membeli melalui `/api/laptops/{id}/buy`, restocker dapat `GET` dan `PATCH`, sedangkan admin dapat melakukan semua operasi. Endpoint login, session, dan logout tetap tersedia untuk semua role yang sudah login. Request terautentikasi tanpa izin mendapat `403 Forbidden`.
 
 `POST /api/auth/login` menerima JSON username dan password dari akun terdaftar atau sesuai `ADMIN_USERNAME` dan `ADMIN_PASSWORD` di environment server:
 
@@ -185,7 +188,42 @@ Ganti `1` pada [http://127.0.0.1:3001/api/laptops/1](http://127.0.0.1:3001/api/l
 }
 ```
 
-### 4. Mengubah laptop
+### 4. Membeli laptop
+
+Buyer yang sudah login dapat membeli satu atau beberapa unit. Ganti `1` dengan ID laptop yang tersedia. Pembelian langsung mengurangi stok di database; jika stok tidak cukup, stok tidak berubah dan server mengembalikan `409 Conflict`.
+
+**Request:** `POST http://127.0.0.1:3001/api/laptops/1/buy` dengan header `Content-Type: application/json`.
+
+```json
+{
+  "jumlah": 1
+}
+```
+
+`jumlah` harus bilangan bulat lebih dari nol. PostgreSQL mengurangi stok secara atomik agar request bersamaan tidak menjual unit yang sama.
+
+**Contoh response `200 OK`:**
+
+```json
+{
+  "status": "success",
+  "message": "Pembelian berhasil",
+  "data": {
+    "laptop": {
+      "id": 1,
+      "nama": "ThinkPad E14",
+      "merek": "Lenovo",
+      "harga": "Rp 12.500.000",
+      "stok": 4
+    },
+    "jumlah_dibeli": 1
+  }
+}
+```
+
+ID yang tidak ditemukan menghasilkan `404 Not Found`, jumlah tidak valid menghasilkan `400 Bad Request`, dan stok tidak cukup menghasilkan `409 Conflict`.
+
+### 5. Mengubah laptop
 
 **Request:** `PATCH http://127.0.0.1:3001/api/laptops/1` dengan header `Content-Type: application/json`. Kirim satu atau beberapa field; field yang tidak dikirim tidak berubah. Minimal satu field harus dikirim.
 
@@ -208,7 +246,7 @@ Field teks yang dikirim mengikuti aturan panjang dan isi yang sama seperti reque
 }
 ```
 
-### 5. Menghapus laptop
+### 6. Menghapus laptop
 
 **Request:** `DELETE http://127.0.0.1:3001/api/laptops/1`. Ganti `1` dengan ID laptop yang ingin dihapus. Request ini tidak membutuhkan body.
 
@@ -239,7 +277,7 @@ Status error aplikasi yang umum:
 | --- | --- |
 | `400 Bad Request` | ID tidak positif, teks tidak valid, nilai negatif, atau body PATCH tidak berisi field yang dapat diubah |
 | `404 Not Found` | Laptop dengan ID tersebut tidak ditemukan |
-| `409 Conflict` | Username registrasi sudah digunakan |
+| `409 Conflict` | Username sudah digunakan atau stok laptop tidak mencukupi |
 | `401 Unauthorized` | Kredensial login salah atau request memerlukan session/JWT valid |
 | `500 Internal Server Error` | Query atau koneksi database gagal; detail internal tidak dikirim ke client |
 

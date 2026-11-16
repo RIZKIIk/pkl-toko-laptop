@@ -21,12 +21,12 @@ use crate::error::ApiError;
 - `crate::` berarti jalur dimulai dari akar crate aplikasi.
 - `ApiError` adalah tipe error aplikasi. Validator memakai varian `BadRequest` untuk input yang tidak valid.
 
-## Fungsi `validate_laptop_id`
+## Fungsi `validasi_id_laptop`
 
 Kode:
 
 ```rust
-pub fn validate_laptop_id(id: i64) -> Result<(), ApiError> {
+pub fn validasi_id_laptop(id: i64) -> Result<(), ApiError> {
     if id <= 0 {
         return Err(ApiError::BadRequest("ID harus berupa angka positif".into()));
     }
@@ -66,13 +66,13 @@ Handler biasanya memakai `?` saat memanggil fungsi ini. Jika hasilnya `Err`, `?`
 ```rust
 #[cfg(test)]
 mod tests {
-    use super::validate_laptop_id;
+    use super::validasi_id_laptop;
 
     #[test]
     fn laptop_id_must_be_positive() {
-        assert!(validate_laptop_id(1).is_ok());
-        assert!(validate_laptop_id(0).is_err());
-        assert!(validate_laptop_id(-1).is_err());
+        assert!(validasi_id_laptop(1).is_ok());
+        assert!(validasi_id_laptop(0).is_err());
+        assert!(validasi_id_laptop(-1).is_err());
     }
 }
 ```

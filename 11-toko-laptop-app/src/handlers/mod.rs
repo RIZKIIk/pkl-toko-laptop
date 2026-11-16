@@ -4,6 +4,8 @@ pub mod auth;
 pub mod laptops;
 pub mod system;
 
-pub use auth::{create_user, current_user, login, logout, register, update_user_role};
-pub use laptops::{create_laptop, delete_laptop, get_laptop, list_laptops, update_laptop};
-pub use system::health;
+pub use auth::{buat_pengguna, daftar, keluar, masuk, pengguna_saat_ini, ubah_peran_pengguna};
+pub use laptops::{
+    ambil_laptop, beli_laptop, daftar_laptop, hapus_laptop, tambah_laptop, ubah_laptop,
+};
+pub use system::cek_kesehatan;

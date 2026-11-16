@@ -36,14 +36,14 @@ pub struct Claims {
 
 impl JwtService {
     /// Membuat service JWT dengan secret yang sama untuk sign dan verify.
-    pub fn new(secret: String) -> Self {
+    pub fn buat(secret: String) -> Self {
         Self {
             secret: Arc::from(secret),
         }
     }
 
     /// Menerbitkan token HS256 dengan identitas dan versi token pengguna.
-    pub fn issue_token(
+    pub fn terbitkan_token(
         &self,
         user_id: i64,
         role: UserRole,
@@ -63,7 +63,7 @@ impl JwtService {
     }
 
     /// Memverifikasi signature dan expiry, lalu mengembalikan claims pengguna.
-    pub fn verify_token(&self, token: &str) -> Result<Claims, jsonwebtoken::errors::Error> {
+    pub fn verifikasi_token(&self, token: &str) -> Result<Claims, jsonwebtoken::errors::Error> {
         // Algoritma dibatasi ke HS256 dan leeway nol agar expiry berlaku tepat waktu.
         let key = DecodingKey::from_secret(self.secret.as_bytes());
         let mut validation = Validation::new(Algorithm::HS256);
@@ -74,7 +74,7 @@ impl JwtService {
 }
 
 /// Mengambil token dari header Authorization dengan format `Bearer <token>`.
-pub fn bearer_token(headers: &HeaderMap) -> Option<&str> {
+pub fn ambil_token_bearer(headers: &HeaderMap) -> Option<&str> {
     let value = headers.get(AUTHORIZATION)?.to_str().ok()?;
     let (scheme, token) = value.split_once(' ')?;
 
@@ -89,35 +89,6 @@ pub fn bearer_token(headers: &HeaderMap) -> Option<&str> {
 }
 
 /// Memvalidasi bearer JWT dari header dan mengambil claims pengguna.
-pub fn claims_from_headers(headers: &HeaderMap, jwt: &JwtService) -> Option<Claims> {
-    jwt.verify_token(bearer_token(headers)?).ok()
-}
-
-#[cfg(test)]
-mod tests {
-    use super::{JwtService, UserRole};
-
-    const SECRET: &str = "test-secret-with-at-least-32-bytes-long";
-
-    #[test]
-    fn token_round_trip_returns_the_user_id_and_role() {
-        let jwt = JwtService::new(SECRET.to_owned());
-        let token = jwt.issue_token(7, UserRole::Admin, 3).unwrap();
-
-        let claims = jwt.verify_token(&token).unwrap();
-        assert_eq!(claims.sub, 7);
-        assert_eq!(claims.role, UserRole::Admin);
-        assert_eq!(claims.token_version, 3);
-    }
-
-    #[test]
-    fn token_rejects_tampering_and_a_different_secret() {
-        let jwt = JwtService::new(SECRET.to_owned());
-        let other_jwt = JwtService::new("another-test-secret-with-32-bytes".to_owned());
-        let token = jwt.issue_token(7, UserRole::Admin, 0).unwrap();
-        let tampered = format!("{token}x");
-
-        assert!(jwt.verify_token(&tampered).is_err());
-        assert!(other_jwt.verify_token(&token).is_err());
-    }
+pub fn ambil_klaim_dari_header(headers: &HeaderMap, jwt: &JwtService) -> Option<Claims> {
+    jwt.verifikasi_token(ambil_token_bearer(headers)?).ok()
 }

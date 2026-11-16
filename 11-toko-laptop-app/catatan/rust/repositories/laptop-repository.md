@@ -31,10 +31,10 @@ Semua fungsi bersifat `async` karena database adalah I/O yang perlu ditunggu. `.
 - `fetch_all` membaca semua baris; `fetch_one` meminta satu baris; `fetch_optional` menerima nol atau satu baris; `execute` menjalankan query tanpa mengambil model.
 - `Result<T, sqlx::Error>` membungkus hasil sukses (`Ok(T)`) atau error (`Err`); `Option<T>` di dalamnya membedakan hasil query kosong (`None`) dari kegagalan query. Karena itu `Ok(None)` tidak sama dengan `Err(...)`.
 
-## 1. `list_laptops`
+## 1. `daftar_laptop`
 
 ```rust
-pub async fn list_laptops(pool: &PgPool) -> Result<Vec<Laptop>, sqlx::Error> {
+pub async fn daftar_laptop(pool: &PgPool) -> Result<Vec<Laptop>, sqlx::Error> {
     sqlx::query_as::<_, Laptop>(
         "SELECT id, nama, merek, harga, stok FROM laptops ORDER BY id",
     )
@@ -45,10 +45,10 @@ pub async fn list_laptops(pool: &PgPool) -> Result<Vec<Laptop>, sqlx::Error> {
 
 `SELECT` mengambil kolom yang dipakai model, `ORDER BY id` mengurutkan hasil berdasarkan ID, dan `fetch_all` mengembalikan `Vec<Laptop>`. `Vec` kosong berarti tabel belum berisi laptop, bukan error.
 
-## 2. `get_laptop`
+## 2. `ambil_laptop`
 
 ```rust
-pub async fn get_laptop(pool: &PgPool, id: i64) -> Result<Option<Laptop>, sqlx::Error> {
+pub async fn ambil_laptop(pool: &PgPool, id: i64) -> Result<Option<Laptop>, sqlx::Error> {
     sqlx::query_as::<_, Laptop>(
         "SELECT id, nama, merek, harga, stok FROM laptops WHERE id = $1",
     )
@@ -60,10 +60,10 @@ pub async fn get_laptop(pool: &PgPool, id: i64) -> Result<Option<Laptop>, sqlx::
 
 `WHERE id = $1` mencari satu ID; `.bind(id)` memasangkan nilai ke placeholder. Hasilnya `Ok(Some(laptop))` jika ditemukan atau `Ok(None)` jika tidak. Error database menjadi `Err(sqlx::Error)`.
 
-## 3. `create_laptop`
+## 3. `tambah_laptop`
 
 ```rust
-pub async fn create_laptop(
+pub async fn tambah_laptop(
     pool: &PgPool,
     payload: &CreateLaptopPayload,
 ) -> Result<Laptop, sqlx::Error> {
@@ -85,10 +85,10 @@ pub async fn create_laptop(
 
 `query_as::<_, Laptop>` menyatakan tipe setiap baris hasil adalah `Laptop`; `_` membiarkan SQLx/compiler menyimpulkan parameter generik lainnya. Tanda `&` pada `payload: &CreateLaptopPayload` berarti payload hanya dipinjam selama query, tidak dipindahkan dari pemanggil.
 
-## 4. `update_laptop`
+## 4. `ubah_laptop`
 
 ```rust
-pub async fn update_laptop(
+pub async fn ubah_laptop(
     pool: &PgPool,
     id: i64,
     payload: &UpdateLaptopPayload,
@@ -119,10 +119,10 @@ pub async fn update_laptop(
 - `CURRENT_TIMESTAMP` memperbarui waktu perubahan saat query berjalan.
 - `RETURNING` meminta baris terbaru. `fetch_optional` menghasilkan `None` jika tidak ada ID tersebut.
 
-## 5. `delete_laptop`
+## 5. `hapus_laptop`
 
 ```rust
-pub async fn delete_laptop(pool: &PgPool, id: i64) -> Result<bool, sqlx::Error> {
+pub async fn hapus_laptop(pool: &PgPool, id: i64) -> Result<bool, sqlx::Error> {
     let result = sqlx::query("DELETE FROM laptops WHERE id = $1")
         .bind(id)
         .execute(pool)
@@ -142,11 +142,11 @@ Parameter request selalu diberikan melalui `.bind(...)`, bukan digabung ke teks 
 
 | Fungsi | Query | Hasil sukses | Arti hasil kosong |
 | --- | --- | --- | --- |
-| `list_laptops` | `SELECT ... ORDER BY id` | `Vec<Laptop>` | `Vec` kosong berarti belum ada data. |
-| `get_laptop` | `SELECT ... WHERE id` | `Option<Laptop>` | `None` berarti ID tidak ditemukan. |
-| `create_laptop` | `INSERT ... RETURNING` | `Laptop` | Tidak ada hasil kosong normal; query harus membuat satu baris. |
-| `update_laptop` | `UPDATE ... COALESCE ... RETURNING` | `Option<Laptop>` | `None` berarti ID tidak ditemukan. |
-| `delete_laptop` | `DELETE ...` | `bool` | `false` berarti tidak ada baris terhapus. |
+| `daftar_laptop` | `SELECT ... ORDER BY id` | `Vec<Laptop>` | `Vec` kosong berarti belum ada data. |
+| `ambil_laptop` | `SELECT ... WHERE id` | `Option<Laptop>` | `None` berarti ID tidak ditemukan. |
+| `tambah_laptop` | `INSERT ... RETURNING` | `Laptop` | Tidak ada hasil kosong normal; query harus membuat satu baris. |
+| `ubah_laptop` | `UPDATE ... COALESCE ... RETURNING` | `Option<Laptop>` | `None` berarti ID tidak ditemukan. |
+| `hapus_laptop` | `DELETE ...` | `bool` | `false` berarti tidak ada baris terhapus. |
 
 ## Ilustrasi alur query
 

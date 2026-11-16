@@ -46,7 +46,7 @@ Dengan begitu handler cukup mengembalikan `ApiError`; handler tidak perlu membua
 3. `pub enum ApiError` membuat tipe error yang bisa digunakan modul lain, terutama [validation](validation.md) dan [handlers](handlers.md).
 4. `impl From<sqlx::Error> for ApiError` mendefinisikan konversi dari error SQLx ke `ApiError::Database`.
 5. Fungsi `from(error)` menerima error SQLx dan membungkusnya dengan `Self::Database(error)`. `Self` di sini berarti `ApiError`.
-6. Karena implementasi `From` ini ada, ekspresi query seperti `repositories::laptop_repository::list_laptops(&pool).await?` pada handler dapat memakai `?`. Rust otomatis mengubah `sqlx::Error` menjadi `ApiError`.
+6. Karena implementasi `From` ini ada, ekspresi query seperti `repositories::laptop_repository::daftar_laptop(&pool).await?` pada handler dapat memakai `?`. Rust otomatis mengubah `sqlx::Error` menjadi `ApiError`.
 7. `impl IntoResponse for ApiError` mengajari Axum cara merespons ketika sebuah handler mengembalikan `Err(ApiError)`.
 8. `into_response(self)` menerima kepemilikan error. Error tidak lagi diperlukan setelah diubah menjadi HTTP response.
 9. `match self` memilih pasangan `(status, message)` untuk masing-masing varian: `BadRequest` menjadi 400, `NotFound` menjadi 404.
@@ -56,7 +56,7 @@ Dengan begitu handler cukup mengembalikan `ApiError`; handler tidak perlu membua
 
 ## Contoh alur
 
-Saat `validate_laptop_id(0)` mengembalikan `ApiError::BadRequest`, Axum menjalankan `into_response` dan client menerima HTTP 400. Saat `get_laptop` tidak menemukan baris, helper handler membuat `ApiError::NotFound` dan client menerima 404. Saat query SQL gagal, `?` membuat `ApiError::Database`, lalu client menerima 500 tanpa detail internal.
+Saat `validasi_id_laptop(0)` mengembalikan `ApiError::BadRequest`, Axum menjalankan `into_response` dan client menerima HTTP 400. Saat `ambil_laptop` tidak menemukan baris, helper handler membuat `ApiError::NotFound` dan client menerima 404. Saat query SQL gagal, `?` membuat `ApiError::Database`, lalu client menerima 500 tanpa detail internal.
 
 ## Hubungan dengan file lain
 

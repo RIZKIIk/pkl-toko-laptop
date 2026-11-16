@@ -54,7 +54,7 @@ Jika body tidak dapat di-deserialize ke tipe parameter `Json<T>`—misalnya teks
 Contoh signature create laptop:
 
 ```rust
-pub async fn create_laptop(
+pub async fn tambah_laptop(
     State(pool): State<PgPool>,
     Json(payload): Json<CreateLaptopPayload>,
 ) -> Result<(StatusCode, Json<Value>), ApiError>

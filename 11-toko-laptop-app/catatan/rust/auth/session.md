@@ -16,17 +16,17 @@ File ini khusus mengelola session login melalui `tower-sessions`. Pemeriksaan JW
 | --- | --- |
 | `SESSION_USERNAME_KEY` | Menyamakan nama key username dalam session. |
 | `SessionIdentity` | Membungkus username hasil pembacaan session. |
-| `start_session` | Mengganti ID session setelah login lalu menyimpan username. |
-| `session_identity` | Membaca username dari session request. |
-| `clear_session` | Menghapus data session aktif dari store. |
+| `mulai_sesi` | Mengganti ID session setelah login lalu menyimpan username. |
+| `identitas_sesi` | Membaca username dari session request. |
+| `hapus_sesi` | Menghapus data session aktif dari store. |
 
 ## Helper session
 
-### `start_session(session, username)`
+### `mulai_sesi(session, username)`
 
 Fungsi ini memanggil `session.cycle_id()` sebelum menyimpan username menggunakan `SESSION_USERNAME_KEY`. Mengganti ID session setelah login membantu mencegah session pra-login dipakai kembali. Error dari operasi session diteruskan sebagai `tower_sessions::session::Error`.
 
-### `session_identity(session)`
+### `identitas_sesi(session)`
 
 Fungsi asinkron ini mengembalikan `Result<Option<SessionIdentity>, Error>`:
 
@@ -36,7 +36,7 @@ Fungsi asinkron ini mengembalikan `Result<Option<SessionIdentity>, Error>`:
 
 Username dari session belum membuktikan bahwa akun masih ada. Middleware memeriksanya lagi ke database sebelum meneruskan request.
 
-### `clear_session(session)`
+### `hapus_sesi(session)`
 
 Memanggil `session.flush()` untuk menghapus session aktif dari store. Handler logout juga menaikkan `token_version` di database agar JWT lama pengguna ditolak.
 

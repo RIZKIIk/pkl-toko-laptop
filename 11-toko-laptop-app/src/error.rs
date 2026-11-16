@@ -13,6 +13,8 @@ pub enum ApiError {
     BadRequest(String),
     /// Laptop yang diminta tidak ditemukan.
     NotFound(String),
+    /// Stok laptop tidak cukup untuk memenuhi pembelian.
+    Conflict(String),
     /// Query atau koneksi database mengalami kegagalan.
     Database(sqlx::Error),
 }
@@ -30,6 +32,7 @@ impl IntoResponse for ApiError {
         let (status, message) = match self {
             Self::BadRequest(message) => (StatusCode::BAD_REQUEST, message),
             Self::NotFound(message) => (StatusCode::NOT_FOUND, message),
+            Self::Conflict(message) => (StatusCode::CONFLICT, message),
             Self::Database(error) => {
                 eprintln!("Kesalahan database: {error}");
                 (

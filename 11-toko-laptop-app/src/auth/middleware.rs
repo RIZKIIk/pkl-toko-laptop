@@ -9,7 +9,7 @@ use axum::{
 use sqlx::PgPool;
 use tower_sessions::Session;
 
-use super::{jwt::JwtService, response::error_response, role::UserRole, session::session_identity};
+use super::{jwt::JwtService, response::respons_gagal, role::UserRole, session::identitas_sesi};
 
 #[derive(Clone, Debug)]
 pub struct AuthIdentity {
@@ -19,15 +19,19 @@ pub struct AuthIdentity {
 }
 
 /// Memastikan request terautentikasi dan role-nya diizinkan sebelum ke handler.
-pub async fn require_auth(
+pub async fn wajibkan_autentikasi(
     State(pool): State<PgPool>,
     Extension(jwt): Extension<JwtService>,
     session: Session,
     mut request: Request,
     next: Next,
 ) -> Response {
-    let identity = if let Some(claims) = super::jwt::claims_from_headers(request.headers(), &jwt) {
-        match crate::repositories::user_repository::find_user_by_id(&pool, claims.sub).await {
+    let identity = if let Some(claims) =
+        super::jwt::ambil_klaim_dari_header(request.headers(), &jwt)
+    {
+        match crate::repositories::user_repository::cari_pengguna_berdasarkan_id(&pool, claims.sub)
+            .await
+        {
             Ok(Some((username, role, token_version)))
                 if role == claims.role && token_version == claims.token_version =>
             {
@@ -40,7 +44,7 @@ pub async fn require_auth(
             Ok(_) => None,
             Err(error) => {
                 eprintln!("Gagal memeriksa identitas JWT: {error}");
-                return error_response(
+                return respons_gagal(
                     StatusCode::INTERNAL_SERVER_ERROR,
                     "Terjadi kesalahan saat memeriksa autentikasi",
                 );
@@ -52,9 +56,9 @@ pub async fn require_auth(
 
     let identity = match identity {
         Some(identity) => identity,
-        None => match session_identity(&session).await {
+        None => match identitas_sesi(&session).await {
             Ok(Some(identity)) => {
-                match crate::repositories::user_repository::find_user_by_username(
+                match crate::repositories::user_repository::cari_pengguna_berdasarkan_nama(
                     &pool,
                     &identity.username,
                 )
@@ -65,20 +69,20 @@ pub async fn require_auth(
                         username: identity.username,
                         role,
                     },
-                    Ok(_) => return error_response(StatusCode::UNAUTHORIZED, "Login diperlukan"),
+                    Ok(_) => return respons_gagal(StatusCode::UNAUTHORIZED, "Login diperlukan"),
                     Err(error) => {
                         eprintln!("Gagal memeriksa identitas session: {error}");
-                        return error_response(
+                        return respons_gagal(
                             StatusCode::INTERNAL_SERVER_ERROR,
                             "Terjadi kesalahan saat memeriksa autentikasi",
                         );
                     }
                 }
             }
-            Ok(None) => return error_response(StatusCode::UNAUTHORIZED, "Login diperlukan"),
+            Ok(None) => return respons_gagal(StatusCode::UNAUTHORIZED, "Login diperlukan"),
             Err(error) => {
                 eprintln!("Gagal membaca session: {error}");
-                return error_response(
+                return respons_gagal(
                     StatusCode::INTERNAL_SERVER_ERROR,
                     "Terjadi kesalahan pada session",
                 );
@@ -88,9 +92,9 @@ pub async fn require_auth(
 
     if !identity
         .role
-        .can_access(request.method(), request.uri().path())
+        .boleh_mengakses(request.method(), request.uri().path())
     {
-        return error_response(StatusCode::FORBIDDEN, "Role tidak memiliki akses");
+        return respons_gagal(StatusCode::FORBIDDEN, "Role tidak memiliki akses");
     }
 
     request.extensions_mut().insert(identity);

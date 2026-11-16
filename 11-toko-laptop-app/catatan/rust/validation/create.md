@@ -15,23 +15,23 @@ Validator ini memeriksa payload sebelum handler meminta repository menyimpan lap
 
 ```rust
 use crate::{error::ApiError, models::CreateLaptopPayload};
-use super::text::validate_text;
+use super::text::validasi_teks;
 ```
 
 - `crate::` memulai jalur dari akar crate.
 - `crate::{...}` mengimpor beberapa nama dari akar crate dalam satu blok.
 - `error::ApiError` adalah tipe error aplikasi untuk menandai input tidak valid.
 - `models::CreateLaptopPayload` adalah struct yang mewakili body request POST.
-- `super::text::validate_text` mengambil helper dari modul saudara `text` melalui modul induk `validation`.
+- `super::text::validasi_teks` mengambil helper dari modul saudara `text` melalui modul induk `validation`.
 
-## 2. Fungsi `validate_create_laptop`
+## 2. Fungsi `validasi_laptop_baru`
 
 ```rust
-pub fn validate_create_laptop(
+pub fn validasi_laptop_baru(
     payload: CreateLaptopPayload,
 ) -> Result<CreateLaptopPayload, ApiError> {
-    let nama = validate_text(payload.nama, "Nama laptop", 150)?;
-    let merek = validate_text(payload.merek, "Merek laptop", 100)?;
+    let nama = validasi_teks(payload.nama, "Nama laptop", 150)?;
+    let merek = validasi_teks(payload.merek, "Merek laptop", 100)?;
 
     if payload.harga < 0 {
         return Err(ApiError::BadRequest("Harga tidak boleh negatif".into()));
@@ -59,7 +59,7 @@ pub fn validate_create_laptop(
 
 ### Pemeriksaan berurutan
 
-1. `payload.nama` dipindahkan ke helper `validate_text` bersama label `"Nama laptop"` dan batas 150 karakter. Hasil teks yang sudah dibersihkan disimpan dalam `nama`.
+1. `payload.nama` dipindahkan ke helper `validasi_teks` bersama label `"Nama laptop"` dan batas 150 karakter. Hasil teks yang sudah dibersihkan disimpan dalam `nama`.
 2. `?` setelah pemanggilan helper berarti jika validasi teks gagal, fungsi langsung mengembalikan `Err` kepada handler; jika berhasil, proses berlanjut.
 3. Merek diperiksa dengan cara sama, dengan batas 100 karakter.
 4. `if payload.harga < 0` menolak harga negatif. Harga nol diperbolehkan.
@@ -82,7 +82,7 @@ Modul test pada source memiliki dua kasus:
 
 `#[cfg(test)]` membatasi modul test agar dikompilasi untuk test. `#[test]` menandai fungsi test. `assert_eq!` membandingkan hasil aktual dengan nilai harapan, sedangkan `.is_err()` memeriksa bahwa hasil bertipe `Result` adalah kegagalan.
 
-Validator ini dipanggil oleh handler create sebelum query `INSERT`. Aturan umum teks dijelaskan pada [validate_text](text.md).
+Validator ini dipanggil oleh handler create sebelum query `INSERT`. Aturan umum teks dijelaskan pada [validasi_teks](text.md).
 
 ## Ringkasan aturan per field
 

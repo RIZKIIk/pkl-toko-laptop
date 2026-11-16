@@ -9,12 +9,12 @@
 
 ## Tujuan
 
-`create_laptop` menangani `POST /api/laptops`. Handler menghubungkan body request dengan validator, repository, dan presenter. Ia tidak menjalankan SQL sendiri dan tidak menyimpan aturan validasi di dalam handler.
+`tambah_laptop` menangani `POST /api/laptops`. Handler menghubungkan body request dengan validator, repository, dan presenter. Ia tidak menjalankan SQL sendiri dan tidak menyimpan aturan validasi di dalam handler.
 
 ## Data masuk dan hasil
 
 ```rust
-pub async fn create_laptop(
+pub async fn tambah_laptop(
     State(pool): State<PgPool>,
     Json(payload): Json<CreateLaptopPayload>,
 ) -> Result<(StatusCode, Json<Value>), ApiError>
@@ -33,17 +33,17 @@ Request wajib membawa `nama`, `merek`, `harga`, dan `stok`. Bentuk payload dan c
 
 ## Alur proses
 
-1. `validate_create_laptop(payload)?` memangkas spasi pinggir nama/merek, menolak teks kosong atau terlalu panjang, dan menolak harga/stok negatif. Fungsi validator sendiri mengembalikan `Result<CreateLaptopPayload, ApiError>`. Operator `?` mengambil nilai dari `Ok`, atau langsung mengembalikan `Err` dari handler.
-2. `repository::create_laptop(&pool, &payload).await?` meminjam pool dan payload (`&`), lalu menunggu query asynchronous (`.await`). Repository memakai `INSERT ... RETURNING` sehingga hasil berisi laptop baru, termasuk ID database. `?` juga meneruskan error query yang dikonversi ke `ApiError`.
-3. `laptop_to_object(&laptop)` mengubah entity menjadi object JSON dengan key bernama.
-4. `success_response_with_message(...)` menambahkan `status: "success"` dan pesan berhasil.
+1. `validasi_laptop_baru(payload)?` memangkas spasi pinggir nama/merek, menolak teks kosong atau terlalu panjang, dan menolak harga/stok negatif. Fungsi validator sendiri mengembalikan `Result<CreateLaptopPayload, ApiError>`. Operator `?` mengambil nilai dari `Ok`, atau langsung mengembalikan `Err` dari handler.
+2. `repository::tambah_laptop(&pool, &payload).await?` meminjam pool dan payload (`&`), lalu menunggu query asynchronous (`.await`). Repository memakai `INSERT ... RETURNING` sehingga hasil berisi laptop baru, termasuk ID database. `?` juga meneruskan error query yang dikonversi ke `ApiError`.
+3. `laptop_ke_objek(&laptop)` mengubah entity menjadi object JSON dengan key bernama.
+4. `respons_berhasil_dengan_pesan(...)` menambahkan `status: "success"` dan pesan berhasil.
 5. Handler memasangkan body dengan `StatusCode::CREATED`, sehingga client menerima `201 Created`. Ekspresi `Ok((..., Json(...)))` membentuk nilai sukses dari tipe `Result`; `Err` tidak ditulis di sini karena kegagalan sudah diteruskan menggunakan `?`.
 
 ```text
 Json<CreateLaptopPayload>
-  → validate_create_laptop
+  → validasi_laptop_baru
   → INSERT ... RETURNING
-  → laptop_to_object
+  → laptop_ke_objek
   → 201 Created + JSON
 ```
 

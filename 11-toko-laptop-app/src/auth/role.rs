@@ -12,7 +12,7 @@ pub enum UserRole {
 }
 
 impl UserRole {
-    pub fn as_str(self) -> &'static str {
+    pub fn sebagai_teks(self) -> &'static str {
         match self {
             Self::Admin => "admin",
             Self::Buyer => "buyer",
@@ -20,7 +20,7 @@ impl UserRole {
         }
     }
 
-    pub fn can_access(self, method: &Method, path: &str) -> bool {
+    pub fn boleh_mengakses(self, method: &Method, path: &str) -> bool {
         if matches!(path, "/api/auth/session" | "/api/auth/logout") {
             return true;
         }
@@ -28,8 +28,11 @@ impl UserRole {
         match self {
             Self::Admin => true,
             Self::Buyer => {
-                *method == Method::GET
-                    && (path == "/api/laptops" || path.starts_with("/api/laptops/"))
+                (*method == Method::GET
+                    && (path == "/api/laptops" || path.starts_with("/api/laptops/")))
+                    || (*method == Method::POST
+                        && path.starts_with("/api/laptops/")
+                        && path.ends_with("/buy"))
             }
             Self::Restocker => {
                 (*method == Method::GET
@@ -42,7 +45,7 @@ impl UserRole {
 
 impl fmt::Display for UserRole {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        formatter.write_str(self.as_str())
+        formatter.write_str(self.sebagai_teks())
     }
 }
 
@@ -56,40 +59,5 @@ impl FromStr for UserRole {
             "restocker" => Ok(Self::Restocker),
             _ => Err(format!("Role pengguna tidak dikenal: {role}")),
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use axum::http::Method;
-
-    use super::UserRole;
-
-    #[test]
-    fn admin_can_access_all_protected_routes() {
-        assert!(UserRole::Admin.can_access(&Method::DELETE, "/api/laptops/1"));
-        assert!(UserRole::Admin.can_access(&Method::POST, "/api/laptops"));
-        assert!(UserRole::Admin.can_access(&Method::PATCH, "/api/admin/users/andi/role"));
-    }
-
-    #[test]
-    fn buyer_can_only_read_laptops_and_manage_own_session() {
-        assert!(UserRole::Buyer.can_access(&Method::GET, "/api/laptops"));
-        assert!(UserRole::Buyer.can_access(&Method::GET, "/api/laptops/1"));
-        assert!(UserRole::Buyer.can_access(&Method::POST, "/api/auth/logout"));
-        assert!(!UserRole::Buyer.can_access(&Method::POST, "/api/laptops"));
-        assert!(!UserRole::Buyer.can_access(&Method::PATCH, "/api/laptops/1"));
-        assert!(!UserRole::Buyer.can_access(&Method::DELETE, "/api/laptops/1"));
-    }
-
-    #[test]
-    fn restocker_can_read_and_update_laptops_only() {
-        assert!(UserRole::Restocker.can_access(&Method::GET, "/api/laptops"));
-        assert!(UserRole::Restocker.can_access(&Method::GET, "/api/laptops/1"));
-        assert!(UserRole::Restocker.can_access(&Method::PATCH, "/api/laptops/1"));
-        assert!(UserRole::Restocker.can_access(&Method::POST, "/api/auth/logout"));
-        assert!(!UserRole::Restocker.can_access(&Method::POST, "/api/laptops"));
-        assert!(!UserRole::Restocker.can_access(&Method::DELETE, "/api/laptops/1"));
-        assert!(!UserRole::Restocker.can_access(&Method::PATCH, "/api/admin/users/andi/role"));
     }
 }

@@ -33,13 +33,13 @@ impl AppConfig {
     /// Membaca pengaturan dari environment variable.
     /// Hanya `APP_HOST` dan `SESSION_COOKIE_SECURE` memiliki default; port,
     /// database, akun admin, dan secret JWT wajib tersedia dan valid.
-    pub fn from_env() -> Result<Self, Box<dyn Error + Send + Sync>> {
+    pub fn baca_dari_env() -> Result<Self, Box<dyn Error + Send + Sync>> {
         let session_cookie_secure = match env::var("SESSION_COOKIE_SECURE") {
             Ok(value) => value.parse()?,
             Err(env::VarError::NotPresent) => false,
             Err(error) => return Err(error.into()),
         };
-        let jwt_secret = required_non_empty_env("JWT_SECRET")?;
+        let jwt_secret = ambil_env_wajib("JWT_SECRET")?;
         if jwt_secret.len() < 32 {
             return Err("JWT_SECRET harus memiliki panjang minimal 32 byte".into());
         }
@@ -54,23 +54,23 @@ impl AppConfig {
             db_name: env::var("DB_NAME")?,
             db_user: env::var("DB_USER")?,
             db_password: env::var("DB_PASSWORD")?,
-            admin_username: required_non_empty_env("ADMIN_USERNAME")?,
-            admin_password: required_non_empty_env("ADMIN_PASSWORD")?,
+            admin_username: ambil_env_wajib("ADMIN_USERNAME")?,
+            admin_password: ambil_env_wajib("ADMIN_PASSWORD")?,
         })
     }
 
     /// Menyinkronkan akun admin dari konfigurasi environment ke tabel users.
-    pub async fn initialize_admin_user(
+    pub async fn siapkan_pengguna_admin(
         &self,
         pool: &sqlx::PgPool,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
-        crate::auth::initialize_admin_user(pool, &self.admin_username, &self.admin_password).await
+        crate::auth::siapkan_pengguna_admin(pool, &self.admin_username, &self.admin_password).await
     }
 
     /// Membuat pool koneksi PostgreSQL untuk dipakai handler.
     /// Pool membatasi lima koneksi dan menunggu maksimal sepuluh detik untuk
     /// memperoleh koneksi sebelum mengembalikan error SQLx.
-    pub async fn connect_database(&self) -> Result<sqlx::PgPool, sqlx::Error> {
+    pub async fn hubungkan_ke_database(&self) -> Result<sqlx::PgPool, sqlx::Error> {
         let options = PgConnectOptions::new()
             .host(&self.db_host)
             .port(self.db_port)
@@ -86,13 +86,13 @@ impl AppConfig {
     }
 
     /// Mengembalikan nama database untuk log startup.
-    pub fn database_name(&self) -> &str {
+    pub fn nama_database(&self) -> &str {
         &self.db_name
     }
 }
 
 /// Mengambil variabel wajib dan menolak nilai kosong.
-fn required_non_empty_env(name: &str) -> Result<String, Box<dyn Error + Send + Sync>> {
+fn ambil_env_wajib(name: &str) -> Result<String, Box<dyn Error + Send + Sync>> {
     let value = env::var(name)?;
     if value.is_empty() {
         return Err(format!("{name} tidak boleh kosong").into());

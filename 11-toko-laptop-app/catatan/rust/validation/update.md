@@ -15,25 +15,25 @@ Validator ini memeriksa body `PATCH` yang boleh berisi hanya sebagian field lapt
 
 ```rust
 use crate::{error::ApiError, models::UpdateLaptopPayload};
-use super::text::validate_text;
+use super::text::validasi_teks;
 ```
 
 - `crate::` menunjuk akar crate.
 - `ApiError` digunakan untuk menandai input tidak valid.
 - `UpdateLaptopPayload` menampung field PATCH dalam bentuk `Option`.
-- `super::text::validate_text` mengambil helper teks dari modul saudara dalam `validation`.
+- `super::text::validasi_teks` mengambil helper teks dari modul saudara dalam `validation`.
 
-## 2. Fungsi `validate_update_laptop`
+## 2. Fungsi `validasi_perubahan_laptop`
 
 ```rust
-pub fn validate_update_laptop(
+pub fn validasi_perubahan_laptop(
     mut payload: UpdateLaptopPayload,
 ) -> Result<UpdateLaptopPayload, ApiError> {
     if let Some(nama) = payload.nama.take() {
-        payload.nama = Some(validate_text(nama, "Nama laptop", 150)?);
+        payload.nama = Some(validasi_teks(nama, "Nama laptop", 150)?);
     }
     if let Some(merek) = payload.merek.take() {
-        payload.merek = Some(validate_text(merek, "Merek laptop", 100)?);
+        payload.merek = Some(validasi_teks(merek, "Merek laptop", 100)?);
     }
     if payload.harga.is_some_and(|harga| harga < 0) {
         return Err(ApiError::BadRequest("Harga tidak boleh negatif".into()));
@@ -66,7 +66,7 @@ pub fn validate_update_laptop(
 
 1. `payload.nama.take()` mengambil nilai `Option<String>` dari field dan mengganti field asalnya dengan `None`.
 2. `if let Some(nama) = ...` menjalankan blok hanya jika nilai tadi berisi teks. `Some(nama)` membuka nilai yang ada dan mengikatnya pada variabel `nama`.
-3. `validate_text(...)?` memeriksa teks dan meneruskan error jika tidak valid.
+3. `validasi_teks(...)?` memeriksa teks dan meneruskan error jika tidak valid.
 4. `Some(...)` membungkus lagi hasil bersih sebagai `Option`, lalu disimpan ke `payload.nama`.
 5. Langkah yang sama dilakukan untuk `merek`, dengan batas 100 karakter.
 

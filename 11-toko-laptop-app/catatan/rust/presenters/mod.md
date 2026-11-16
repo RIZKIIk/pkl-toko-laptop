@@ -31,7 +31,7 @@ Kata `mod` mendaftarkan file sebagai modul. Kata `pub` pada `laptop_response` me
 ```text
 Laptop dari repository
        ↓
-laptop_response::laptop_to_array / laptop_to_object
+laptop_response::laptop_ke_array / laptop_ke_objek
        ↓ memakai
 rupiah::formatkan_rupiah
        ↓

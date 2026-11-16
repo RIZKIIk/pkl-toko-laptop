@@ -29,7 +29,7 @@ use toko_laptop_app::{config::AppConfig, routes};
   dapat mengembalikan berbagai jenis error dalam satu tipe.
 - `AppConfig` adalah struktur konfigurasi dari `src/config.rs`. Struktur ini
   membaca environment variable dan membuat pool PostgreSQL.
-- `routes` adalah modul yang menyediakan `create_router`, yaitu fungsi untuk
+- `routes` adalah modul yang menyediakan `buat_router`, yaitu fungsi untuk
   menyusun endpoint API, middleware autentikasi, session, dan state database.
 
 ## Runtime dan hasil fungsi `main`
@@ -85,14 +85,14 @@ pada langkah berikutnya.
 ## Membaca konfigurasi dan membuka database
 
 ```rust
-let config = AppConfig::from_env()?;
-let pool = config.connect_database().await?;
+let config = AppConfig::baca_dari_env()?;
+let pool = config.hubungkan_ke_database().await?;
 ```
 
-- `AppConfig::from_env()` membaca nilai seperti `APP_HOST`, `APP_PORT`,
+- `AppConfig::baca_dari_env()` membaca nilai seperti `APP_HOST`, `APP_PORT`,
   `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`,
   `ADMIN_USERNAME`, dan `ADMIN_PASSWORD`.
-- `config.connect_database()` membuat `PgPool`, yaitu kumpulan koneksi
+- `config.hubungkan_ke_database()` membuat `PgPool`, yaitu kumpulan koneksi
   PostgreSQL yang dapat dipakai bersama oleh handler API.
 - `?` mengembalikan error dari `main` bila konfigurasi tidak valid atau koneksi
   database gagal. Server tidak akan mulai dalam kondisi tersebut.
@@ -101,17 +101,17 @@ let pool = config.connect_database().await?;
 
 ```rust
 sqlx::migrate!("./database/migrations").run(&pool).await?;
-toko_laptop_app::auth::migrate_legacy_passwords(&pool).await?;
-config.initialize_admin_user(&pool).await?;
+toko_laptop_app::auth::migrasikan_kata_sandi_lama(&pool).await?;
+config.siapkan_pengguna_admin(&pool).await?;
 ```
 
 - `sqlx::migrate!("./database/migrations")` memasukkan berkas migration SQL
   dari folder tersebut ke program saat proses kompilasi.
 - `.run(&pool).await?` menerapkan migration yang belum tercatat sebagai sudah
   dijalankan pada database yang terhubung melalui `pool`.
-- `migrate_legacy_passwords(&pool)` meng-hash password lama dengan Argon2id,
+- `migrasikan_kata_sandi_lama(&pool)` meng-hash password lama dengan Argon2id,
   menghapus nilai password lama, dan memastikan kolom hash wajib terisi.
-- `initialize_admin_user(&pool)` menyinkronkan akun admin dari
+- `siapkan_pengguna_admin(&pool)` menyinkronkan akun admin dari
   `ADMIN_USERNAME` dan `ADMIN_PASSWORD` ke tabel pengguna. Password hanya
   disimpan dalam bentuk hash. Ini memastikan akun admin tersedia sebelum
   endpoint login dipakai.
@@ -124,16 +124,16 @@ config.initialize_admin_user(&pool).await?;
 println!("Koneksi PostgreSQL berhasil.");
 println!("Database migrations berhasil dijalankan.");
 println!("Akun disinkronkan dari ADMIN_USERNAME dan ADMIN_PASSWORD.");
-println!("Database: {}", config.database_name());
+println!("Database: {}", config.nama_database());
 ```
 
-Empat `println!` menampilkan status ke terminal. `config.database_name()`
+Empat `println!` menampilkan status ke terminal. `config.nama_database()`
 mengembalikan nama database untuk informasi log; password tidak pernah dicetak.
 
 ## Membuat router dan listener TCP
 
 ```rust
-let app = routes::create_router(
+let app = routes::buat_router(
     pool,
     config.session_cookie_secure,
     config.jwt_secret.clone(),
@@ -142,7 +142,7 @@ let address = (config.app_host.as_str(), config.app_port);
 let listener = tokio::net::TcpListener::bind(address).await?;
 ```
 
-- `create_router(...)` menerima pool PostgreSQL, pengaturan cookie Secure, dan
+- `buat_router(...)` menerima pool PostgreSQL, pengaturan cookie Secure, dan
   secret JWT untuk memeriksa atau menerbitkan bearer token.
 - `config.app_host.as_str()` mengambil `&str` dari host, sedangkan
   `config.app_port` adalah port server. Keduanya digabung menjadi alamat
@@ -196,7 +196,7 @@ server berakhir tanpa error.
 
 ## Ownership dan alur error pada `main`
 
-`config` dimiliki oleh `main` selama startup. Pemanggilan `connect_database(&self)` hanya meminjamnya sehingga konfigurasi masih bisa dipakai untuk membuat router dan mencetak alamat. `pool` dipakai sebagai referensi `&pool` saat migration serta seed berjalan, lalu dipindahkan ke `create_router(pool, ...)`: sesudah itu pemilik pool adalah router. `config.jwt_secret.clone()` membuat salinan secret yang dimiliki untuk router karena konfigurasi masih diperlukan untuk membaca host/port.
+`config` dimiliki oleh `main` selama startup. Pemanggilan `hubungkan_ke_database(&self)` hanya meminjamnya sehingga konfigurasi masih bisa dipakai untuk membuat router dan mencetak alamat. `pool` dipakai sebagai referensi `&pool` saat migration serta seed berjalan, lalu dipindahkan ke `buat_router(pool, ...)`: sesudah itu pemilik pool adalah router. `config.jwt_secret.clone()` membuat salinan secret yang dimiliki untuk router karena konfigurasi masih diperlukan untuk membaca host/port.
 
 Hasil operasi startup dibungkus `Result`. `?` hanya boleh dipakai di fungsi yang tipe hasilnya dapat menerima error itu; di sini semua error dapat dikonversi ke `Box<dyn Error + Send + Sync>`. Tanpa `?`, setiap panggilan perlu ditangani manual dengan `match`. `.await` berbeda: ia menunggu sebuah `Future` asynchronous, sedangkan `?` menangani hasil `Ok`/`Err` setelah future selesai.
 

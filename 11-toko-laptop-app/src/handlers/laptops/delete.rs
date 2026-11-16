@@ -8,19 +8,19 @@ use serde_json::{Value, json};
 use sqlx::PgPool;
 
 use crate::{
-    error::ApiError, handlers::laptops::not_found_laptop,
-    repositories::laptop_repository as repository, validation::validate_laptop_id,
+    error::ApiError, handlers::laptops::laptop_tidak_ditemukan,
+    repositories::laptop_repository as repository, validation::validasi_id_laptop,
 };
 
 /// Menghapus laptop dan mengembalikan 404 jika ID tidak ditemukan.
-pub async fn delete_laptop(
+pub async fn hapus_laptop(
     State(pool): State<PgPool>,
     Path(id): Path<i64>,
 ) -> Result<Json<Value>, ApiError> {
-    validate_laptop_id(id)?;
+    validasi_id_laptop(id)?;
 
-    if !repository::delete_laptop(&pool, id).await? {
-        return Err(not_found_laptop(id));
+    if !repository::hapus_laptop(&pool, id).await? {
+        return Err(laptop_tidak_ditemukan(id));
     }
 
     Ok(Json(

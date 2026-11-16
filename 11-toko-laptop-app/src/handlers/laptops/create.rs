@@ -5,24 +5,24 @@ use serde_json::Value;
 use sqlx::PgPool;
 
 use crate::{
-    error::ApiError, handlers::laptops::success_response_with_message, models::CreateLaptopPayload,
-    presenters::laptop_response::laptop_to_object, repositories::laptop_repository as repository,
-    validation::validate_create_laptop,
+    error::ApiError, handlers::laptops::respons_berhasil_dengan_pesan, models::CreateLaptopPayload,
+    presenters::laptop_response::laptop_ke_objek, repositories::laptop_repository as repository,
+    validation::validasi_laptop_baru,
 };
 
 /// Memvalidasi request, menyimpan laptop, lalu mengembalikan status 201.
-pub async fn create_laptop(
+pub async fn tambah_laptop(
     State(pool): State<PgPool>,
     Json(payload): Json<CreateLaptopPayload>,
 ) -> Result<(StatusCode, Json<Value>), ApiError> {
-    let payload = validate_create_laptop(payload)?;
-    let laptop = repository::create_laptop(&pool, &payload).await?;
+    let payload = validasi_laptop_baru(payload)?;
+    let laptop = repository::tambah_laptop(&pool, &payload).await?;
 
     Ok((
         StatusCode::CREATED,
-        Json(success_response_with_message(
+        Json(respons_berhasil_dengan_pesan(
             "Laptop berhasil ditambahkan",
-            laptop_to_object(&laptop),
+            laptop_ke_objek(&laptop),
         )),
     ))
 }

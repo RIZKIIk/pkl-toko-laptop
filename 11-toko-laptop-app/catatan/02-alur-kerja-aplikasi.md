@@ -14,11 +14,11 @@ Halaman ini menghubungkan file-file backend. Penjelasan isi setiap fungsi ada di
 ## Saat server dinyalakan
 
 1. [main.rs](rust/main.md) mencoba memuat `.env` dengan `dotenvy::dotenv().ok()`.
-2. `AppConfig::from_env()` di [config.rs](rust/config.md) membaca host, port, kredensial PostgreSQL/admin, dan secret JWT.
-3. `connect_database().await` membuat `PgPool`. Bila langkah ini gagal, server belum mulai menerima request.
+2. `AppConfig::baca_dari_env()` di [config.rs](rust/config.md) membaca host, port, kredensial PostgreSQL/admin, dan secret JWT.
+3. `hubungkan_ke_database().await` membuat `PgPool`. Bila langkah ini gagal, server belum mulai menerima request.
 4. SQLx menjalankan baseline final dan mencatatnya di `_sqlx_migrations`. Jika tabel tersebut berisi versi lama, aplikasi mengizinkan upgrade baseline, mempertahankan data, dan merapikan catatan riwayat lama. Lihat [catatan skema database](rust/database/initial-schema.md).
-5. `migrate_legacy_passwords()` meng-hash password lama dengan Argon2id dan menghapus nilai lama; `initialize_admin_user()` menyimpan hash password akun dari environment.
-6. `routes::create_router(...)` di [routes.rs](rust/routes.md) memasang endpoint, middleware session/JWT, dan pool sebagai state router.
+5. `migrasikan_kata_sandi_lama()` meng-hash password lama dengan Argon2id dan menghapus nilai lama; `siapkan_pengguna_admin()` menyimpan hash password akun dari environment.
+6. `routes::buat_router(...)` di [routes.rs](rust/routes.md) memasang endpoint, middleware session/JWT, dan pool sebagai state router.
 7. Tokio membuat `TcpListener` pada `APP_HOST:APP_PORT`.
 8. `axum::serve(listener, app).await` menunggu koneksi HTTP.
 
@@ -64,7 +64,7 @@ POST /api/auth/login + username/password
   -> password cocok: buat session baru dan JWT HS256 (berlaku satu jam)
   -> SessionManagerLayer mengirim cookie session ke client
   -> client mengirim cookie session atau Authorization: Bearer <JWT>
-  -> middleware require_auth memverifikasi JWT/session dan role pengguna di database
+  -> middleware wajibkan_autentikasi memverifikasi JWT/session dan role pengguna di database
   -> logout menaikkan token_version pengguna dan menghapus session aktif
   -> semua JWT lama pengguna ditolak; session yang dipakai untuk logout dihapus
 ```
@@ -102,11 +102,11 @@ Endpoint ini tidak memakai pool dan tidak menjalankan query. Cocok untuk mengece
 
 ```text
 route
-  -> handlers::laptops::list_laptops
-  -> repositories::laptop_repository::list_laptops
+  -> handlers::laptops::daftar_laptop
+  -> repositories::laptop_repository::daftar_laptop
   -> SELECT ... ORDER BY id
   -> Vec<Laptop>
-  -> presenter laptop_to_array untuk tiap laptop
+  -> presenter laptop_ke_array untuk tiap laptop
   -> { status: "success", data: [ [...], ... ] }
 ```
 
@@ -116,11 +116,11 @@ Daftar kosong tetap response sukses; `data` menjadi array kosong.
 
 ```text
 Path<i64>
-  -> validate_laptop_id
-  -> repositories::laptop_repository::get_laptop
+  -> validasi_id_laptop
+  -> repositories::laptop_repository::ambil_laptop
   -> Some(Laptop) / None
-  -> ok_or_else(not_found_laptop)
-  -> laptop_to_array
+  -> ok_or_else(laptop_tidak_ditemukan)
+  -> laptop_ke_array
   -> response sukses / 404
 ```
 
@@ -130,10 +130,10 @@ Data detail berbentuk array `[id, nama, merek, harga_rupiah, stok]`, bukan objec
 
 ```text
 Json<CreateLaptopPayload>
-  -> validate_create_laptop
+  -> validasi_laptop_baru
   -> INSERT ... RETURNING
   -> Laptop baru
-  -> laptop_to_object
+  -> laptop_ke_objek
   -> 201 Created + message
 ```
 
@@ -146,8 +146,8 @@ Path<i64> + Json<UpdateLaptopPayload>
   -> validasi ID dan field yang ada
   -> UPDATE memakai COALESCE
   -> Some(Laptop) / None
-  -> ok_or_else(not_found_laptop)
-  -> laptop_to_array + message
+  -> ok_or_else(laptop_tidak_ditemukan)
+  -> laptop_ke_array + message
 ```
 
 `Option` di payload membedakan field yang dikirim dan tidak. `COALESCE` di SQL memakai nilai lama bila parameter dari `Option` adalah `None`. Body kosong ditolak agar PATCH tidak hanya mengubah `updated_at`.
@@ -156,7 +156,7 @@ Path<i64> + Json<UpdateLaptopPayload>
 
 ```text
 Path<i64>
-  -> validate_laptop_id
+  -> validasi_id_laptop
   -> DELETE ... WHERE id = $1
   -> rows_affected > 0
   -> response sukses / 404

@@ -32,10 +32,10 @@ presenters/
 
 | Endpoint | Fungsi presenter | Bentuk `data` |
 | --- | --- | --- |
-| `GET /api/laptops` | `laptop_to_array` untuk setiap baris. | Daftar array laptop. |
-| `GET /api/laptops/{id}` | `laptop_to_array`. | Satu array laptop. |
-| `PATCH /api/laptops/{id}` | `laptop_to_array`. | Array laptop terbaru. |
-| `POST /api/laptops` | `laptop_to_object`. | Object dengan nama field. |
+| `GET /api/laptops` | `laptop_ke_array` untuk setiap baris. | Daftar array laptop. |
+| `GET /api/laptops/{id}` | `laptop_ke_array`. | Satu array laptop. |
+| `PATCH /api/laptops/{id}` | `laptop_ke_array`. | Array laptop terbaru. |
+| `POST /api/laptops` | `laptop_ke_objek`. | Object dengan nama field. |
 
 Array laptop selalu berurutan `[id, nama, merek, harga, stok]`. Nilai `harga` pada response berupa string Rupiah, walaupun model, database, dan request create menggunakan angka. Karena array dibaca berdasarkan posisi, client harus memakai urutan yang sama.
 

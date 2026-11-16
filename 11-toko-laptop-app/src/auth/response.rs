@@ -8,7 +8,7 @@ use axum::{
 use serde_json::{Value, json};
 
 /// Membuat response error JSON dengan status yang ditentukan pemanggil.
-pub fn error_response(status: StatusCode, message: &'static str) -> Response {
+pub fn respons_gagal(status: StatusCode, message: &'static str) -> Response {
     (
         status,
         Json::<Value>(json!({
@@ -20,6 +20,6 @@ pub fn error_response(status: StatusCode, message: &'static str) -> Response {
 }
 
 /// Membuat response sukses JSON dengan status 200.
-pub fn success_response(body: Value) -> Response {
+pub fn respons_berhasil(body: Value) -> Response {
     (StatusCode::OK, Json(body)).into_response()
 }

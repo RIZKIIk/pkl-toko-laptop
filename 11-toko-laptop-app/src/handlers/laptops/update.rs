@@ -9,28 +9,28 @@ use sqlx::PgPool;
 
 use crate::{
     error::ApiError,
-    handlers::laptops::{not_found_laptop, success_response_with_message},
+    handlers::laptops::{laptop_tidak_ditemukan, respons_berhasil_dengan_pesan},
     models::UpdateLaptopPayload,
-    presenters::laptop_response::laptop_to_array,
+    presenters::laptop_response::laptop_ke_array,
     repositories::laptop_repository as repository,
-    validation::{validate_laptop_id, validate_update_laptop},
+    validation::{validasi_id_laptop, validasi_perubahan_laptop},
 };
 
 /// Memvalidasi dan menyimpan perubahan parsial pada laptop.
-pub async fn update_laptop(
+pub async fn ubah_laptop(
     State(pool): State<PgPool>,
     Path(id): Path<i64>,
     Json(payload): Json<UpdateLaptopPayload>,
 ) -> Result<Json<Value>, ApiError> {
-    validate_laptop_id(id)?;
-    let payload = validate_update_laptop(payload)?;
+    validasi_id_laptop(id)?;
+    let payload = validasi_perubahan_laptop(payload)?;
 
-    let laptop = repository::update_laptop(&pool, id, &payload)
+    let laptop = repository::ubah_laptop(&pool, id, &payload)
         .await?
-        .ok_or_else(|| not_found_laptop(id))?;
+        .ok_or_else(|| laptop_tidak_ditemukan(id))?;
 
-    Ok(Json(success_response_with_message(
+    Ok(Json(respons_berhasil_dengan_pesan(
         "Laptop berhasil diperbarui",
-        laptop_to_array(&laptop),
+        laptop_ke_array(&laptop),
     )))
 }

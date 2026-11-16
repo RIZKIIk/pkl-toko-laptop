@@ -4,22 +4,40 @@ use crate::models::{CreateLaptopPayload, Laptop, UpdateLaptopPayload};
 use sqlx::PgPool;
 
 /// Mengambil semua laptop dengan urutan ID menaik.
-pub async fn list_laptops(pool: &PgPool) -> Result<Vec<Laptop>, sqlx::Error> {
+pub async fn daftar_laptop(pool: &PgPool) -> Result<Vec<Laptop>, sqlx::Error> {
     sqlx::query_as::<_, Laptop>("SELECT id, nama, merek, harga, stok FROM laptops ORDER BY id")
         .fetch_all(pool)
         .await
 }
 
 /// Mengambil satu laptop; `None` berarti ID tidak ditemukan.
-pub async fn get_laptop(pool: &PgPool, id: i64) -> Result<Option<Laptop>, sqlx::Error> {
+pub async fn ambil_laptop(pool: &PgPool, id: i64) -> Result<Option<Laptop>, sqlx::Error> {
     sqlx::query_as::<_, Laptop>("SELECT id, nama, merek, harga, stok FROM laptops WHERE id = $1")
         .bind(id)
         .fetch_optional(pool)
         .await
 }
 
+/// Mengurangi stok hanya jika jumlah yang diminta masih tersedia.
+pub async fn beli_laptop(
+    pool: &PgPool,
+    id: i64,
+    jumlah: i32,
+) -> Result<Option<Laptop>, sqlx::Error> {
+    sqlx::query_as::<_, Laptop>(
+        "UPDATE laptops
+         SET stok = stok - $2, updated_at = CURRENT_TIMESTAMP
+         WHERE id = $1 AND stok >= $2
+         RETURNING id, nama, merek, harga, stok",
+    )
+    .bind(id)
+    .bind(jumlah)
+    .fetch_optional(pool)
+    .await
+}
+
 /// Menyimpan laptop baru dan mengembalikan baris yang dibuat.
-pub async fn create_laptop(
+pub async fn tambah_laptop(
     pool: &PgPool,
     payload: &CreateLaptopPayload,
 ) -> Result<Laptop, sqlx::Error> {
@@ -37,7 +55,7 @@ pub async fn create_laptop(
 }
 
 /// Mengubah field yang dikirim dan mengembalikan data terbaru bila ditemukan.
-pub async fn update_laptop(
+pub async fn ubah_laptop(
     pool: &PgPool,
     id: i64,
     payload: &UpdateLaptopPayload,
@@ -63,7 +81,7 @@ pub async fn update_laptop(
 }
 
 /// Menghapus laptop dan menyatakan apakah ada baris yang terhapus.
-pub async fn delete_laptop(pool: &PgPool, id: i64) -> Result<bool, sqlx::Error> {
+pub async fn hapus_laptop(pool: &PgPool, id: i64) -> Result<bool, sqlx::Error> {
     let result = sqlx::query("DELETE FROM laptops WHERE id = $1")
         .bind(id)
         .execute(pool)

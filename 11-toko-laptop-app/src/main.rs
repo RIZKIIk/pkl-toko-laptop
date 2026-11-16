@@ -11,8 +11,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     dotenvy::dotenv().ok();
 
     // Baca konfigurasi aplikasi, lalu buka koneksi ke database.
-    let config = AppConfig::from_env()?;
-    let pool = config.connect_database().await?;
+    let config = AppConfig::baca_dari_env()?;
+    let pool = config.hubungkan_ke_database().await?;
 
     // Siapkan daftar migrasi dan temukan migrasi baseline versi 1.
     let has_migration_history: bool =
@@ -61,17 +61,17 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // Jalankan migrasi, perbarui kata sandi lama, dan pastikan akun admin tersedia.
     let migrator = sqlx::migrate::Migrator::with_migrations(migrations);
     migrator.run(&pool).await?;
-    toko_laptop_app::auth::migrate_legacy_passwords(&pool).await?;
-    config.initialize_admin_user(&pool).await?;
+    toko_laptop_app::auth::migrasikan_kata_sandi_lama(&pool).await?;
+    config.siapkan_pengguna_admin(&pool).await?;
 
     // Tampilkan status inisialisasi aplikasi dan database.
     println!("Koneksi PostgreSQL berhasil.");
     println!("Database migrations berhasil dijalankan.");
     println!("Akun disinkronkan dari ADMIN_USERNAME dan ADMIN_PASSWORD.");
-    println!("Database: {}", config.database_name());
+    println!("Database: {}", config.nama_database());
 
     // Bangun router dengan koneksi database dan pengaturan autentikasi.
-    let app = routes::create_router(
+    let app = routes::buat_router(
         pool,
         config.session_cookie_secure,
         config.jwt_secret.clone(),

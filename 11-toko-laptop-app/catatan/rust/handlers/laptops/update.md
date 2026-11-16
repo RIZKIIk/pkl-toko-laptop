@@ -9,12 +9,12 @@
 
 ## Tujuan
 
-`update_laptop` menangani `PATCH /api/laptops/{id}`. Client boleh mengirim satu atau beberapa field; field yang tidak dikirim harus tetap memakai nilai lama. Handler memeriksa input, memanggil repository, lalu mengembalikan data terbaru.
+`ubah_laptop` menangani `PATCH /api/laptops/{id}`. Client boleh mengirim satu atau beberapa field; field yang tidak dikirim harus tetap memakai nilai lama. Handler memeriksa input, memanggil repository, lalu mengembalikan data terbaru.
 
 ## Data masuk
 
 ```rust
-pub async fn update_laptop(
+pub async fn ubah_laptop(
     State(pool): State<PgPool>,
     Path(id): Path<i64>,
     Json(payload): Json<UpdateLaptopPayload>,
@@ -31,9 +31,9 @@ pub async fn update_laptop(
 
 ## Alur proses
 
-1. `validate_laptop_id(id)?` menolak ID nol atau negatif.
-2. `validate_update_laptop(payload)?` membersihkan field teks yang dikirim, memeriksa angka agar tidak negatif, dan menolak body tanpa field.
-3. `repository::update_laptop(&pool, id, &payload).await?` meminjam pool dan payload, lalu menunggu query asynchronous. Repository memakai `COALESCE` supaya parameter `None` mempertahankan nilai lama. Hasilnya bertipe `Result<Option<Laptop>, sqlx::Error>`.
+1. `validasi_id_laptop(id)?` menolak ID nol atau negatif.
+2. `validasi_perubahan_laptop(payload)?` membersihkan field teks yang dikirim, memeriksa angka agar tidak negatif, dan menolak body tanpa field.
+3. `repository::ubah_laptop(&pool, id, &payload).await?` meminjam pool dan payload, lalu menunggu query asynchronous. Repository memakai `COALESCE` supaya parameter `None` mempertahankan nilai lama. Hasilnya bertipe `Result<Option<Laptop>, sqlx::Error>`.
 4. `?` meneruskan error query; setelah query sukses, `.ok_or_else(...)` mengubah `None` (ID tidak ditemukan) menjadi error 404 dan membuka `Some(Laptop)` menjadi laptop terbaru. Closure not-found dibuat/dijalankan hanya saat nilai adalah `None`.
 5. Presenter memformat data terbaru sebagai array; helper response menambahkan status dan pesan.
 
