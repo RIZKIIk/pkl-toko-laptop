@@ -11,6 +11,8 @@
 
 Repository ini menjalankan query PostgreSQL pada tabel laptop. Ia menerima pool koneksi dan parameter data, lalu mengembalikan model atau hasil operasi. Repository tidak mengetahui status HTTP maupun bentuk JSON response.
 
+Query tulis membuka transaksi, mengisi `rizzshop.user_id` secara lokal dari `AuthIdentity` middleware, lalu menjalankan INSERT/UPDATE/DELETE. Trigger PostgreSQL membaca nilai itu untuk mengisi actor `laptop_logs`. Operasi langsung dari DBeaver tetap dilog, tetapi `user_id` bernilai `NULL` jika sesi database tidak menyetel actor.
+
 ## Import
 
 ```rust

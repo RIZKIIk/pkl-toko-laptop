@@ -1,13 +1,14 @@
 //! Handler untuk memperbarui sebagian field laptop.
 //! Catatan: [Buka penjelasan](file:///home/rizki/projects/Rust/tugas/PKL/11-toko-laptop-app/catatan/rust/handlers/laptops/update.md)
 use axum::{
-    Json,
+    Extension, Json,
     extract::{Path, State},
 };
 use serde_json::Value;
 use sqlx::PgPool;
 
 use crate::{
+    auth::middleware::AuthIdentity,
     error::ApiError,
     handlers::laptops::{laptop_tidak_ditemukan, respons_berhasil_dengan_pesan},
     models::UpdateLaptopPayload,
@@ -19,13 +20,14 @@ use crate::{
 /// Memvalidasi dan menyimpan perubahan parsial pada laptop.
 pub async fn ubah_laptop(
     State(pool): State<PgPool>,
+    Extension(identity): Extension<AuthIdentity>,
     Path(id): Path<i64>,
     Json(payload): Json<UpdateLaptopPayload>,
 ) -> Result<Json<Value>, ApiError> {
     validasi_id_laptop(id)?;
     let payload = validasi_perubahan_laptop(payload)?;
 
-    let laptop = repository::ubah_laptop(&pool, id, &payload)
+    let laptop = repository::ubah_laptop(&pool, identity.user_id, id, &payload)
         .await?
         .ok_or_else(|| laptop_tidak_ditemukan(id))?;
 

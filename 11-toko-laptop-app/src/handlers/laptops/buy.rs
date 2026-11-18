@@ -7,7 +7,7 @@ use serde_json::{Value, json};
 use sqlx::PgPool;
 
 use crate::{
-    error::ApiError, handlers::laptops::laptop_tidak_ditemukan,
+    auth::middleware::AuthIdentity, error::ApiError, handlers::laptops::laptop_tidak_ditemukan,
     presenters::laptop_response::laptop_ke_objek, repositories::laptop_repository as repository,
     validation::validasi_id_laptop,
 };
@@ -20,6 +20,7 @@ pub struct BuyLaptopPayload {
 /// Membeli laptop dan mengurangi stok yang tersedia.
 pub async fn beli_laptop(
     State(pool): State<PgPool>,
+    axum::Extension(identity): axum::Extension<AuthIdentity>,
     Path(id): Path<i64>,
     Json(payload): Json<BuyLaptopPayload>,
 ) -> Result<Json<Value>, ApiError> {
@@ -30,7 +31,7 @@ pub async fn beli_laptop(
         ));
     }
 
-    let laptop = match repository::beli_laptop(&pool, id, payload.jumlah).await? {
+    let laptop = match repository::beli_laptop(&pool, identity.user_id, id, payload.jumlah).await? {
         Some(laptop) => laptop,
         None => match repository::ambil_laptop(&pool, id).await? {
             Some(_) => return Err(ApiError::Conflict("Stok laptop tidak mencukupi".into())),

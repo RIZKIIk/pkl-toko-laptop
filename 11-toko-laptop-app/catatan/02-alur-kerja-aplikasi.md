@@ -16,7 +16,7 @@ Halaman ini menghubungkan file-file backend. Penjelasan isi setiap fungsi ada di
 1. [main.rs](rust/main.md) mencoba memuat `.env` dengan `dotenvy::dotenv().ok()`.
 2. `AppConfig::baca_dari_env()` di [config.rs](rust/config.md) membaca host, port, kredensial PostgreSQL/admin, dan secret JWT.
 3. `hubungkan_ke_database().await` membuat `PgPool`. Bila langkah ini gagal, server belum mulai menerima request.
-4. SQLx menjalankan baseline final dan mencatatnya di `_sqlx_migrations`. Jika tabel tersebut berisi versi lama, aplikasi mengizinkan upgrade baseline, mempertahankan data, dan merapikan catatan riwayat lama. Lihat [catatan skema database](rust/database/initial-schema.md).
+4. SQLx menjalankan migration yang belum tercatat di `_sqlx_migrations`. Migration audit membuat/menyesuaikan `laptop_logs` dan memasang trigger pada `laptops`; lihat [catatan skema database](rust/database/initial-schema.md). Buat backup sebelum startup menerapkan perubahan pada database lama.
 5. `migrasikan_kata_sandi_lama()` meng-hash password lama dengan Argon2id dan menghapus nilai lama; `siapkan_pengguna_admin()` menyimpan hash password akun dari environment.
 6. `routes::buat_router(...)` di [routes.rs](rust/routes.md) memasang endpoint, middleware session/JWT, dan pool sebagai state router.
 7. Tokio membuat `TcpListener` pada `APP_HOST:APP_PORT`.

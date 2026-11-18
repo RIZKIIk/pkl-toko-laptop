@@ -17,9 +17,9 @@ Modul ini mengelompokkan handler resource laptop, mengekspor fungsi untuk dipaka
 | --- | --- | --- |
 | [`create.rs`](create.md) | `POST /api/laptops` | Membuat laptop dan mengembalikan object. |
 | [`read.rs`](read.md) | `GET /api/laptops` dan `GET /api/laptops/{id}` | Mengembalikan daftar atau satu array laptop. |
-| `buy.rs` | `POST /api/laptops/{id}/buy` | Membeli unit yang tersedia dan mengurangi stok. |
+| `buy.rs` | `POST /api/laptops/{id}/buy` | Membeli unit, mencatat actor UPDATE stok ke audit log. |
 | [`update.rs`](update.md) | `PATCH /api/laptops/{id}` | Mengembalikan array laptop terbaru. |
-| [`delete.rs`](delete.md) | `DELETE /api/laptops/{id}` | Mengembalikan pesan dan ID yang dihapus. |
+| [`delete.rs`](delete.md) | `DELETE /api/laptops/{id}` | Mengembalikan pesan dan ID; trigger menyimpan snapshot DELETE. |
 
 Setiap file operasi tetap menjadi modul internal (`mod create;`, dan seterusnya). Dengan cara itu, detail organisasi file terpisah dari jalur publik yang dipakai router.
 

@@ -5,7 +5,7 @@
 ![Ilustrasi: Peta wilayah aplikasi](ilustrasi/halaman/02-01-gambaran-proyek.svg "Peta wilayah aplikasi")
 
 
-Toko Laptop App adalah REST API inventaris laptop. Kode aktif menyediakan operasi CRUD: melihat daftar laptop, melihat satu laptop, menambah, mengubah sebagian field, dan menghapus data. Aplikasi juga memiliki registrasi akun, role `admin`/`buyer`/`restocker`, dan login berbasis cookie session serta JWT bearer. Repository ini tidak memiliki frontend, trigger PostgreSQL, atau function PostgreSQL aktif.
+Toko Laptop App adalah REST API inventaris laptop. Kode aktif menyediakan operasi CRUD, registrasi akun, role `admin`/`buyer`/`restocker`, serta login berbasis cookie session dan JWT bearer. Migration audit memasang trigger PostgreSQL yang mencatat INSERT, UPDATE, dan DELETE laptop beserta actor terautentikasi bila perubahan datang dari backend.
 
 ## Teknologi yang benar-benar dipakai
 
@@ -15,7 +15,7 @@ Toko Laptop App adalah REST API inventaris laptop. Kode aktif menyediakan operas
 | Axum | Router, handler, extractor, dan response HTTP. | `routes.rs`, `handlers/`, `error.rs`. |
 | Tokio | Runtime async dan listener TCP. | `#[tokio::main]`, `TcpListener`. |
 | SQLx | Pool dan query PostgreSQL. | `config.rs`, `repositories/`. |
-| PostgreSQL | Penyimpanan tabel `laptops` dan `users`, termasuk `token_version` untuk pencabutan JWT. | Satu baseline final dan upgrade otomatis riwayat lama. |
+| PostgreSQL | Menyimpan akun, inventaris, dan audit log. | Baseline SQLx dan migration audit lanjutan; log memakai FK `SET NULL` agar tetap ada setelah penghapusan laptop/pengguna. |
 | Serde | Membaca JSON body ke payload Rust. | `#[derive(Deserialize)]`. |
 | serde_json | Membuat JSON response. | `json!`, `Value`. |
 | dotenvy | Mencoba memuat environment dari `.env`. | `main.rs`. |
@@ -35,7 +35,7 @@ Toko Laptop App adalah REST API inventaris laptop. Kode aktif menyediakan operas
 | `src/repositories/` | Query SQL dikelompokkan menurut resource. |
 | `src/presenters/` | Pemetaan response dan format Rupiah dipisah. |
 | `src/error.rs` | Memetakan error menjadi response HTTP JSON. |
-| `database/migrations/` | Riwayat perubahan tabel laptop/user, hash password, role, dan versi pencabutan JWT. |
+| `database/migrations/` | Riwayat perubahan skema akun, inventaris, dan audit log laptop. |
 | `.env` | Pengaturan lokal server dan PostgreSQL; tidak dibagikan sebagai dokumentasi. |
 | `postman/` | Collection serta environment untuk uji manual. |
 | `catatan/` | Penjelasan detail kode; tidak dijalankan oleh aplikasi. |
@@ -84,6 +84,6 @@ Setiap file tetap memiliki fokus kecil:
 | `&T` | Meminjam nilai `T` tanpa memindahkan kepemilikannya. |
 | `Result<T, E>` | Mengandung `Ok(T)` saat berhasil atau `Err(E)` saat gagal; `Result` berbeda dari `Option`, yang menyatakan ada/tidaknya nilai. |
 
-Migration aktif diringkas menjadi satu baseline final yang meng-upgrade database lama sambil mempertahankan datanya. Setelah baseline diterapkan, jangan mengubah file migration; tambahkan file baru untuk perubahan skema berikutnya. Detailnya ada di [catatan skema database](rust/database/initial-schema.md). Kolom `token_version` menaik saat pencabutan JWT; lihat penjelasan terpisah [dari login sampai logout](token_ver.md).
+Migration lama tetap menjadi baseline yang sama. Perubahan audit dikelola oleh migration baru; lihat [skema, relasi, dan trigger](rust/database/initial-schema.md) serta [DBML](../database/schema.dbml). Buat dan verifikasi backup sebelum menerapkan migration ke database lama. Kolom `token_version` tetap dipakai untuk pencabutan JWT; lihat [alur login sampai logout](token_ver.md).
 
 Lanjutkan ke [alur kerja aplikasi](02-alur-kerja-aplikasi.md) untuk melihat istilah tersebut saat request benar-benar berjalan.

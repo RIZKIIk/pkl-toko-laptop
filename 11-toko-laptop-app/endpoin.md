@@ -35,6 +35,8 @@ Untuk seluruh contoh perintah terminal dan penjelasan opsi seperti `-X`, `-d`, `
 
 `{id}` harus berupa ID positif laptop yang ada di database. Collection Postman menyediakan request registrasi, login, dan operasi laptop.
 
+Setiap operasi INSERT, UPDATE, atau DELETE pada `laptops` dicatat otomatis oleh trigger PostgreSQL ke `laptop_logs`. Untuk request backend, actor berasal dari identitas yang telah diverifikasi middleware. Penghapusan laptop menyimpan snapshot lama dan mempertahankan seluruh log.
+
 **Urutan mencoba API:** periksa `/health` → registrasi akun atau siapkan akun admin → login untuk mendapat cookie → kirim request laptop → logout setelah selesai. Contoh siap salin tersedia di [panduan curl](catatan/curl.md); skenario otomatis tersedia di [panduan Postman](catatan/postman.md).
 
 ### Quick flow

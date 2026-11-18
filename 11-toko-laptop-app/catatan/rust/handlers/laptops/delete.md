@@ -35,6 +35,7 @@ Import `crate::{...}` di bawah file mengimpor `ApiError`, helper pesan not-found
 ```rust
 pub async fn hapus_laptop(
     State(pool): State<PgPool>,
+    Extension(identity): Extension<AuthIdentity>,
     Path(id): Path<i64>,
 ) -> Result<Json<Value>, ApiError> {
     validasi_id_laptop(id)?;
@@ -54,13 +55,14 @@ pub async fn hapus_laptop(
 - `pub` membuat handler dapat dipasang oleh router.
 - `async` diperlukan karena query database asynchronous.
 - `State(pool): State<PgPool>` adalah pola *destructuring*: extractor `State` mengambil pool dari router, lalu mengikat nilainya ke nama `pool`.
+- `Extension(identity)` membawa `AuthIdentity` yang telah diverifikasi middleware; `user_id` menjadi actor pada log.
 - `Path(id): Path<i64>` mengambil ID dari URL dan meminta Axum membacanya sebagai bilangan `i64`.
 - `-> Result<Json<Value>, ApiError>` berarti handler menghasilkan response JSON jika sukses, atau error aplikasi jika gagal.
 
 ### Urutan proses
 
 1. `validasi_id_laptop(id)?` menolak ID nol atau negatif. Operator `?` menghentikan handler dan meneruskan error validasi.
-2. `repository::hapus_laptop(&pool, id)` meminta repository menghapus baris. `&pool` meminjam pool yang sama; `.await` menunggu query selesai.
+2. `repository::hapus_laptop(&pool, identity.user_id, id)` menyetel actor di transaksi sebelum menghapus baris. Trigger menyimpan snapshot OLD dan FK `SET NULL` mempertahankan semua log.
 3. Repository mengembalikan `Result<bool, sqlx::Error>`. Operator `?` meneruskan error database jika query gagal; jika sukses, `bool` menunjukkan apakah ada baris terhapus.
 4. `if !...` memakai `!` untuk membalik boolean. Jika tidak ada baris yang terhapus (`false`), fungsi mengembalikan `Err(laptop_tidak_ditemukan(id))`.
 5. Jika baris berhasil dihapus, `json!({...})` menyusun object dengan tiga field: status, pesan, dan ID.
@@ -89,6 +91,8 @@ Tidak ada presenter di handler ini karena response hanya membutuhkan ID dan pesa
 ```text
 DELETE /api/laptops/{id}
   → validasi ID
+  → transaksi + set actor
   → DELETE ... WHERE id = $1
+  → trigger menyimpan OLD, laptop_id log DELETE = NULL
   → rows_affected > 0 ? 200 : 404
 ```

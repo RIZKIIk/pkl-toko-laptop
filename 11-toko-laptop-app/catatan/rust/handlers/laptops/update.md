@@ -16,12 +16,14 @@
 ```rust
 pub async fn ubah_laptop(
     State(pool): State<PgPool>,
+    Extension(identity): Extension<AuthIdentity>,
     Path(id): Path<i64>,
     Json(payload): Json<UpdateLaptopPayload>,
 ) -> Result<Json<Value>, ApiError>
 ```
 
 - `State(pool)` mengambil pool PostgreSQL dari router.
+- `Extension(identity)` menerima actor tepercaya dari middleware autentikasi.
 - `Path(id)` mengambil ID dari URL.
 - `Json(payload)` membaca body sebagai `UpdateLaptopPayload`; tiap field menggunakan `Option`.
 - `Result<Json<Value>, ApiError>` menyatakan `Ok` berisi JSON sukses, sementara `Err` membawa error aplikasi.
@@ -33,14 +35,15 @@ pub async fn ubah_laptop(
 
 1. `validasi_id_laptop(id)?` menolak ID nol atau negatif.
 2. `validasi_perubahan_laptop(payload)?` membersihkan field teks yang dikirim, memeriksa angka agar tidak negatif, dan menolak body tanpa field.
-3. `repository::ubah_laptop(&pool, id, &payload).await?` meminjam pool dan payload, lalu menunggu query asynchronous. Repository memakai `COALESCE` supaya parameter `None` mempertahankan nilai lama. Hasilnya bertipe `Result<Option<Laptop>, sqlx::Error>`.
+3. `repository::ubah_laptop(&pool, identity.user_id, id, &payload).await?` meneruskan actor tepercaya. Repository membuka transaksi, menyetel actor secara lokal, lalu menjalankan `UPDATE`; trigger menyimpan `old_data` dan `new_data`. `COALESCE` menjaga nilai field yang tidak dikirim. Hasilnya bertipe `Result<Option<Laptop>, sqlx::Error>`.
 4. `?` meneruskan error query; setelah query sukses, `.ok_or_else(...)` mengubah `None` (ID tidak ditemukan) menjadi error 404 dan membuka `Some(Laptop)` menjadi laptop terbaru. Closure not-found dibuat/dijalankan hanya saat nilai adalah `None`.
 5. Presenter memformat data terbaru sebagai array; helper response menambahkan status dan pesan.
 
 ```text
 ID + PATCH body
   → validate ID dan field yang dikirim
-  → UPDATE dengan COALESCE
+  → transaksi + set actor
+  → UPDATE dengan COALESCE dan trigger audit
   → Some(Laptop) atau None
   → array response terbaru atau 404
 ```

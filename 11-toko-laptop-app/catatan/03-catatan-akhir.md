@@ -75,7 +75,7 @@ cargo test
 
 Gunakan [panduan `curl`](curl.md) atau [Postman](postman.md) untuk mencoba API. Jangan membagikan file `.env`, JWT, password, atau cookie session.
 
-Migration aktif sekarang satu baseline yang kompatibel dengan database lama. Setelah baseline diterapkan, jangan mengubah file migration; buat file baru untuk perubahan skema selanjutnya. Jangan gunakan kredensial nyata atau deploy aplikasi latihan ini sebagai aplikasi produksi tanpa tinjauan keamanan dan konfigurasi tambahan.
+Skema memakai baseline yang dipertahankan dan migration audit baru. Jangan mengubah migration yang sudah diterapkan; buat migration berikutnya untuk perubahan skema. Backup database lama sebelum startup menjalankan migration baru. Jangan gunakan kredensial nyata atau deploy aplikasi latihan ini sebagai aplikasi produksi tanpa tinjauan keamanan dan konfigurasi tambahan.
 
 ## Hasil pemeriksaan catatan
 

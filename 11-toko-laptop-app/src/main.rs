@@ -30,9 +30,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .find(|migration| migration.version == 1)
         .expect("migrasi baseline versi 1 harus tersedia");
 
-    // Rapikan riwayat migrasi lama agar versi baseline menjadi titik awal yang konsisten.
+    // Buang riwayat lama hanya jika checksum baseline sudah berbeda.
     if has_migration_history {
-        // Pertahankan baseline jika checksum-nya cocok; jika tidak, mulai ulang riwayatnya.
+        // Riwayat yang cocok dipertahankan bersama migration baru sesudahnya.
         let baseline_is_applied: bool = sqlx::query_scalar(
             "SELECT EXISTS (
                 SELECT 1 FROM public._sqlx_migrations
@@ -44,13 +44,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .fetch_one(&pool)
         .await?;
 
-        if baseline_is_applied {
-            // Hapus catatan migrasi selain baseline tanpa mengubah data aplikasi.
-            sqlx::query("DELETE FROM public._sqlx_migrations WHERE version <> $1")
-                .bind(baseline.version)
-                .execute(&pool)
-                .await?;
-        } else {
+        if !baseline_is_applied {
             // Hapus seluruh catatan lama agar migrasi dapat diterapkan dari baseline.
             sqlx::query("DELETE FROM public._sqlx_migrations")
                 .execute(&pool)
