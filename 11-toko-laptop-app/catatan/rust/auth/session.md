@@ -38,11 +38,11 @@ Username dari session belum membuktikan bahwa akun masih ada. Middleware memerik
 
 ### `hapus_sesi(session)`
 
-Memanggil `session.flush()` untuk menghapus session aktif dari store. Handler logout juga menaikkan `token_version` di database agar JWT lama pengguna ditolak.
+Memanggil `session.flush()` untuk menghapus session aktif dari store. Logout tidak membatalkan JWT; bearer token yang sudah diterbitkan tetap berlaku sampai `exp`.
 
 ## Penyimpanan session
 
-Router memakai `MemoryStore`. Session akan hilang saat server dimulai ulang dan tidak dibagikan ke instance aplikasi lain. Logout menghapus session yang dipakai untuk logout; session cookie di perangkat lain tidak dicabut oleh mekanisme `token_version`.
+Router memakai `MemoryStore`. Session akan hilang saat server dimulai ulang dan tidak dibagikan ke instance aplikasi lain. Logout hanya menghapus session yang dipakai pada request itu; session cookie dari perangkat lain masih aktif. JWT bearer tetap berlaku sampai kedaluwarsa.
 
 Contoh login dan request dengan cookie tersedia di [panduan curl](../../curl.md). File cookie berisi kredensial aktif; jangan dibagikan atau dimasukkan ke version control.
 

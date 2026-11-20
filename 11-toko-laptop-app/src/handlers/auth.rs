@@ -83,7 +83,7 @@ pub async fn masuk(
     }
 
     // Satu login menghasilkan JWT dan session cookie untuk dua cara autentikasi.
-    let (user_id, role, token_version) =
+    let (user_id, role) =
         match crate::repositories::user_repository::cari_identitas_pengguna_untuk_login(
             &pool, username,
         )
@@ -105,7 +105,7 @@ pub async fn masuk(
             }
         };
 
-    let token = match jwt.terbitkan_token(user_id, role, token_version) {
+    let token = match jwt.terbitkan_token(user_id) {
         Ok(token) => token,
         Err(error) => {
             eprintln!("Gagal membuat JWT saat login: {error}");
@@ -210,7 +210,7 @@ pub async fn buat_pengguna(
     }
 }
 
-/// Mengubah role pengguna menjadi buyer/restocker dan mencabut kredensial lamanya.
+/// Mengubah role pengguna menjadi buyer/restocker tanpa membatalkan JWT aktif.
 pub async fn ubah_peran_pengguna(
     State(pool): State<PgPool>,
     Extension(identity): Extension<AuthIdentity>,
@@ -261,22 +261,8 @@ pub async fn pengguna_saat_ini(Extension(identity): Extension<AuthIdentity>) -> 
     }))
 }
 
-/// Mencabut semua JWT pengguna dan menghapus session aktif.
-pub async fn keluar(
-    State(pool): State<PgPool>,
-    Extension(identity): Extension<AuthIdentity>,
-    session: Session,
-) -> Response {
-    if let Err(error) =
-        crate::repositories::user_repository::naikkan_versi_token(&pool, identity.user_id).await
-    {
-        eprintln!("Gagal mencabut JWT saat logout: {error}");
-        return response::respons_gagal(
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "Terjadi kesalahan saat logout",
-        );
-    }
-
+/// Menghapus session aktif; JWT tetap berlaku hingga mencapai waktu kedaluwarsanya.
+pub async fn keluar(session: Session) -> Response {
     if let Err(error) = auth::session::hapus_sesi(&session).await {
         eprintln!("Gagal menghapus session saat logout: {error}");
         return response::respons_gagal(

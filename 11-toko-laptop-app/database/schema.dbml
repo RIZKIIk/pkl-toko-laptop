@@ -1,19 +1,13 @@
-// Target schema for the unchanged 0001 baseline plus 0002_laptop_audit.sql.
-// laptop_logs is the audit relation; each row can refer to one user and one laptop.
-// A deleted laptop/user sets the corresponding nullable FK to NULL; snapshots stay in JSONB.
-
 Table public.users {
   id bigint [pk, increment]
   username varchar(100) [not null, unique]
   password_hash text [not null]
   role varchar(20) [not null, default: 'buyer']
-  token_version bigint [not null, default: 0]
   created_at timestamptz [not null, default: `CURRENT_TIMESTAMP`]
 
   checks {
     `length(btrim(username)) > 0` [name: 'users_username_check']
     `role in ('admin', 'buyer', 'restocker')` [name: 'users_role_check']
-    `token_version >= 0` [name: 'users_token_version_check']
   }
 }
 
@@ -22,7 +16,7 @@ Table public.laptops {
   nama varchar(150) [not null]
   merek varchar(100) [not null]
   harga bigint [not null]
-  stok int [not null]
+  stok integer [not null]
   created_at timestamptz [not null, default: `CURRENT_TIMESTAMP`]
   updated_at timestamptz [not null, default: `CURRENT_TIMESTAMP`]
 
@@ -36,8 +30,8 @@ Table public.laptops {
 
 Table public.laptop_logs {
   id bigint [pk, increment]
-  laptop_id bigint [note: 'Nullable; set null when laptop is deleted.']
-  user_id bigint [note: 'Nullable; actor is absent for writes outside authenticated app requests.']
+  laptop_id bigint
+  user_id bigint
   operation varchar(10) [not null]
   old_data jsonb
   new_data jsonb
@@ -54,18 +48,13 @@ Table public.laptop_logs {
 }
 
 Table public._sqlx_migrations {
-  version bigint [pk]
+  version bigint [pk, not null]
   description text [not null]
   installed_on timestamptz [not null, default: `now()`]
   success boolean [not null]
   checksum bytea [not null]
   execution_time bigint [not null]
-
-  Note: 'Internal SQLx migration ledger; intentionally has no business foreign keys.'
 }
 
-// One user can produce zero or many logs. A log can have zero or one actor.
 Ref laptop_logs_user_id_fkey: public.users.id < public.laptop_logs.user_id [delete: set null]
-
-// One laptop can have zero or many logs. A log can have zero or one live laptop reference.
 Ref laptop_logs_laptop_id_fkey: public.laptops.id < public.laptop_logs.laptop_id [delete: set null]

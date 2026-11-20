@@ -6,7 +6,7 @@
 
 ## Tujuan
 
-Skema target terdiri dari `users`, `laptops`, `laptop_logs`, dan tabel internal SQLx `_sqlx_migrations`. Baseline [0001_final_schema.sql](../../../database/migrations/0001_final_schema.sql) membuat akun dan inventaris. Migration [0002_laptop_audit.sql](../../../database/migrations/0002_laptop_audit.sql) membuat atau menyesuaikan tabel audit dan memasang trigger. DBML target tersedia di [schema.dbml](../../../database/schema.dbml).
+Skema target terdiri dari `users`, `laptops`, `laptop_logs`, dan tabel internal SQLx `_sqlx_migrations`. Baseline [0001_final_schema.sql](../../../database/migrations/0001_final_schema.sql) membuat akun dan inventaris. Migration [0002_laptop_audit.sql](../../../database/migrations/0002_laptop_audit.sql) membuat atau menyesuaikan tabel audit dan memasang trigger. Migration [0003_remove_token_version.sql](../../../database/migrations/0003_remove_token_version.sql) menghapus kolom `token_version` yang tidak lagi dipakai. DBML target tersedia di [schema.dbml](../../../database/schema.dbml).
 
 Audit read-only pada database yang sudah ada menemukan `laptop_logs` berisi data tetapi tidak dikelola oleh baseline dan tidak memiliki trigger/function. Foreign key lama memakai aksi default `NO ACTION`, sehingga log dapat menghalangi penghapusan laptop. Migration baru tidak mengubah file baseline; ia menambahkan `user_id`, mengganti FK laptop menjadi `ON DELETE SET NULL`, dan mengaktifkan pencatatan otomatis. Sebelum startup menerapkan migration pada database lama, ambil dan verifikasi backup.
 
@@ -32,10 +32,9 @@ Validasi di database menjadi lapisan perlindungan tambahan bagi [validasi Rust](
 | `username` | `VARCHAR(100)` | Username unik dan tidak boleh kosong. |
 | `password_hash` | `TEXT` | Hash password Argon2id. |
 | `role` | `VARCHAR(20)` | Role `admin`, `buyer`, atau `restocker`; default `buyer`. |
-| `token_version` | `BIGINT` | Versi JWT; logout menaikkannya untuk mencabut semua JWT lama pengguna. |
 | `created_at` | `TIMESTAMPTZ` | Waktu akun dibuat. |
 
-Baseline final memastikan `token_version` tersedia dan tidak negatif; tabel lama `revoked_jwts` tidak digunakan. Akun lama tetap dipertahankan, termasuk hash password-nya. Versi disimpan per pengguna; logout menaikkannya, lalu middleware membandingkan versi pada JWT dengan database. Ini mencabut semua JWT lama pengguna sekaligus, bukan session cookie lain.
+Migration 0003 menghapus kolom `token_version` dari database lama tanpa mengubah migration baseline yang telah diterapkan. Akun dan hash password tetap dipertahankan. Logout tidak mencabut JWT; token bearer tetap berlaku sampai `exp`, selama signature valid dan akun masih ada.
 
 ## Tabel `laptop_logs`
 
@@ -66,7 +65,7 @@ Tidak ada foreign key langsung antara `users` dan `laptops`: aplikasi tidak memi
 
 - Primary key: `users.id`, `laptops.id`, `laptop_logs.id`, dan `_sqlx_migrations.version`.
 - Unique: `users.username`.
-- Check: nama/merek/username tidak kosong setelah trim; harga/stok dan `token_version` tidak negatif; role serta operation memakai daftar nilai yang didukung.
+- Check: nama/merek/username tidak kosong setelah trim; harga/stok tidak negatif; role serta operation memakai daftar nilai yang didukung.
 - Index tambahan: `laptop_logs.laptop_id` dan `laptop_logs.user_id` untuk pencarian audit serta aksi referensial `SET NULL`.
 - Tidak ada stored procedure; hanya function trigger `capture_laptop_log`.
 - DBML mendeskripsikan kolom, checks, indexes, kardinalitas, dan aksi `ON DELETE`. Pengaturan PostgreSQL `NOT DEFERRABLE` tidak tersedia dalam sintaks relationship DBML, jadi file DBML dipakai untuk ERD; migration SQL tetap menjadi sumber DDL yang dijalankan.

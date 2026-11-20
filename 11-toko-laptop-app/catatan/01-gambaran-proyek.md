@@ -84,6 +84,6 @@ Setiap file tetap memiliki fokus kecil:
 | `&T` | Meminjam nilai `T` tanpa memindahkan kepemilikannya. |
 | `Result<T, E>` | Mengandung `Ok(T)` saat berhasil atau `Err(E)` saat gagal; `Result` berbeda dari `Option`, yang menyatakan ada/tidaknya nilai. |
 
-Migration lama tetap menjadi baseline yang sama. Perubahan audit dikelola oleh migration baru; lihat [skema, relasi, dan trigger](rust/database/initial-schema.md) serta [DBML](../database/schema.dbml). Buat dan verifikasi backup sebelum menerapkan migration ke database lama. Kolom `token_version` tetap dipakai untuk pencabutan JWT; lihat [alur login sampai logout](token_ver.md).
+Migration lama tetap menjadi baseline yang sama. Perubahan audit dan penghapusan kolom lama `token_version` dikelola oleh migration lanjutan; lihat [skema, relasi, dan trigger](rust/database/initial-schema.md) serta [DBML](../database/schema.dbml). Buat dan verifikasi backup sebelum menerapkan migration ke database lama.
 
 Lanjutkan ke [alur kerja aplikasi](02-alur-kerja-aplikasi.md) untuk melihat istilah tersebut saat request benar-benar berjalan.

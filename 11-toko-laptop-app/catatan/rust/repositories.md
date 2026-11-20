@@ -9,7 +9,7 @@
 
 ## Tanggung jawab
 
-Repository menjadi lapisan yang menyusun query database per domain. Modul laptop menangani CRUD `laptops`, sedangkan modul user menangani pencarian identitas, akun, role, dan token-version. Fungsi menerima `PgPool`, mengikat nilai dengan `.bind(...)`, dan mengembalikan model atau hasil operasi database.
+Repository menjadi lapisan yang menyusun query database per domain. Modul laptop menangani CRUD `laptops`, sedangkan modul user menangani pencarian identitas, akun, dan role. Fungsi menerima `PgPool`, mengikat nilai dengan `.bind(...)`, dan mengembalikan model atau hasil operasi database.
 
 Repository tidak mengetahui status HTTP, JSON, atau cara membaca request. Handler yang memanggil repository mengubah `sqlx::Error` menjadi [`ApiError`](error.md).
 
@@ -47,7 +47,7 @@ repositories/
 
 Nilai hasil tersebut tetap dibungkus `Result`, sehingga error query dibedakan dari hasil normal seperti `None` atau `false`.
 
-Untuk akun, `Option` juga menandai hasil pencarian yang tidak ditemukan. `token_version` di tabel users adalah versi JWT terkini: pencabutan menaikkan versi database agar token lama tidak cocok lagi; lihat [penjelasan token_version](../token_ver.md). Riwayat migration SQLx berurutan dan tidak boleh ditulis ulang setelah diterapkan; lihat [skema database dan panduan migration](database/initial-schema.md).
+Untuk akun, `Option` juga menandai hasil pencarian yang tidak ditemukan. JWT tidak memiliki mekanisme pencabutan individual; server menerima token sampai `exp` jika signature valid dan akun masih ada. Riwayat migration SQLx berurutan dan tidak boleh ditulis ulang setelah diterapkan; lihat [skema database dan panduan migration](database/initial-schema.md).
 
 ## Alur umum
 

@@ -23,7 +23,7 @@ Untuk seluruh contoh perintah terminal dan penjelasan opsi seperti `-X`, `-d`, `
 | `POST` | `/api/auth/register` | Membuat akun baru | Publik | `201 Created` |
 | `POST` | `/api/auth/login` | Login, membuat session, dan menerbitkan JWT | Publik | `200 OK` |
 | `GET` | `/api/auth/session` | Melihat pengguna pada session atau JWT aktif | Wajib login | `200 OK` |
-| `POST` | `/api/auth/logout` | Mencabut semua JWT pengguna dan session yang dipakai | Wajib login | `200 OK` |
+| `POST` | `/api/auth/logout` | Menghapus session yang dipakai; JWT tetap berlaku sampai kedaluwarsa | Wajib login | `200 OK` |
 | `POST` | `/api/admin/users` | Membuat akun buyer/restocker | Admin | `201 Created` |
 | `PATCH` | `/api/admin/users/{username}/role` | Mengubah role menjadi buyer/restocker | Admin | `200 OK` |
 | `GET` | [`/api/laptops`](http://127.0.0.1:3001/api/laptops) | Melihat semua laptop | Admin, buyer, restocker | `200 OK` |
@@ -77,7 +77,7 @@ curl -i -b cookies.txt \
   http://127.0.0.1:3001/api/admin/users
 ```
 
-Role akun yang sudah ada dapat diubah dengan `PATCH /api/admin/users/{username}/role`, memakai body `{"role":"buyer"}` atau `{"role":"restocker"}`. Role `admin` hanya dapat ditetapkan melalui konfigurasi startup, dan admin tidak dapat mengubah role akunnya sendiri. Perubahan role mencabut session dan JWT lama pengguna tersebut.
+Role akun yang sudah ada dapat diubah dengan `PATCH /api/admin/users/{username}/role`, memakai body `{"role":"buyer"}` atau `{"role":"restocker"}`. Role `admin` hanya dapat ditetapkan melalui konfigurasi startup, dan admin tidak dapat mengubah role akunnya sendiri. Perubahan role langsung mengubah izin request berikutnya; JWT yang sudah terbit tetap diterima sampai kedaluwarsa.
 
 Role menentukan akses endpoint laptop: buyer dapat `GET` dan membeli melalui `/api/laptops/{id}/buy`, restocker dapat `GET` dan `PATCH`, sedangkan admin dapat melakukan semua operasi. Endpoint login, session, dan logout tetap tersedia untuk semua role yang sudah login. Request terautentikasi tanpa izin mendapat `403 Forbidden`.
 
@@ -108,7 +108,7 @@ curl -i -H "Authorization: Bearer $TOKEN" http://127.0.0.1:3001/api/laptops
 curl -i -H "Authorization: Bearer $TOKEN" http://127.0.0.1:3001/api/auth/session
 ```
 
-Kredensial salah, token tidak valid/kedaluwarsa/dicabut, atau request terlindungi tanpa session maupun JWT menghasilkan `401 Unauthorized`. Jangan membagikan atau commit file cookie maupun token. Session disimpan dalam memori server dan otomatis hilang saat server dimulai ulang. Logout mencabut semua JWT pengguna dengan menaikkan `token_version`, lalu menghapus session yang dipakai; client tetap harus menghapus token lokal.
+Kredensial salah, token tidak valid/kedaluwarsa, atau request terlindungi tanpa session maupun JWT menghasilkan `401 Unauthorized`. Jangan membagikan atau commit file cookie maupun token. Session disimpan dalam memori server dan otomatis hilang saat server dimulai ulang. Logout menghapus session yang dipakai, tetapi JWT bearer tetap berlaku sampai waktu kedaluwarsanya; client perlu menghapus token lokal bila tidak ingin menggunakannya lagi.
 
 ## Pemeriksaan Layanan
 

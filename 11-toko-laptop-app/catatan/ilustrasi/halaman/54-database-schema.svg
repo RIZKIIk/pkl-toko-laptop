@@ -13,7 +13,7 @@
     <rect x="42" y="128" width="240" height="164" rx="16" fill="#ede9fe" />
     <text x="66" y="163" font-size="18" font-weight="750" fill="#5b21b6">users</text>
     <text x="66" y="195" font-size="13" fill="#1e293b">id · username</text>
-    <text x="66" y="219" font-size="13" fill="#1e293b">role · token_version</text>
+    <text x="66" y="219" font-size="13" fill="#1e293b">role</text>
     <text x="66" y="269" font-size="12" fill="#475569">akun dan role</text>
 
     <rect x="360" y="128" width="240" height="164" rx="16" fill="#fef3c7" />

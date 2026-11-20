@@ -35,7 +35,7 @@ Client → handler → validation → repository → PostgreSQL
 1. **Kenali proyek:** baca [gambaran proyek](01-gambaran-proyek.md) dan catatan [alur aplikasi](02-alur-kerja-aplikasi.md).
 2. **Ikuti urutannya:** baca [alur kerja aplikasi](02-alur-kerja-aplikasi.md), lalu pelajari [main](rust/main.md), [config](rust/config.md), [lib](rust/lib.md), dan [routes](rust/routes.md).
 3. **Telusuri satu endpoint:** gunakan `POST /api/laptops` sebagai contoh pada [handler create](rust/handlers/laptops/create.md), [validator create](rust/validation/create.md), [repository laptop](rust/repositories/laptop-repository.md), dan [presenter response](rust/presenters/laptop-response.md).
-4. **Pelajari login:** mulai dari [handler auth](rust/handlers/auth.md), lanjut ke [perbedaan session dan JWT](rust/auth/sesi_jwt.md), [modul auth](rust/auth/mod.md), [session](rust/auth/session.md), [middleware](rust/auth/middleware.md), [JWT](rust/auth/jwt.md), [penjelasan `token_version`](token_ver.md), dan [repository user](rust/repositories/user-repository.md).
+4. **Pelajari login:** mulai dari [handler auth](rust/handlers/auth.md), lanjut ke [perbedaan session dan JWT](rust/auth/sesi_jwt.md), [modul auth](rust/auth/mod.md), [session](rust/auth/session.md), [middleware](rust/auth/middleware.md), [JWT](rust/auth/jwt.md), dan [repository user](rust/repositories/user-repository.md).
 5. **Buka konsep per lapisan:** gunakan indeks [models](rust/models.md), [validation](rust/validation.md), [repositories](rust/repositories.md), atau [presenters](rust/presenters.md) untuk memilih file terkait.
 6. **Lihat kontrak client:** buka [dokumentasi endpoint](../endpoin.md), [contoh `curl`](curl.md), atau [skenario Postman](postman.md).
 
@@ -66,7 +66,6 @@ Centang setiap misi yang sudah bisa dijelaskan:
 | Routing dan handler | [routes](rust/routes.md) · [ringkasan handlers](rust/handlers.md) · [modul handlers](rust/handlers/mod.md) · [auth](rust/handlers/auth.md) · [health check](rust/handlers/system.md) |
 | Operasi laptop | [modul laptop](rust/handlers/laptops/mod.md) · [create](rust/handlers/laptops/create.md) · [read](rust/handlers/laptops/read.md) · [update](rust/handlers/laptops/update.md) · [delete](rust/handlers/laptops/delete.md) |
 | Autentikasi | [modul auth](rust/auth/mod.md) · [middleware](rust/auth/middleware.md) · [perbedaan session dan JWT](rust/auth/sesi_jwt.md) · [response HTTP](rust/auth/response.md) · [JWT](rust/auth/jwt.md) · [session](rust/auth/session.md) · [repository user](rust/repositories/user-repository.md) |
-| Konsep autentikasi | [Penjelasan `token_version` dari login sampai logout](token_ver.md) |
 | Model request dan entity | [ringkasan models](rust/models.md) · [modul models](rust/models/mod.md) · [modul laptop](rust/models/laptop/mod.md) · [entity](rust/models/laptop/entity.md) · [payload POST](rust/models/laptop/create-payload.md) · [payload PATCH](rust/models/laptop/update-payload.md) |
 | Validasi input | [ringkasan validation](rust/validation.md) · [modul](rust/validation/mod.md) · [ID](rust/validation/id.md) · [teks](rust/validation/text.md) · [create](rust/validation/create.md) · [update](rust/validation/update.md) |
 | Database | [ringkasan repository](rust/repositories.md) · [modul repository](rust/repositories/mod.md) · [query laptop](rust/repositories/laptop-repository.md) · [skema database final](rust/database/initial-schema.md) |
@@ -83,8 +82,8 @@ Centang setiap misi yang sudah bisa dijelaskan:
 
 ## Database dan autentikasi
 
-SQLx menerapkan baseline dan migration lanjutan saat startup. Migration audit menghubungkan `laptop_logs` ke actor dan laptop dengan foreign key yang mempertahankan log ketika parent dihapus. Buat backup sebelum menerapkan migration baru pada database lama. Lihat [skema dan aturan migration](rust/database/initial-schema.md) dan [DBML](../database/schema.dbml). Kolom `token_version` tetap dipakai untuk mencabut JWT lama; ikuti [penjelasan token_version](token_ver.md).
+SQLx menerapkan baseline dan migration lanjutan saat startup. Migration audit menghubungkan `laptop_logs` ke actor dan laptop dengan foreign key yang mempertahankan log ketika parent dihapus; migration berikutnya menghapus kolom `token_version` yang sudah tidak dipakai. Buat backup sebelum menerapkan migration baru pada database lama. Lihat [skema dan aturan migration](rust/database/initial-schema.md) dan [DBML](../database/schema.dbml).
 
 ## Batasan yang perlu diingat
 
-Proyek ini tidak memiliki frontend. Catatan membahas pengalaman client API dan source backend. Password disimpan sebagai hash Argon2id dan session berada di memory store. Logout menaikkan `token_version` agar seluruh JWT milik pengguna tidak berlaku lagi, lalu menghapus session yang dipakai untuk logout; session lain tidak ikut dicabut. Jangan gunakan kredensial nyata atau deploy sebagai aplikasi produksi.
+Proyek ini tidak memiliki frontend. Catatan membahas pengalaman client API dan source backend. Password disimpan sebagai hash Argon2id dan session berada di memory store. Logout menghapus session yang dipakai, sedangkan JWT tetap berlaku sampai waktu kedaluwarsanya. Jangan gunakan kredensial nyata atau deploy sebagai aplikasi produksi.

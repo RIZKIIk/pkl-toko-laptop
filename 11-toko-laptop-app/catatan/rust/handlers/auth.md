@@ -73,12 +73,12 @@ Fungsi privat ini meminjam teks (`&str`) alih-alih mengambil kepemilikan `String
 
 1. Memanggil `validasi_nama_pengguna` dan memakai `match`: username valid diteruskan, sedangkan `Err(message)` langsung menjadi `400 Bad Request`. Password kosong juga menghasilkan 400.
 2. Menunggu `auth::verifikasi_kredensial(&pool, username, &payload.password).await`. Hasil `Ok(false)` menjadi `401 Unauthorized`; `Err(error)` dicatat di log server dan menjadi 500. Username/password yang tidak cocok memakai pesan umum yang sama.
-3. Jika kredensial cocok, mencari tuple identitas dengan `cari_identitas_pengguna_untuk_login(...).await`: nilai `Ok(Some(...))` berisi ID, role, dan `token_version`; `Ok(None)` tetap menghasilkan 401; error menjadi 500.
-4. Meminta `jwt.terbitkan_token(user_id, role, token_version)` membuat token. Error penerbitan dicatat dan menghasilkan 500.
+3. Jika kredensial cocok, mencari tuple identitas dengan `cari_identitas_pengguna_untuk_login(...).await`: nilai `Ok(Some(...))` berisi ID dan role; `Ok(None)` tetap menghasilkan 401; error menjadi 500.
+4. Meminta `jwt.terbitkan_token(user_id)` membuat token. Error penerbitan dicatat dan menghasilkan 500.
 5. Memanggil `session::mulai_sesi(&session, username).await`. Jika gagal, handler mengembalikan 500.
 6. Mengembalikan response sukses berisi username, role, access token, tipe `Bearer`, dan `expires_in`. Session manager mengurus cookie; handler tidak merakit header cookie sendiri.
 
-`match` dipakai untuk setiap operasi yang dapat gagal agar handler bisa memilih pesan yang sesuai untuk client sekaligus mencatat detail internal server. Kredensial, role, dan versi token diperiksa/dikelola di layanan auth dan repository, bukan lewat SQL di handler.
+`match` dipakai untuk setiap operasi yang dapat gagal agar handler bisa memilih pesan yang sesuai untuk client sekaligus mencatat detail internal server. Kredensial dan role diperiksa/dikelola di layanan auth dan repository, bukan lewat SQL di handler.
 
 ### `daftar(State(pool), Json(payload))`
 
@@ -98,15 +98,15 @@ Endpoint admin ini membaca `CreateUserPayload` yang berisi username, password, d
 
 ### `ubah_peran_pengguna(State(pool), Extension(identity), Path(username), Json(payload))`
 
-Middleware menyediakan `identity`; `Path(username)` mengambil nama akun dari URL dan `Json(payload)` membaca role baru. Handler menolak username yang tidak valid, perubahan role untuk akun yang sedang dipakai, dan target role admin dengan 400. Kemudian `ubah_peran_pengguna(...).await` menghasilkan 200 saat berubah, 404 bila pengguna tidak ada, atau 500 bila query gagal. Repository menangani perubahan role dan pencabutan kredensial terkait.
+Middleware menyediakan `identity`; `Path(username)` mengambil nama akun dari URL dan `Json(payload)` membaca role baru. Handler menolak username yang tidak valid, perubahan role untuk akun yang sedang dipakai, dan target role admin dengan 400. Kemudian `ubah_peran_pengguna(...).await` menghasilkan 200 saat berubah, 404 bila pengguna tidak ada, atau 500 bila query gagal. Role baru langsung dipakai pada request selanjutnya, sementara JWT yang sudah diterbitkan tetap diterima hingga kedaluwarsa.
 
 ### `pengguna_saat_ini(Extension(identity))`
 
 Tidak mencari identitas sendiri. Middleware di [`auth/middleware.rs`](../auth/middleware.md) sudah memverifikasi JWT atau session dan menyisipkan `AuthIdentity`; fungsi ini mengembalikan username dan role dari nilai tersebut dalam response sukses.
 
-### `keluar(State(pool), Extension(identity), session)`
+### `keluar(session)`
 
-Pertama, menaikkan `token_version` pengguna di database menggunakan ID dari `identity`. Jika operasi gagal, handler langsung mengembalikan 500. Setelah berhasil, `hapus_sesi(&session).await` menghapus session aktif; kegagalan ini juga menghasilkan 500. Jika keduanya sukses, response menyatakan logout berhasil. Perubahan versi token membuat JWT lama pengguna tidak lagi lolos verifikasi; penghapusan session hanya menghapus session yang dikirim request ini.
+Memanggil `hapus_sesi(&session).await` untuk menghapus session aktif. Jika gagal, handler mengembalikan 500; jika berhasil, response menyatakan logout berhasil. JWT bearer yang dipakai pada request logout tetap dapat digunakan sampai waktu `exp`.
 
 ## Ringkasan route
 
@@ -115,7 +115,7 @@ Pertama, menaikkan `token_version` pengguna di database menggunakan ID dari `ide
 | `POST /api/auth/register` | `daftar` | Publik; membuat akun buyer. |
 | `POST /api/auth/login` | `masuk` | Publik; membuat JWT dan session. |
 | `GET /api/auth/session` | `pengguna_saat_ini` | Dilindungi; membaca identitas terverifikasi. |
-| `POST /api/auth/logout` | `keluar` | Dilindungi; mencabut JWT lama dan menghapus session aktif. |
+| `POST /api/auth/logout` | `keluar` | Dilindungi; menghapus session aktif tanpa membatalkan JWT. |
 | `POST /api/admin/users` | `buat_pengguna` | Dilindungi; membuat akun buyer/restocker. |
 | `PATCH /api/admin/users/{username}/role` | `ubah_peran_pengguna` | Dilindungi; mengubah role target yang diizinkan. |
 

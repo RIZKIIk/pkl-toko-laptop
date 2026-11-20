@@ -65,13 +65,13 @@ POST /api/auth/login + username/password
   -> SessionManagerLayer mengirim cookie session ke client
   -> client mengirim cookie session atau Authorization: Bearer <JWT>
   -> middleware wajibkan_autentikasi memverifikasi JWT/session dan role pengguna di database
-  -> logout menaikkan token_version pengguna dan menghapus session aktif
-  -> semua JWT lama pengguna ditolak; session yang dipakai untuk logout dihapus
+  -> logout menghapus session aktif
+  -> JWT tetap berlaku sampai waktu kedaluwarsanya
 ```
 
 Password di database berupa hash Argon2id dengan salt unik. Server-side session berarti browser atau `curl` membawa cookie sebagai penunjuk session; username disimpan di session store, bukan dipercayakan dari body request pada setiap endpoint.
 
-JWT membawa `token_version` yang dibandingkan dengan nilai terkini di database. Logout menaikkan nilai database, sehingga JWT lama pengguna tidak lagi cocok; ini mencabut semua JWT pengguna, bukan hanya token request logout. Logout menghapus session yang dipakai pada request tersebut, bukan session lain. Baca [penjelasan token_version](token_ver.md) untuk contoh nilai sebelum dan sesudah logout.
+JWT berlaku satu jam sejak login dan diterima sampai waktu `exp` selama signature valid dan akun masih ada. Middleware mengambil role terkini dari database untuk memeriksa izin. Logout hanya menghapus session yang dipakai pada request; JWT bearer tidak dicabut dan tetap berlaku sampai kedaluwarsa.
 
 ## Jalur error
 

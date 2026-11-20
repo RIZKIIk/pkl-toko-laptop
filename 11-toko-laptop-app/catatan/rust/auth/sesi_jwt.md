@@ -15,19 +15,19 @@ Keduanya tetap perlu dijaga sebagai kredensial. Siapa pun yang memperoleh cookie
 
 | Aspek | Session | JWT |
 | --- | --- | --- |
-| Data yang dibawa client | Cookie berisi ID session, bukan seluruh identitas. | Token berisi claims seperti ID pengguna (`sub`), expiry (`exp`), role, dan `token_version`. |
+| Data yang dibawa client | Cookie berisi ID session, bukan seluruh identitas. | Token berisi ID pengguna (`sub`) dan waktu kedaluwarsa (`exp`). |
 | Penyimpanan identitas | Data session berada di server. Pada proyek ini session disimpan di `MemoryStore`. | Claims berada di payload token yang ditandatangani. Payload dapat dibaca client, tetapi perubahan tanpa secret membuat signature tidak valid. |
 | Cara dikirim | Browser mengirim cookie pada request sesuai aturan cookie. | Client mengirim `Authorization: Bearer <token>`. |
-| Pemeriksaan di aplikasi | Middleware membaca username dari session lalu mencari pengguna dan role terkini di database. | Middleware memeriksa signature dan expiry, lalu mencari pengguna di database dan mencocokkan role serta `token_version`. |
-| Efek restart server | Session dalam `MemoryStore` hilang saat server dimulai ulang. | Token tetap tersimpan pada client sampai kedaluwarsa, tetapi tetap perlu lolos validasi signature, pengguna, role, dan versi token. |
-| Pencabutan saat logout | Session yang sedang dipakai dihapus dari store. Session lain tidak ikut terhapus. | `token_version` pengguna dinaikkan, sehingga seluruh JWT lama pengguna ditolak pada request berikutnya. |
+| Pemeriksaan di aplikasi | Middleware membaca username dari session lalu mencari pengguna dan role terkini di database. | Middleware memeriksa signature dan expiry, lalu mencari pengguna dan role terkini di database. |
+| Efek restart server | Session dalam `MemoryStore` hilang saat server dimulai ulang. | Token tetap tersimpan pada client dan diterima sampai kedaluwarsa selama signature valid dan akun masih ada. |
+| Perilaku saat logout | Session yang sedang dipakai dihapus dari store. Session lain tidak ikut terhapus. | JWT tidak dicabut. Token tetap berlaku sampai `exp`, termasuk setelah endpoint logout dipanggil. |
 
-> **Catatan penting:** JWT sering disebut membuat autentikasi *stateless* karena claims dibawa di token. Namun, aplikasi ini tetap mengakses database setiap request JWT untuk memastikan pengguna masih ada dan role serta `token_version` masih cocok. Jadi, jangan menganggap pemeriksaan JWT di proyek ini hanya memerlukan verifikasi signature.
+> **Catatan penting:** JWT sering disebut membuat autentikasi *stateless* karena claims dibawa di token. Aplikasi ini tetap mengakses database setiap request JWT untuk memastikan pengguna masih ada dan mengambil role terkini untuk otorisasi.
 
 ## Alur login di proyek ini
 
 1. Client mengirim username dan password ke endpoint login.
-2. Setelah kredensial benar, handler mengambil ID pengguna, role, dan `token_version` dari database.
+2. Setelah kredensial benar, handler mengambil ID pengguna dan role dari database.
 3. Handler menerbitkan JWT satu jam dan membuat session yang menyimpan username. Session ID diganti setelah login.
 4. Response login memberikan `access_token`; cookie session juga dikelola melalui mekanisme cookie.
 5. Untuk request protected, middleware mencoba JWT lebih dulu. Jika JWT tidak menghasilkan identitas valid, middleware mencoba session. Setelah identitas ditemukan, middleware memeriksa izin role untuk route yang diminta.
@@ -52,14 +52,12 @@ Kedua cara tersebut menuju middleware autentikasi yang sama. Setelah identitas d
 
 ## Perbedaan perilaku saat logout
 
-Logout memiliki dampak berbeda pada kedua mekanisme:
+Logout membersihkan session yang dikirim pada request:
 
-- **JWT:** aplikasi menaikkan `users.token_version`. Semua JWT yang membawa versi sebelumnya menjadi tidak valid, termasuk token yang belum kedaluwarsa dan token dari perangkat lain.
+- **JWT:** tidak dicabut. Bearer token tetap dapat dipakai sampai waktu kedaluwarsanya, bahkan jika token itu dikirim pada request logout.
 - **Session:** aplikasi menghapus session yang dipakai untuk request logout. Session di perangkat atau browser lain tidak otomatis dihapus.
 
-Karena login membuat kedua kredensial, client sebaiknya menghapus access token lokal dan cookie terkait setelah logout. Session di perangkat lain tidak dicabut oleh kenaikan `token_version`; JWT lama di perangkat tersebut ditolak, tetapi session-nya masih dapat dikenali sampai session itu dihapus atau store hilang.
-
-Penjelasan lebih rinci tentang pencabutan tersedia di [catatan `token_version`](../../token_ver.md).
+Karena login membuat kedua kredensial, client perlu menghapus access token lokal sendiri jika ingin berhenti mengirimkannya. Menghapus cookie session saja tidak membatalkan JWT. Role yang berubah tetap mengubah izin request berikutnya karena middleware membaca role terkini dari database.
 
 ## Keterbatasan penyimpanan saat ini
 
@@ -73,4 +71,4 @@ Lihat [konfigurasi](../config.md) untuk pengaturan secret JWT dan [routes](../ro
 - [Session](session.md) menjelaskan penyimpanan identitas dan helper cookie-session.
 - [Middleware](middleware.md) menjelaskan cara request protected memilih JWT atau session.
 - [Handler auth](../handlers/auth.md) menangani login dan logout.
-- [Repository user](../repositories/user-repository.md) membaca identitas serta mengubah `token_version`.
+- [Repository user](../repositories/user-repository.md) membaca identitas dan role akun.

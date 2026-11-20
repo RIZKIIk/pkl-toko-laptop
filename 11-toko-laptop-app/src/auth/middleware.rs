@@ -32,15 +32,11 @@ pub async fn wajibkan_autentikasi(
         match crate::repositories::user_repository::cari_pengguna_berdasarkan_id(&pool, claims.sub)
             .await
         {
-            Ok(Some((username, role, token_version)))
-                if role == claims.role && token_version == claims.token_version =>
-            {
-                Some(AuthIdentity {
-                    user_id: claims.sub,
-                    username,
-                    role,
-                })
-            }
+            Ok(Some((username, role))) => Some(AuthIdentity {
+                user_id: claims.sub,
+                username,
+                role,
+            }),
             Ok(_) => None,
             Err(error) => {
                 eprintln!("Gagal memeriksa identitas JWT: {error}");

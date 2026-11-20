@@ -53,35 +53,33 @@ claims yang sudah diverifikasi
 | --- | --- | --- |
 | `sub` | `i64` | ID pengguna pemilik token. Nama `sub` adalah singkatan dari *subject*. Middleware memakai nilai ini untuk mencari pengguna di database. |
 | `exp` | `u64` | Waktu kedaluwarsa dalam detik sejak Unix epoch (1 Januari 1970 UTC). Token ditolak setelah waktu ini terlewati. |
-| `role` | `UserRole` | Role saat token dibuat. Middleware membandingkannya dengan role terbaru dari database sebelum menerima identitas JWT. |
-| `token_version` | `i64` | Versi token pengguna saat JWT dibuat. Middleware membandingkannya dengan versi terbaru di database untuk menolak token yang telah dicabut. |
 
 Contoh payload setelah di-decode:
 
 ```json
 {
   "sub": 7,
-  "exp": 1793864943,
-  "role": "admin",
-  "token_version": 0
+  "exp": 1793864943
 }
 ```
 
-Angka `exp` di atas hanya contoh timestamp; saat runtime nilainya dihitung dari waktu sekarang. `sub` dan `exp` merupakan nama klaim JWT yang lazim. `role` dan `token_version` adalah data khusus aplikasi. Role diserialisasi sebagai teks huruf kecil, seperti `"admin"`, sesuai konfigurasi serde pada [`UserRole`](../../../src/auth/role.rs).
+Angka `exp` di atas hanya contoh timestamp; saat runtime nilainya dihitung dari waktu sekarang. `sub` dan `exp` merupakan nama klaim JWT yang lazim. Role tidak dibawa di token; middleware mengambil role terbaru dari database saat memeriksa izin.
 
-### Perbedaan `role` dan `token_version`
+JWT yang diterbitkan sebelum perubahan ini membawa klaim tambahan `role` dan `token_version`. Klaim tambahan itu diabaikan saat dibaca sebagai `Claims`, sehingga token lama tetap diterima sampai `exp` selama secret masih sama dan akun masih ada.
 
-- `role` mengingat role saat token diterbitkan. Bila role pengguna berubah, middleware mendapati nilai token dan database berbeda, lalu tidak menerima identitas dari JWT tersebut.
-- `token_version` memungkinkan pencabutan banyak token sekaligus. Logout menaikkan versi di database. JWT lama pengguna membawa versi sebelumnya dan tidak lagi cocok, termasuk JWT yang belum mencapai `exp`.
+### Role dan masa berlaku token
 
-Pencocokan database ini dilakukan oleh middleware pada request JWT. Karena itu, token proyek ini tidak hanya diterima berdasarkan signature dan expiry.
+- Role disimpan di database, bukan di JWT. Perubahan role memengaruhi izin request berikutnya tanpa membatalkan token.
+- Tidak ada pencabutan JWT saat logout atau perubahan password. Token dengan signature valid tetap berlaku sampai `exp`, selama akun pemiliknya masih ada.
+
+Middleware tetap melihat database untuk memastikan akun masih ada dan mendapatkan role terkini. Karena itu, penghapusan akun membuat JWT tidak dapat dipakai lagi.
 
 ## 4. Alur penerbitan token
 
-Setelah login memverifikasi username dan password, handler membaca ID, role, dan `token_version` pengguna dari database. Handler memanggil:
+Setelah login memverifikasi username dan password, handler membaca ID dan role pengguna dari database. Handler memanggil:
 
 ```rust
-jwt.terbitkan_token(user_id, role, token_version)
+jwt.terbitkan_token(user_id)
 ```
 
 Di dalam `terbitkan_token`, prosesnya adalah:
@@ -107,7 +105,7 @@ Ketika middleware menerima request, ia mencoba mengambil bearer token dari heade
 4. Memanggil `decode::<Claims>(...)`. Library memeriksa token sesuai konfigurasi, lalu mengubah payload ke `Claims`.
 5. Mengembalikan klaim jika valid atau error jika token tidak dapat diverifikasi.
 
-Validnya signature belum cukup untuk memastikan pengguna masih boleh mengakses endpoint. Middleware tetap mencocokkan pengguna, role, dan `token_version` dengan database, lalu memeriksa izin role. Lihat [catatan middleware](middleware.md).
+Validnya signature belum cukup untuk memastikan pengguna masih boleh mengakses endpoint. Middleware memastikan pengguna masih ada, mengambil role terkini dari database, lalu memeriksa izin role. Lihat [catatan middleware](middleware.md).
 
 ## 6. Mengambil bearer token dari header
 
@@ -175,7 +173,6 @@ Import lainnya:
 | `jsonwebtoken::{Header, Validation}` | Mengatur metadata algoritma saat encode dan aturan saat decode. |
 | `jsonwebtoken::{encode, decode}` | Mengubah claims menjadi token bertanda tangan dan memverifikasi token menjadi claims. |
 | `serde::{Deserialize, Serialize}` | Trait untuk membaca dan menghasilkan representasi data. |
-| `super::role::UserRole` | `super` menunjuk module induk `auth`; `role::UserRole` mengambil enum role dari module saudara. |
 
 ### 7.3 Konstanta dan tipe data
 
@@ -227,12 +224,10 @@ pub fn new(secret: String) -> Self {
 pub struct Claims {
     pub sub: i64,
     pub exp: u64,
-    pub role: UserRole,
-    pub token_version: i64,
 }
 ```
 
-`Claims` mempunyai empat field publik. Tipe `i64` adalah bilangan bulat bertanda 64-bit; `u64` adalah bilangan bulat tanpa tanda 64-bit. `Serialize` diperlukan saat claims dikodekan menjadi payload token, sedangkan `Deserialize` diperlukan untuk membaca payload kembali sebagai `Claims`. `Debug` membantu inspeksi saat debugging dan `Clone` memungkinkan nilai claims disalin bila diperlukan.
+`Claims` mempunyai dua field publik. Tipe `i64` adalah bilangan bulat bertanda 64-bit; `u64` adalah bilangan bulat tanpa tanda 64-bit. `Serialize` diperlukan saat claims dikodekan menjadi payload token, sedangkan `Deserialize` diperlukan untuk membaca payload kembali sebagai `Claims`. `Debug` membantu inspeksi saat debugging dan `Clone` memungkinkan nilai claims disalin bila diperlukan.
 
 ### 7.5 `impl`, fungsi, method, dan `Self`
 
@@ -261,8 +256,6 @@ Signature berikut menunjukkan cara membaca bentuk fungsi:
 pub fn terbitkan_token(
     &self,
     user_id: i64,
-    role: UserRole,
-    token_version: i64,
 ) -> Result<String, Box<dyn std::error::Error + Send + Sync>>
 ```
 
@@ -291,8 +284,6 @@ pub fn verifikasi_token(
 let claims = Claims {
     sub: user_id,
     exp: now + TOKEN_EXPIRED_SECONDS,
-    role,
-    token_version,
 };
 ```
 
@@ -301,8 +292,6 @@ let claims = Claims {
 - `Claims { ... }` membangun instance struct.
 - `sub: user_id` menyatakan field `sub` diisi dari variable `user_id`.
 - `now + TOKEN_EXPIRED_SECONDS` menjumlahkan timestamp sekarang dengan durasi berlaku.
-- `role` merupakan *field initialization shorthand*, singkatan dari `role: role`.
-- `token_version` juga shorthand untuk `token_version: token_version`.
 - Koma memisahkan field; titik koma mengakhiri statement.
 
 Variable lokal immutable secara default. Kata `mut` hanya dibutuhkan bila binding itu sendiri akan diubah.
@@ -439,12 +428,12 @@ Di bagian akhir file:
 ```rust
 #[cfg(test)]
 mod tests {
-    use super::{JwtService, UserRole};
+    use super::JwtService;
 
     const SECRET: &str = "test-secret-with-at-least-32-bytes-long";
 
     #[test]
-    fn token_round_trip_returns_the_user_id_and_role() {
+    fn token_round_trip_returns_the_user_id() {
         // ...
     }
 }
@@ -453,7 +442,7 @@ mod tests {
 - `mod tests` membuat module anak bernama `tests`.
 - `use super::{...}` mengambil nama dari module induk tempat test berada.
 - `const SECRET: &str` membuat konstanta string yang dipinjam.
-- `fn token_round_trip_returns_the_user_id_and_role()` mendeklarasikan fungsi test; nama deskriptif menjelaskan perilaku yang diuji.
+- `fn token_round_trip_returns_the_user_id()` mendeklarasikan fungsi test; nama deskriptif menjelaskan perilaku yang diuji.
 - `#[cfg(test)]` membatasi kompilasi module untuk test.
 - `#[test]` mendaftarkan fungsi sebagai unit test.
 
@@ -461,7 +450,7 @@ Macro assertion yang digunakan:
 
 | Macro | Pemakaian di test |
 | --- | --- |
-| `assert_eq!(aktual, harapan)` | Memastikan claims hasil verifikasi sama dengan ID, role, atau versi yang diharapkan. |
+| `assert_eq!(aktual, harapan)` | Memastikan claims hasil verifikasi sama dengan ID pengguna atau waktu kedaluwarsa yang diharapkan. |
 | `assert!(kondisi)` | Memastikan kondisi bernilai benar, misalnya hasil verifikasi merupakan error. |
 | `format!("{token}x")` | Membentuk string baru memakai format string dan menangkap variable `token` di dalam `{...}`. Test menambahkan karakter untuk mengubah token. |
 
@@ -469,7 +458,7 @@ Macro assertion yang digunakan:
 
 Dua test yang tersedia memeriksa:
 
-1. **Round trip:** token diterbitkan, diverifikasi, lalu `sub`, `role`, dan `token_version` diperiksa.
+1. **Round trip:** token diterbitkan dan diverifikasi, lalu klaim `sub` diperiksa.
 2. **Penolakan token:** token yang diubah dan token yang diverifikasi dengan secret berbeda harus menghasilkan error.
 
 Test tersebut tidak menyatakan seluruh kemungkinan perilaku sudah diuji; contohnya, source ini tidak memiliki test khusus untuk token kedaluwarsa.
@@ -517,7 +506,7 @@ Contoh tersebut menunjukkan header request, bukan kode Rust. Jangan menaruh toke
 
 `verifikasi_token` dapat mengembalikan error, antara lain ketika token tidak dapat di-decode, signature tidak cocok, algoritma tidak sesuai, atau token kedaluwarsa. `ambil_klaim_dari_header` juga mengembalikan `None` jika header hilang atau format bearer tidak cocok.
 
-Setelah JWT tidak menghasilkan identitas, middleware mencoba session. Jika session valid, request dapat tetap terautentikasi melalui session. Jika session juga tidak memberi identitas, middleware mengembalikan `401 Unauthorized`. Bila JWT lolos verifikasi, middleware masih harus memastikan pengguna ada dan `role` serta `token_version` cocok dengan database. Untuk detail hasil HTTP dan otorisasi, lihat [middleware](middleware.md).
+Setelah JWT tidak menghasilkan identitas, middleware mencoba session. Jika session valid, request dapat tetap terautentikasi melalui session. Jika session juga tidak memberi identitas, middleware mengembalikan `401 Unauthorized`. Bila JWT lolos verifikasi, middleware masih memastikan pengguna ada dan mengambil role terbaru dari database untuk otorisasi. Untuk detail hasil HTTP dan otorisasi, lihat [middleware](middleware.md).
 
 ## 11. Secret dan batas keamanan
 
@@ -528,7 +517,7 @@ Hal yang perlu dijaga:
 - Gunakan secret rahasia dan berbeda dari secret development/test.
 - Jangan mencatat secret atau access token ke log.
 - Jangan menganggap payload JWT terenkripsi.
-- Jangan menerima role dalam payload JWT sebagai satu-satunya sumber izin; aplikasi mencocokkannya dengan database dan menjalankan pemeriksaan role.
+- Role tidak dibawa dalam payload JWT; aplikasi mengambilnya dari database untuk memeriksa izin.
 - Hindari membagikan token karena pemegang token dapat menggunakannya selama token masih diterima aplikasi.
 
 ## 12. Hubungan dengan file lain
@@ -537,7 +526,7 @@ Hal yang perlu dijaga:
 - [Middleware autentikasi](middleware.md) membaca dan memverifikasi JWT, memeriksa database, lalu mengotorisasi request.
 - [Session](session.md) menjelaskan metode autentikasi cookie yang menjadi fallback.
 - [Perbandingan session dan JWT](sesi_jwt.md) membahas perbedaan serta perilaku logout.
-- [Role](../../../src/auth/role.rs) mendefinisikan enum `UserRole` yang dipakai claims.
-- [Repository user](../repositories/user-repository.md) menyediakan identitas pengguna dan `token_version`.
+- [Role](../../../src/auth/role.rs) mendefinisikan enum `UserRole` yang dipakai middleware.
+- [Repository user](../repositories/user-repository.md) menyediakan identitas dan role terkini pengguna.
 - [Routes](../routes.md) memasang `JwtService` sebagai extension router.
 - [Konfigurasi](../config.md) membaca serta memvalidasi `JWT_SECRET`.

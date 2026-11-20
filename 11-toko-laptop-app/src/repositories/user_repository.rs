@@ -93,21 +93,21 @@ pub async fn cari_pengguna_berdasarkan_nama(
     .transpose()
 }
 
-/// Mengambil ID, role, dan versi token untuk membuat JWT saat login.
+/// Mengambil ID dan role terbaru untuk membuat JWT saat login.
 pub async fn cari_identitas_pengguna_untuk_login(
     pool: &PgPool,
     username: &str,
-) -> Result<Option<(i64, UserRole, i64)>, sqlx::Error> {
-    let user = sqlx::query_as::<_, (i64, String, i64)>(
-        "SELECT id, role, token_version FROM public.users WHERE username = $1",
+) -> Result<Option<(i64, UserRole)>, sqlx::Error> {
+    let user = sqlx::query_as::<_, (i64, String)>(
+        "SELECT id, role FROM public.users WHERE username = $1",
     )
     .bind(username)
     .fetch_optional(pool)
     .await?;
 
-    user.map(|(user_id, role, token_version)| {
+    user.map(|(user_id, role)| {
         role.parse::<UserRole>()
-            .map(|role| (user_id, role, token_version))
+            .map(|role| (user_id, role))
             .map_err(|error| {
                 sqlx::Error::Decode(
                     std::io::Error::new(std::io::ErrorKind::InvalidData, error).into(),
@@ -117,21 +117,21 @@ pub async fn cari_identitas_pengguna_untuk_login(
     .transpose()
 }
 
-/// Mengambil username, role, dan versi token berdasarkan ID pengguna.
+/// Mengambil username dan role terbaru berdasarkan ID pengguna.
 pub async fn cari_pengguna_berdasarkan_id(
     pool: &PgPool,
     user_id: i64,
-) -> Result<Option<(String, UserRole, i64)>, sqlx::Error> {
-    let user = sqlx::query_as::<_, (String, String, i64)>(
-        "SELECT username, role, token_version FROM public.users WHERE id = $1",
+) -> Result<Option<(String, UserRole)>, sqlx::Error> {
+    let user = sqlx::query_as::<_, (String, String)>(
+        "SELECT username, role FROM public.users WHERE id = $1",
     )
     .bind(user_id)
     .fetch_optional(pool)
     .await?;
 
-    user.map(|(username, role, token_version)| {
+    user.map(|(username, role)| {
         role.parse::<UserRole>()
-            .map(|role| (username, role, token_version))
+            .map(|role| (username, role))
             .map_err(|error| {
                 sqlx::Error::Decode(
                     std::io::Error::new(std::io::ErrorKind::InvalidData, error).into(),
@@ -141,29 +141,14 @@ pub async fn cari_pengguna_berdasarkan_id(
     .transpose()
 }
 
-/// Mencabut seluruh JWT pengguna dengan menaikkan versi yang tersimpan.
-pub async fn naikkan_versi_token(pool: &PgPool, user_id: i64) -> Result<(), sqlx::Error> {
-    sqlx::query("UPDATE public.users SET token_version = token_version + 1 WHERE id = $1")
-        .bind(user_id)
-        .execute(pool)
-        .await?;
-
-    Ok(())
-}
-
-/// Mengubah role; middleware menolak JWT yang membawa role berbeda.
+/// Mengubah role tanpa membatalkan JWT yang sudah diterbitkan.
 pub async fn ubah_peran_pengguna(
     pool: &PgPool,
     username: &str,
     role: UserRole,
 ) -> Result<bool, sqlx::Error> {
     let updated_username: Option<String> = sqlx::query_scalar(
-        "UPDATE public.users AS existing_user \
-         SET role = $2, \
-             token_version = existing_user.token_version + \
-                 CASE WHEN existing_user.role IS DISTINCT FROM $2 THEN 1 ELSE 0 END \
-         WHERE existing_user.username = $1 \
-         RETURNING existing_user.username",
+        "UPDATE public.users SET role = $2 WHERE username = $1 RETURNING username",
     )
     .bind(username)
     .bind(role.sebagai_teks())
@@ -181,14 +166,11 @@ pub async fn simpan_atau_perbarui_pengguna(
     role: UserRole,
 ) -> Result<(), sqlx::Error> {
     sqlx::query(
-        "INSERT INTO public.users AS existing_user (username, password_hash, role) \
+        "INSERT INTO public.users (username, password_hash, role) \
          VALUES ($1, $2, $3) \
          ON CONFLICT (username) DO UPDATE \
          SET password_hash = EXCLUDED.password_hash, \
-             role = EXCLUDED.role, \
-             token_version = existing_user.token_version + \
-                 CASE WHEN existing_user.password_hash IS DISTINCT FROM EXCLUDED.password_hash \
-                      THEN 1 ELSE 0 END",
+             role = EXCLUDED.role",
     )
     .bind(username)
     .bind(password_hash)

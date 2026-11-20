@@ -49,11 +49,11 @@ Mengambil `id` dan `role` dengan `query_as`, lalu mengubah teks role dari databa
 
 ### `cari_identitas_pengguna_untuk_login`
 
-Membaca tuple `(id, role, token_version)` untuk login. `query_as::<_, (i64, String, i64)>` meminta SQLx memetakan baris ke tuple tersebut; `_` membiarkan compiler menyimpulkan parameter generik pertama. Role teks diparse menjadi `UserRole`, dengan penanganan error dan `transpose` yang sama seperti pencarian username.
+Membaca tuple `(id, role)` untuk login. `query_as::<_, (i64, String)>` meminta SQLx memetakan baris ke tuple tersebut; `_` membiarkan compiler menyimpulkan parameter generik pertama. Role teks diparse menjadi `UserRole`, dengan penanganan error dan `transpose` yang sama seperti pencarian username.
 
 ### `cari_pengguna_berdasarkan_id`
 
-Mencari `(username, role, token_version)` menggunakan ID pengguna dan placeholder `$1`. Fungsi ini juga mem-parsing role lalu mengembalikan `Result<Option<(String, UserRole, i64)>, sqlx::Error>`.
+Mencari `(username, role)` menggunakan ID pengguna dan placeholder `$1`. Fungsi ini juga mem-parsing role lalu mengembalikan `Result<Option<(String, UserRole)>, sqlx::Error>`.
 
 ## Upgrade password lama
 
@@ -79,17 +79,15 @@ Migration historis perlu dipertahankan agar checksum SQLx tetap cocok. Perubahan
 
 ## Membuat dan mengubah akun
 
-### `naikkan_versi_token`
-
-Menjalankan `UPDATE users SET token_version = token_version + 1 WHERE id = $1`. Hasilnya `Result<(), sqlx::Error>`. Kenaikan versi membuat JWT lama pengguna tidak cocok dengan versi di database. Makna dan alurnya dijelaskan pada [catatan token_version](../../token_ver.md); logout memanggil fungsi ini sebelum menghapus session aktif.
+Logout tidak menjalankan query pencabutan token. Handler hanya menghapus session yang dipakai, sementara JWT tetap berlaku sampai waktu `exp`.
 
 ### `ubah_peran_pengguna`
 
-Memperbarui role berdasarkan username dan menaikkan `token_version` hanya jika role memang berubah. SQL `IS DISTINCT FROM` membandingkan nilai secara aman termasuk kemungkinan `NULL`; `CASE ... THEN 1 ELSE 0 END` menentukan kenaikan versi. `RETURNING` dan `fetch_optional` menghasilkan `Some(username)` bila akun ditemukan atau `None` bila tidak, lalu `.is_some()` mengubah hasil menjadi `bool`.
+Memperbarui role berdasarkan username. `RETURNING` dan `fetch_optional` menghasilkan `Some(username)` bila akun ditemukan atau `None` bila tidak, lalu `.is_some()` mengubah hasil menjadi `bool`. Middleware memakai role terbaru dari database untuk otorisasi, tanpa membatalkan JWT yang masih aktif.
 
 ### `simpan_atau_perbarui_pengguna`
 
-Memasukkan akun atau menyinkronkan akun yang sudah ada. `.bind(username)`, `.bind(password_hash)`, dan `.bind(role.sebagai_teks())` memasangkan tiga nilai ke `$1`–`$3`. `ON CONFLICT (username) DO UPDATE` menangani benturan username; `EXCLUDED` merujuk nilai baris yang sedang dicoba untuk dimasukkan. Jika hash password berbeda, `CASE` menaikkan `token_version`; jika sama, versinya tetap. Fungsi mengembalikan `Ok(())` tanpa membaca baris.
+Memasukkan akun atau menyinkronkan akun yang sudah ada. `.bind(username)`, `.bind(password_hash)`, dan `.bind(role.sebagai_teks())` memasangkan tiga nilai ke `$1`–`$3`. `ON CONFLICT (username) DO UPDATE` menangani benturan username; `EXCLUDED` merujuk nilai baris yang sedang dicoba untuk dimasukkan. Fungsi mengembalikan `Ok(())` tanpa membaca baris. Sinkronisasi hash password tidak membatalkan JWT yang sudah diterbitkan.
 
 ### `simpan_pengguna_baru`
 
@@ -102,7 +100,7 @@ Membuat akun baru tanpa menimpa akun yang ada. `ON CONFLICT (username) DO NOTHIN
 | `cari_hash_kata_sandi` | `Option<String>` | Username tidak ditemukan. |
 | `cari_kata_sandi_lama` | `Vec<(i64, String)>` | Vector kosong: tidak ada password lama. |
 | `punya_kolom_kata_sandi_lama` | `bool` | `false`: kolom sudah tidak ada. |
-| `perbarui_hash_kata_sandi_lama`, `tuntaskan_migrasi_hash_kata_sandi`, `naikkan_versi_token`, `simpan_atau_perbarui_pengguna` | `()` | Tidak mengembalikan baris; error tetap dapat terjadi. |
+| `perbarui_hash_kata_sandi_lama`, `tuntaskan_migrasi_hash_kata_sandi`, `simpan_atau_perbarui_pengguna` | `()` | Tidak mengembalikan baris; error tetap dapat terjadi. |
 | `cari_pengguna_berdasarkan_nama`, `cari_identitas_pengguna_untuk_login`, `cari_pengguna_berdasarkan_id` | `Option<tuple>` | Akun tidak ditemukan. |
 | `ubah_peran_pengguna`, `simpan_pengguna_baru` | `bool` | `false`: target tak ditemukan atau username sudah dipakai. |
 
@@ -111,8 +109,8 @@ Semua hasil di atas dibungkus `Result<..., sqlx::Error>`. Untuk gambaran lengkap
 ## Ilustrasi alur akun
 
 ```text
-login → cari hash + identitas → verifikasi password → JWT memuat token_version
-logout → naikkan token_version → hapus session aktif
+login → cari hash + identitas → verifikasi password → JWT memuat sub dan exp
+logout → hapus session aktif; JWT berlaku sampai exp
 startup → temukan password lama → hash → simpan hash → hapus kolom lama
 register/admin → insert atau sinkronkan akun melalui parameter SQL
 ```

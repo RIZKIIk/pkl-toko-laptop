@@ -9,8 +9,6 @@ use axum::http::{HeaderMap, header::AUTHORIZATION};
 use jsonwebtoken::{Algorithm, DecodingKey, EncodingKey, Header, Validation, decode, encode};
 use serde::{Deserialize, Serialize};
 
-use super::role::UserRole;
-
 /// Masa berlaku access token dalam detik (satu jam).
 pub const TOKEN_EXPIRED_SECONDS: u64 = 60 * 60;
 
@@ -27,11 +25,6 @@ pub struct Claims {
     pub sub: i64,
     /// Waktu kedaluwarsa token dalam detik sejak Unix epoch (`exp`).
     pub exp: u64,
-    /// Peran pengguna untuk menentukan hak aksesnya.
-    pub role: UserRole,
-    /// Versi token pengguna; dibandingkan dengan versi di database agar token lama
-    /// dapat ditolak setelah versi pengguna dinaikkan, misalnya saat logout.
-    pub token_version: i64,
 }
 
 impl JwtService {
@@ -42,20 +35,16 @@ impl JwtService {
         }
     }
 
-    /// Menerbitkan token HS256 dengan identitas dan versi token pengguna.
+    /// Menerbitkan token HS256 untuk pengguna.
     pub fn terbitkan_token(
         &self,
         user_id: i64,
-        role: UserRole,
-        token_version: i64,
     ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
         // JWT memakai detik sejak Unix epoch untuk mengisi klaim expiry standar.
         let now = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
         let claims = Claims {
             sub: user_id,
             exp: now + TOKEN_EXPIRED_SECONDS,
-            role,
-            token_version,
         };
         let key = EncodingKey::from_secret(self.secret.as_bytes());
 

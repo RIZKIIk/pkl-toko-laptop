@@ -38,7 +38,7 @@ Identitas yang diteruskan ke handler berbentuk `AuthIdentity`, berisi `user_id`,
 ## Urutan pemeriksaan
 
 1. **Coba autentikasi JWT.** Middleware meminta claims dari header `Authorization` melalui `jwt::ambil_klaim_dari_header`. Header harus memakai skema `Bearer` dan diikuti token tanpa spasi. Detail signature, expiry, dan claims ada di [catatan JWT](jwt.md).
-2. **Cocokkan claims JWT dengan database.** Jika token lolos verifikasi, middleware mencari pengguna berdasarkan `sub`. Identitas diterima hanya jika pengguna masih ada, role dari database sama dengan role pada claims, dan `token_version` database sama dengan versi di token.
+2. **Cari pemilik JWT di database.** Jika token lolos verifikasi, middleware mencari pengguna berdasarkan `sub`. Identitas diterima selama pengguna masih ada; role terbaru dari database dipakai untuk memeriksa izin route.
 3. **Gunakan session bila JWT tidak menghasilkan identitas.** Token yang hilang, tidak valid/kedaluwarsa, tidak lagi cocok dengan data pengguna, atau pengguna tidak ditemukan tidak menghasilkan identitas JWT. Middleware lalu mencoba membaca username dari session. Username tersebut dicari kembali ke database; `user_id` dan role yang dipakai berasal dari database, bukan session.
 4. **Tolak request tanpa identitas.** Jika session tidak berisi username atau pengguna session sudah tidak ditemukan, middleware mengembalikan `401 Unauthorized`.
 5. **Periksa otorisasi role.** Middleware memanggil `UserRole::boleh_mengakses` dengan role tepercaya, HTTP method request, dan path request. Query string tidak termasuk path karena yang dipakai adalah `request.uri().path()`.
@@ -49,7 +49,7 @@ Identitas yang diteruskan ke handler berbentuk `AuthIdentity`, berisi `user_id`,
 | Kondisi | Hasil |
 | --- | --- |
 | Tidak ada bearer JWT yang dapat diverifikasi, tetapi session valid | Autentikasi dilanjutkan menggunakan session. |
-| JWT tidak cocok dengan pengguna/role/`token_version`, tetapi session valid | Autentikasi dilanjutkan menggunakan session. |
+| JWT valid dan penggunanya masih ada, tetapi role akun berubah | Autentikasi dilanjutkan memakai role terbaru dari database. |
 | JWT tidak menghasilkan identitas dan session tidak memiliki identitas | `401 Unauthorized`. |
 | Pengguna session tidak ditemukan di database | `401 Unauthorized`. |
 | Pengguna terautentikasi, tetapi role tidak boleh mengakses method/path | `403 Forbidden`. |
