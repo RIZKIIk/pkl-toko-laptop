@@ -1,0 +1,72 @@
+# `src/validation/mod.rs`
+
+> **Navigasi:** [Indeks catatan](../../README.md) · [README proyek](../../../README.md) · [Endpoint API](../../../endpoin.md)
+
+![Ilustrasi: Gerbang validator per operasi](../../ilustrasi/halaman/45-mod.svg "Gerbang validator per operasi")
+
+
+[Buka source `validation/mod.rs`](../../../src/validation/mod.rs)
+
+## Tujuan
+
+File ini mengatur modul validator dan menentukan fungsi validasi mana yang boleh dipanggil langsung oleh handler. Ia tidak melakukan validasi sendiri; implementasinya ada di file validator terkait.
+
+## 1. Deklarasi modul internal
+
+```rust
+mod create;
+mod id;
+mod text;
+mod update;
+```
+
+Setiap `mod nama;` memberi tahu Rust bahwa ada modul di file `nama.rs` dalam folder `validation/`.
+
+- `create` memeriksa payload untuk membuat laptop.
+- `id` memastikan ID laptop positif.
+- `text` membersihkan dan membatasi teks; ia dipakai oleh validator payload.
+- `update` memeriksa payload perubahan parsial.
+
+Tidak adanya `pub` berarti modul-modul ini tidak dibuka langsung ke pemakai crate melalui nama `validation::create`, `validation::text`, dan seterusnya. Handler diarahkan memakai fungsi yang diekspor di bawah.
+
+## 2. Ekspor fungsi validator
+
+```rust
+pub use create::validasi_laptop_baru;
+pub use id::validasi_id_laptop;
+pub use update::validasi_perubahan_laptop;
+```
+
+- `use` membawa nama dari modul sumber ke namespace `validation`.
+- `pub use` juga mengekspor ulang nama itu agar dapat dipakai modul lain.
+- Contohnya, `pub use id::validasi_id_laptop;` memungkinkan handler memanggil `crate::validation::validasi_id_laptop(...)`, tanpa menyebut jalur internal `crate::validation::id::...`.
+
+Hanya fungsi yang diperlukan handler yang diekspor. Helper teks tetap detail internal karena tidak ada `pub use text::...`.
+
+## Alur pemakaian
+
+```text
+handler
+  -> crate::validation::validasi_laptop_baru(...)
+     -> validator create memakai helper text secara internal
+  -> lanjut ke repository hanya jika hasilnya Ok
+```
+
+Jika fungsi validasi menghasilkan `Err(ApiError)`, handler umumnya memakai operator `?` untuk menghentikan proses dan meneruskan error ke mekanisme response aplikasi.
+
+## Catatan per validator
+
+- [ID](id.md): aturan nilai path positif.
+- [Teks](text.md): trim, penolakan teks kosong, dan batas karakter.
+- [Create](create.md): validasi seluruh field laptop baru.
+- [Update](update.md): validasi field yang dikirim untuk perubahan parsial.
+
+## Peta fungsi yang diekspor
+
+| Fungsi pada `crate::validation` | Modul implementasi | Dipakai oleh |
+| --- | --- | --- |
+| `validasi_id_laptop` | `id.rs` | Handler detail, update, dan delete. |
+| `validasi_laptop_baru` | `create.rs` | Handler `POST /api/laptops`. |
+| `validasi_perubahan_laptop` | `update.rs` | Handler `PATCH /api/laptops/{id}`. |
+
+Helper `validasi_teks` sengaja tetap internal. Validator create dan update memakainya agar aturan trim dan batas panjang tidak berbeda.

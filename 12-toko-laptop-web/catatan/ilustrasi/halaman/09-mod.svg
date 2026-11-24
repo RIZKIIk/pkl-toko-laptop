@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 360" role="img" aria-labelledby="title desc">
+<title id="title">Auth dirangkai dari komponen</title><desc id="desc">Ilustrasi khusus untuk mod: HTTP headers; JWT service; Session store; Middleware.</desc>
+<defs><pattern id="dots" width="18" height="18" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1" fill="#94a3b8" opacity=".25"/></pattern><filter id="shadow" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="5" stdDeviation="6" flood-color="#0f172a" flood-opacity=".1"/></filter></defs>
+<rect width="960" height="360" rx="28" fill="#f8fafc"/><rect width="960" height="360" rx="28" fill="url(#dots)"/>
+<rect x="32" y="28" width="8" height="38" rx="4" fill="#2563eb"/><text x="56" y="44" font-family="system-ui,sans-serif" font-size="12" font-weight="800" letter-spacing="2" fill="#2563eb">AUTH MODULE</text>
+<text x="56" y="91" font-family="system-ui,sans-serif" font-size="25" font-weight="750" fill="#0f172a">Auth dirangkai dari komponen</text>
+<circle cx="895" cy="61" r="31" fill="#dbeafe"/><text x="895" y="70" text-anchor="middle" font-family="system-ui,sans-serif" font-size="25">🧩</text>
+<rect x="108" y="147" width="720" height="32" rx="10" fill="#dbeafe" stroke="#2563eb" stroke-opacity=".22"/>
+<circle cx="132" cy="163" r="8" fill="#2563eb"/><text x="154" y="169" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#172554">HTTP headers</text>
+<text x="850" y="168" font-family="system-ui,sans-serif" font-size="11" fill="#64748b">STEP 01</text>
+<rect x="108" y="189" width="720" height="32" rx="10" fill="white" stroke="#2563eb" stroke-opacity=".22"/>
+<circle cx="132" cy="205" r="8" fill="#2563eb"/><text x="154" y="211" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#172554">JWT service</text>
+<text x="850" y="210" font-family="system-ui,sans-serif" font-size="11" fill="#64748b">STEP 02</text>
+<rect x="108" y="231" width="720" height="32" rx="10" fill="#dbeafe" stroke="#2563eb" stroke-opacity=".22"/>
+<circle cx="132" cy="247" r="8" fill="#2563eb"/><text x="154" y="253" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#172554">Session store</text>
+<text x="850" y="252" font-family="system-ui,sans-serif" font-size="11" fill="#64748b">STEP 03</text>
+<rect x="108" y="273" width="720" height="32" rx="10" fill="white" stroke="#2563eb" stroke-opacity=".22"/>
+<circle cx="132" cy="289" r="8" fill="#2563eb"/><text x="154" y="295" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#172554">Middleware</text>
+<text x="850" y="294" font-family="system-ui,sans-serif" font-size="11" fill="#64748b">STEP 04</text>
+<text x="56" y="340" font-family="system-ui,sans-serif" font-size="11" fill="#64748b">CATATAN BELAJAR  /  AUTH MODULE</text></svg>

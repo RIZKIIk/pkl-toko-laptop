@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 360" role="img" aria-labelledby="title desc">
+<title id="title">Kontrak data POST</title><desc id="desc">Ilustrasi khusus untuk create-payload: name: String; brand: String; price: i32; semua wajib.</desc>
+<defs><pattern id="dots" width="18" height="18" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1" fill="#94a3b8" opacity=".25"/></pattern><filter id="shadow" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="5" stdDeviation="6" flood-color="#0f172a" flood-opacity=".1"/></filter></defs>
+<rect width="960" height="360" rx="28" fill="#f8fafc"/><rect width="960" height="360" rx="28" fill="url(#dots)"/>
+<rect x="32" y="28" width="8" height="38" rx="4" fill="#4f46e5"/><text x="56" y="44" font-family="system-ui,sans-serif" font-size="12" font-weight="800" letter-spacing="2" fill="#4f46e5">REQUEST SHAPE</text>
+<text x="56" y="91" font-family="system-ui,sans-serif" font-size="25" font-weight="750" fill="#0f172a">Kontrak data POST</text>
+<circle cx="895" cy="61" r="31" fill="#e0e7ff"/><text x="895" y="70" text-anchor="middle" font-family="system-ui,sans-serif" font-size="25">📋</text>
+<rect x="62" y="139" width="390" height="174" rx="18" fill="#0f172a"/>
+<circle cx="86" cy="162" r="5" fill="#fb7185"/><circle cx="104" cy="162" r="5" fill="#fbbf24"/><circle cx="122" cy="162" r="5" fill="#34d399"/>
+<text x="88" y="199" font-family="ui-monospace,monospace" font-size="12" fill="#4f46e5">01</text>
+<text x="123" y="199" font-family="ui-monospace,monospace" font-size="13" fill="#e2e8f0">name: String</text>
+<text x="88" y="226" font-family="ui-monospace,monospace" font-size="12" fill="#4f46e5">02</text>
+<text x="123" y="226" font-family="ui-monospace,monospace" font-size="13" fill="#e2e8f0">brand: String</text>
+<text x="88" y="253" font-family="ui-monospace,monospace" font-size="12" fill="#4f46e5">03</text>
+<text x="123" y="253" font-family="ui-monospace,monospace" font-size="13" fill="#e2e8f0">price: i32</text>
+<text x="88" y="280" font-family="ui-monospace,monospace" font-size="12" fill="#4f46e5">04</text>
+<text x="123" y="280" font-family="ui-monospace,monospace" font-size="13" fill="#e2e8f0">semua wajib</text>
+<path d="M474 225h55l-12-10m12 10-12 10" fill="none" stroke="#4f46e5" stroke-width="3"/>
+<rect x="558" y="158" width="310" height="132" rx="22" fill="#e0e7ff"/><text x="586" y="190" font-family="system-ui" font-size="11" font-weight="800" letter-spacing="1.5" fill="#4f46e5">HASIL YANG PERLU DIINGAT</text>
+<text x="586" y="225" font-family="system-ui" font-size="14" font-weight="700" fill="#312e81">• price: i32</text>
+<text x="586" y="253" font-family="system-ui" font-size="14" font-weight="700" fill="#312e81">• semua wajib</text>
+<text x="56" y="340" font-family="system-ui,sans-serif" font-size="11" fill="#64748b">CATATAN BELAJAR  /  REQUEST SHAPE</text></svg>

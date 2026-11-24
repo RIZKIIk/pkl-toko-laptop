@@ -1,0 +1,10 @@
+//! Validasi ID dan payload laptop sebelum data masuk ke repository.
+//! Catatan: [Buka penjelasan](file:///home/rizki/projects/Rust/tugas/PKL/11-toko-laptop-app/catatan/rust/validation/mod.md)
+mod create;
+mod id;
+mod text;
+mod update;
+
+pub use create::validasi_laptop_baru;
+pub use id::validasi_id_laptop;
+pub use update::validasi_perubahan_laptop;
