@@ -1,9 +1,10 @@
+// Akun aplikasi; role menentukan izin admin, buyer, atau restocker.
 Table public.users {
   id bigint [pk, increment]
   username varchar(100) [not null, unique]
+  created_at timestamptz [not null, default: `CURRENT_TIMESTAMP`]
   password_hash text [not null]
   role varchar(20) [not null, default: 'buyer']
-  created_at timestamptz [not null, default: `CURRENT_TIMESTAMP`]
 
   checks {
     `length(btrim(username)) > 0` [name: 'users_username_check']
@@ -11,6 +12,7 @@ Table public.users {
   }
 }
 
+// Inventaris laptop. Nilai stok dan harga divalidasi agar tidak negatif.
 Table public.laptops {
   id bigint [pk, increment]
   nama varchar(150) [not null]
@@ -28,14 +30,16 @@ Table public.laptops {
   }
 }
 
+// Diisi otomatis oleh trigger laptops_capture_audit_log untuk INSERT/UPDATE/DELETE.
 Table public.laptop_logs {
   id bigint [pk, increment]
-  laptop_id bigint
-  user_id bigint
+  // FK opsional supaya catatan log tetap ada setelah laptop/user dihapus.
+  laptop_id bigint [null]
   operation varchar(10) [not null]
   old_data jsonb
   new_data jsonb
   changed_at timestamptz [not null, default: `CURRENT_TIMESTAMP`]
+  user_id bigint [null]
 
   indexes {
     (laptop_id) [name: 'laptop_logs_laptop_id_idx']
@@ -47,6 +51,8 @@ Table public.laptop_logs {
   }
 }
 
+// Metadata internal SQLx. Tabel ini mencatat migration yang sudah dijalankan;
+// tidak memiliki relasi ke tabel bisnis.
 Table public._sqlx_migrations {
   version bigint [pk, not null]
   description text [not null]
