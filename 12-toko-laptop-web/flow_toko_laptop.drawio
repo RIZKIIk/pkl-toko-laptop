@@ -1,0 +1,403 @@
+<mxfile host="app.diagrams.net" agent="diagrams.net" pages="2">
+  <diagram id="login-web" name="01 Login ">
+    <mxGraphModel dx="1327" dy="566" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2260" pageHeight="2620" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="page_title" parent="1" style="text;html=1;align=left;verticalAlign=middle;fontFamily=Helvetica;fontSize=23;fontStyle=1;fontColor=#111827;spacingLeft=4;" value="01&amp;nbsp; LOGIN WEB" vertex="1">
+          <mxGeometry height="42" width="1500" x="30" y="12" as="geometry" />
+        </mxCell>
+        <mxCell id="header_browser" parent="1" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#E0F2FE;strokeColor=#0284C7;strokeWidth=2;fontColor=#0C4A6E;fontFamily=Helvetica;fontSize=17;align=center;verticalAlign=middle;" value="&lt;b&gt;BROWSER&lt;/b&gt;" vertex="1">
+          <mxGeometry height="38" width="590" x="20" y="65" as="geometry" />
+        </mxCell>
+        <mxCell id="header_frontend" parent="1" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#EFF6FF;strokeColor=#3B82F6;strokeWidth=2;fontColor=#1E3A8A;fontFamily=Helvetica;fontSize=17;align=center;verticalAlign=middle;" value="&lt;b&gt;FRONTEND WEB&lt;/b&gt;" vertex="1">
+          <mxGeometry height="38" width="700" x="620" y="65" as="geometry" />
+        </mxCell>
+        <mxCell id="header_backend" parent="1" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#F5F3FF;strokeColor=#8B5CF6;strokeWidth=2;fontColor=#4C1D95;fontFamily=Helvetica;fontSize=17;align=center;verticalAlign=middle;" value="&lt;b&gt;BACKEND API&lt;/b&gt;" vertex="1">
+          <mxGeometry height="38" width="910" x="1330" y="65" as="geometry" />
+        </mxCell>
+        <mxCell id="b_start" parent="1" style="ellipse;aspect=fixed;whiteSpace=wrap;html=1;fillColor=#E0F2FE;strokeColor=#0284C7;fontColor=#0C4A6E;fontFamily=Helvetica;fontSize=13;strokeWidth=2;spacing=9;shadow=1;align=center;verticalAlign=middle;fontStyle=1;" value="MULAI" vertex="1">
+          <mxGeometry height="58" width="450" x="90" y="145" as="geometry" />
+        </mxCell>
+        <mxCell id="b_open" parent="1" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#E0F2FE;strokeColor=#0284C7;fontColor=#0C4A6E;fontFamily=Helvetica;fontSize=13;strokeWidth=2;spacing=9;shadow=1;align=center;verticalAlign=middle;" value="&lt;b&gt;User membuka halaman /login&lt;/b&gt;&lt;br&gt;Browser meminta halaman login ke frontend" vertex="1">
+          <mxGeometry height="88" width="500" x="65" y="245" as="geometry" />
+        </mxCell>
+        <mxCell id="b_fill" parent="1" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#E0F2FE;strokeColor=#0284C7;fontColor=#0C4A6E;fontFamily=Helvetica;fontSize=13;strokeWidth=2;spacing=9;shadow=1;align=center;verticalAlign=middle;" value="&lt;b&gt;User mengisi form login&lt;/b&gt;&lt;br&gt;Username dan password" vertex="1">
+          <mxGeometry height="90" width="500" x="65" y="490" as="geometry" />
+        </mxCell>
+        <mxCell id="b_cookie" parent="1" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#E0F2FE;strokeColor=#0284C7;fontColor=#0C4A6E;fontFamily=Helvetica;fontSize=13;strokeWidth=2;spacing=9;shadow=1;align=center;verticalAlign=middle;" value="&lt;b&gt;Browser menerima Set-Cookie&lt;/b&gt;&lt;br&gt;Menyimpan session ID secara otomatis&lt;br&gt;Cookie tidak dapat dibaca JavaScript (HttpOnly)" vertex="1">
+          <mxGeometry height="105" width="500" x="50" y="2090" as="geometry" />
+        </mxCell>
+        <mxCell id="b_dashboard" parent="1" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#DCFCE7;strokeColor=#16A34A;fontColor=#14532D;fontFamily=Helvetica;fontSize=13;strokeWidth=2;spacing=9;shadow=1;align=center;verticalAlign=middle;" value="&lt;b&gt;Browser membuka dashboard&lt;/b&gt;&lt;br&gt;Halaman sesuai role pengguna" vertex="1">
+          <mxGeometry height="86" width="500" x="65" y="2480" as="geometry" />
+        </mxCell>
+        <mxCell id="f_form" parent="1" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#EFF6FF;strokeColor=#3B82F6;fontColor=#1E3A8A;fontFamily=Helvetica;fontSize=13;strokeWidth=2;spacing=9;shadow=1;align=center;verticalAlign=middle;" value="&lt;b&gt;Frontend menampilkan form login&lt;/b&gt;&lt;br&gt;Input username dan password" vertex="1">
+          <mxGeometry height="88" width="580" x="680" y="245" as="geometry" />
+        </mxCell>
+        <mxCell id="f_validate" parent="1" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#EFF6FF;strokeColor=#3B82F6;fontColor=#1E3A8A;fontFamily=Helvetica;fontSize=13;strokeWidth=2;spacing=9;shadow=1;align=center;verticalAlign=middle;" value="&lt;b&gt;Validasi input di frontend&lt;/b&gt;&lt;br&gt;Username wajib diisi, dan&lt;br&gt;Password tidak boleh kosong" vertex="1">
+          <mxGeometry height="110" width="580" x="680" y="490" as="geometry" />
+        </mxCell>
+        <mxCell id="f_valid" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FEF3C7;strokeColor=#D97706;fontColor=#78350F;fontFamily=Helvetica;fontSize=13;strokeWidth=2;spacing=9;shadow=1;align=center;verticalAlign=middle;fontStyle=1;spacing=6;" value="&lt;b&gt;Input valid?&lt;/b&gt;" vertex="1">
+          <mxGeometry height="125" width="240" x="850" y="660" as="geometry" />
+        </mxCell>
+        <mxCell id="f_client_error" parent="1" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#FEE2E2;strokeColor=#DC2626;fontColor=#7F1D1D;fontFamily=Helvetica;fontSize=13;strokeWidth=2;spacing=9;shadow=1;align=center;verticalAlign=middle;" value="&lt;b&gt;Pesan validasi ditampilkan&lt;/b&gt;&lt;br&gt;User diminta memperbaiki input" vertex="1">
+          <mxGeometry height="88" width="580" x="680" y="835" as="geometry" />
+        </mxCell>
+        <mxCell id="f_post" parent="1" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#EFF6FF;strokeColor=#3B82F6;fontColor=#1E3A8A;fontFamily=Helvetica;fontSize=13;strokeWidth=2;spacing=9;shadow=1;align=center;verticalAlign=middle;" value="&lt;b&gt;Kirim request login&lt;/b&gt;&lt;br&gt;POST /api/auth/login" vertex="1">
+          <mxGeometry height="112" width="580" x="680" y="1010" as="geometry" />
+        </mxCell>
+        <mxCell id="f_api_error" parent="1" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#FEE2E2;strokeColor=#DC2626;fontColor=#7F1D1D;fontFamily=Helvetica;fontSize=13;strokeWidth=2;spacing=9;shadow=1;align=center;verticalAlign=middle;" value="&lt;b&gt;Terima response gagal&lt;/b&gt;&lt;br&gt;HTTP 400 / 401 / 500&lt;br&gt;Tampilkan pesan login gagal" vertex="1">
+          <mxGeometry height="105" width="580" x="680" y="1780" as="geometry" />
+        </mxCell>
+        <mxCell id="f_response" parent="1" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#EFF6FF;strokeColor=#3B82F6;fontColor=#1E3A8A;fontFamily=Helvetica;fontSize=13;strokeWidth=2;spacing=9;shadow=1;align=center;verticalAlign=middle;" value="&lt;b&gt;Terima response login&lt;/b&gt;&lt;br&gt;Baca access_token, username, role, expires_in" vertex="1">
+          <mxGeometry height="95" width="580" x="680" y="2175" as="geometry" />
+        </mxCell>
+        <mxCell id="f_store" parent="1" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#EFF6FF;strokeColor=#3B82F6;fontColor=#1E3A8A;fontFamily=Helvetica;fontSize=13;strokeWidth=2;spacing=9;shadow=1;align=center;verticalAlign=middle;" value="&lt;b&gt;Simpan autentikasi&amp;nbsp;&lt;/b&gt;" vertex="1">
+          <mxGeometry height="105" width="580" x="680" y="2390" as="geometry" />
+        </mxCell>
+        <mxCell id="s_validate" parent="1" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#F5F3FF;strokeColor=#8B5CF6;fontColor=#4C1D95;fontFamily=Helvetica;fontSize=13;strokeWidth=2;spacing=9;shadow=1;align=center;verticalAlign=middle;" value="&lt;b&gt;Backend menerima POST /api/auth/login&lt;/b&gt;&lt;br&gt;Validasi body JSON dan field&amp;nbsp;" vertex="1">
+          <mxGeometry height="95" width="790" x="1390" y="1010" as="geometry" />
+        </mxCell>
+        <mxCell id="s_payload_valid" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FEF3C7;strokeColor=#D97706;fontColor=#78350F;fontFamily=Helvetica;fontSize=13;strokeWidth=2;spacing=9;shadow=1;align=center;verticalAlign=middle;fontStyle=1;spacing=6;" value="&lt;b&gt;Body request valid?&lt;/b&gt;" vertex="1">
+          <mxGeometry height="120" width="260" x="1655" y="1150" as="geometry" />
+        </mxCell>
+        <mxCell id="s_bad_request" parent="1" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#FEE2E2;strokeColor=#DC2626;fontColor=#7F1D1D;fontFamily=Helvetica;fontSize=13;strokeWidth=2;spacing=9;shadow=1;align=center;verticalAlign=middle;" value="&lt;b&gt;Request ditolak&lt;/b&gt;&lt;br&gt;HTTP 400 — Data login tidak valid" vertex="1">
+          <mxGeometry height="100" width="360" x="1390" y="1320" as="geometry" />
+        </mxCell>
+        <mxCell id="s_verify" parent="1" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#ECFEFF;strokeColor=#0891B2;fontColor=#164E63;fontFamily=Helvetica;fontSize=13;strokeWidth=2;spacing=9;shadow=1;align=center;verticalAlign=middle;" value="&lt;b&gt;Verifikasi kredensial&lt;/b&gt;&lt;br&gt;Cari username di PostgreSQL&lt;br&gt;Bandingkan password dengan hash Argon2id" vertex="1">
+          <mxGeometry height="120" width="380" x="1800" y="1320" as="geometry" />
+        </mxCell>
+        <mxCell id="s_match" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FEF3C7;strokeColor=#D97706;fontColor=#78350F;fontFamily=Helvetica;fontSize=13;strokeWidth=2;spacing=9;shadow=1;align=center;verticalAlign=middle;fontStyle=1;spacing=6;" value="&lt;b&gt;Username dan password cocok?&lt;/b&gt;" vertex="1">
+          <mxGeometry height="125" width="260" x="1860" y="1490" as="geometry" />
+        </mxCell>
+        <mxCell id="s_401" parent="1" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#FEE2E2;strokeColor=#DC2626;fontColor=#7F1D1D;fontFamily=Helvetica;fontSize=13;strokeWidth=2;spacing=9;shadow=1;align=center;verticalAlign=middle;" value="&lt;b&gt;Login ditolak&lt;/b&gt;&lt;br&gt;HTTP 401 — Username atau password salah" vertex="1">
+          <mxGeometry height="105" width="360" x="1390" y="1660" as="geometry" />
+        </mxCell>
+        <mxCell id="s_identity" parent="1" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#ECFEFF;strokeColor=#0891B2;fontColor=#164E63;fontFamily=Helvetica;fontSize=13;strokeWidth=2;spacing=9;shadow=1;align=center;verticalAlign=middle;" value="&lt;b&gt;Ambil identitas akun&lt;/b&gt;&lt;br&gt;user_id, role&lt;br&gt;PostgreSQL: users" vertex="1">
+          <mxGeometry height="105" width="380" x="1800" y="1660" as="geometry" />
+        </mxCell>
+        <mxCell id="s_jwt" parent="1" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#F5F3FF;strokeColor=#8B5CF6;fontColor=#4C1D95;fontFamily=Helvetica;fontSize=13;strokeWidth=2;spacing=9;shadow=1;align=center;verticalAlign=middle;" value="&lt;b&gt;Buat access token JWT&lt;/b&gt;&lt;br&gt;HS256 · masa berlaku 1 jam&lt;br&gt;Claims: sub, role, exp" vertex="1">
+          <mxGeometry height="110" width="380" x="1800" y="1810" as="geometry" />
+        </mxCell>
+        <mxCell id="s_session" parent="1" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#F5F3FF;strokeColor=#8B5CF6;fontColor=#4C1D95;fontFamily=Helvetica;fontSize=13;strokeWidth=2;spacing=9;shadow=1;align=center;verticalAlign=middle;" value="&lt;b&gt;Buat session server-side&lt;/b&gt;&lt;br&gt;Regenerasi session ID setelah login berhasil&lt;br&gt;Simpan user_id; ambil role terbaru dari database" vertex="1">
+          <mxGeometry height="100" width="380" x="1800" y="1965" as="geometry" />
+        </mxCell>
+        <mxCell id="s_redis" parent="1" style="shape=cylinder3;boundedLbl=1;size=14;whiteSpace=wrap;html=1;fillColor=#FFF7ED;strokeColor=#F97316;fontColor=#9A3412;fontFamily=Helvetica;fontSize=13;strokeWidth=2;spacing=9;shadow=1;align=center;verticalAlign=middle;fontStyle=1;" value="&lt;b&gt;Redis Session Store&lt;/b&gt;&lt;br&gt;Simpan data session dengan TTL&lt;br&gt;Session ID bersifat acak dan tidak memuat data akun" vertex="1">
+          <mxGeometry height="100" width="380" x="1800" y="2110" as="geometry" />
+        </mxCell>
+        <mxCell id="s_200" parent="1" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#DCFCE7;strokeColor=#16A34A;fontColor=#14532D;fontFamily=Helvetica;fontSize=13;strokeWidth=2;spacing=9;shadow=1;align=center;verticalAlign=middle;" value="&lt;b&gt;Response login berhasil&lt;/b&gt;&lt;br&gt;HTTP 200 + JSON: access_token, username, role, expires_in&lt;br&gt;Set-Cookie: session ID; HttpOnly; Secure; SameSite" vertex="1">
+          <mxGeometry height="125" width="790" x="1390" y="2270" as="geometry" />
+        </mxCell>
+        <mxCell id="le1" edge="1" parent="1" source="b_start" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#64748B;strokeWidth=2;endArrow=block;endFill=1;fontFamily=Helvetica;fontSize=12;fontColor=#334155;labelBackgroundColor=#FFFFFF;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="b_open" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="le2" edge="1" parent="1" source="b_open" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#0284C7;strokeWidth=2;endArrow=block;endFill=1;fontFamily=Helvetica;fontSize=12;fontColor=#334155;labelBackgroundColor=#FFFFFF;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="f_form" value="Minta halaman login">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="le3" edge="1" parent="1" source="f_form" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#3B82F6;strokeWidth=2;endArrow=block;endFill=1;fontFamily=Helvetica;fontSize=12;fontColor=#334155;labelBackgroundColor=#FFFFFF;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="b_fill" value="Form ditampilkan">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="le4" edge="1" parent="1" source="b_fill" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#0284C7;strokeWidth=2;endArrow=block;endFill=1;fontFamily=Helvetica;fontSize=12;fontColor=#334155;labelBackgroundColor=#FFFFFF;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="f_validate" value="Submit form">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="le5" edge="1" parent="1" source="f_validate" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#64748B;strokeWidth=2;endArrow=block;endFill=1;fontFamily=Helvetica;fontSize=12;fontColor=#334155;labelBackgroundColor=#FFFFFF;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="f_valid" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="le6" edge="1" parent="1" source="f_valid" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#DC2626;strokeWidth=2;endArrow=block;endFill=1;fontFamily=Helvetica;fontSize=12;fontColor=#334155;labelBackgroundColor=#FFFFFF;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0.261;entryY=0.05;entryDx=0;entryDy=0;entryPerimeter=0;" target="f_client_error" value="TIDAK">
+          <mxGeometry relative="1" x="0.1794" as="geometry">
+            <Array as="points">
+              <mxPoint x="830" y="722.5" />
+              <mxPoint x="830" y="799.8" />
+              <mxPoint x="831.4" y="799.8" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="le7" edge="1" parent="1" source="f_client_error" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#DC2626;strokeWidth=2;endArrow=block;endFill=1;fontFamily=Helvetica;fontSize=12;fontColor=#334155;labelBackgroundColor=#FFFFFF;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.75;entryDx=0;entryDy=0;" target="b_fill" value="Perbaiki input">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="le8" edge="1" parent="1" source="f_valid" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#16A34A;strokeWidth=2;endArrow=block;endFill=1;fontFamily=Helvetica;fontSize=12;fontColor=#334155;labelBackgroundColor=#FFFFFF;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="f_post" value="YA">
+          <mxGeometry relative="1" x="0.7406" as="geometry">
+            <Array as="points">
+              <mxPoint x="1320" y="722.5" />
+              <mxPoint x="1320" y="960" />
+              <mxPoint x="970" y="960" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="le9" edge="1" parent="1" source="f_post" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#3B82F6;strokeWidth=2;endArrow=block;endFill=1;fontFamily=Helvetica;fontSize=12;fontColor=#334155;labelBackgroundColor=#FFFFFF;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="s_validate" value="HTTP request">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="le10" edge="1" parent="1" source="s_validate" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#64748B;strokeWidth=2;endArrow=block;endFill=1;fontFamily=Helvetica;fontSize=12;fontColor=#334155;labelBackgroundColor=#FFFFFF;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="s_payload_valid" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="le10a" edge="1" parent="1" source="s_payload_valid" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#DC2626;strokeWidth=2;endArrow=block;endFill=1;fontFamily=Helvetica;fontSize=12;fontColor=#334155;labelBackgroundColor=#FFFFFF;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="s_bad_request" value="TIDAK">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="le10b" edge="1" parent="1" source="s_payload_valid" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#16A34A;strokeWidth=2;endArrow=block;endFill=1;fontFamily=Helvetica;fontSize=12;fontColor=#334155;labelBackgroundColor=#FFFFFF;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="s_verify" value="YA">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="le11" edge="1" parent="1" source="s_verify" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#64748B;strokeWidth=2;endArrow=block;endFill=1;fontFamily=Helvetica;fontSize=12;fontColor=#334155;labelBackgroundColor=#FFFFFF;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="s_match" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="le12" edge="1" parent="1" source="s_match" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#DC2626;strokeWidth=2;endArrow=block;endFill=1;fontFamily=Helvetica;fontSize=12;fontColor=#334155;labelBackgroundColor=#FFFFFF;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="s_401" value="TIDAK">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1780" y="1552.5" />
+              <mxPoint x="1780" y="1712.5" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="le13a" edge="1" parent="1" source="s_bad_request" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#DC2626;strokeWidth=2;endArrow=block;endFill=1;fontFamily=Helvetica;fontSize=12;fontColor=#334155;labelBackgroundColor=#FFFFFF;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.25;entryDx=0;entryDy=0;" target="f_api_error" value="HTTP 400">
+          <mxGeometry relative="1" x="-0.0005" as="geometry">
+            <Array as="points">
+              <mxPoint x="1390" y="1380" />
+              <mxPoint x="1320" y="1380" />
+              <mxPoint x="1320" y="1806.3" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="le13" edge="1" parent="1" source="s_401" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#DC2626;strokeWidth=2;endArrow=block;endFill=1;fontFamily=Helvetica;fontSize=12;fontColor=#334155;labelBackgroundColor=#FFFFFF;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.75;entryDx=0;entryDy=0;" target="f_api_error" value="HTTP 401">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1360" y="1712.5" />
+              <mxPoint x="1360" y="1858.8" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="le14" edge="1" parent="1" source="f_api_error" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#DC2626;strokeWidth=2;endArrow=block;endFill=1;fontFamily=Helvetica;fontSize=12;fontColor=#334155;labelBackgroundColor=#FFFFFF;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.95;entryDx=0;entryDy=0;" target="b_fill" value="Coba login lagi">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="le15" edge="1" parent="1" source="s_match" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#16A34A;strokeWidth=2;endArrow=block;endFill=1;fontFamily=Helvetica;fontSize=12;fontColor=#334155;labelBackgroundColor=#FFFFFF;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="s_identity" value="YA">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="le16" edge="1" parent="1" source="s_identity" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#64748B;strokeWidth=2;endArrow=block;endFill=1;fontFamily=Helvetica;fontSize=12;fontColor=#334155;labelBackgroundColor=#FFFFFF;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="s_jwt" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="le17" edge="1" parent="1" source="s_jwt" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#64748B;strokeWidth=2;endArrow=block;endFill=1;fontFamily=Helvetica;fontSize=12;fontColor=#334155;labelBackgroundColor=#FFFFFF;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="s_session" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="le18" edge="1" parent="1" source="s_session" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#64748B;strokeWidth=2;endArrow=block;endFill=1;fontFamily=Helvetica;fontSize=12;fontColor=#334155;labelBackgroundColor=#FFFFFF;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="s_redis" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="le19" edge="1" parent="1" source="s_redis" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#64748B;strokeWidth=2;endArrow=block;endFill=1;fontFamily=Helvetica;fontSize=12;fontColor=#334155;labelBackgroundColor=#FFFFFF;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="s_200" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="le20" edge="1" parent="1" source="s_200" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#16A34A;strokeWidth=2;endArrow=block;endFill=1;fontFamily=Helvetica;fontSize=12;fontColor=#334155;labelBackgroundColor=#FFFFFF;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="b_cookie" value="Set-Cookie">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1380" y="2332.5" />
+              <mxPoint x="1380" y="2150" />
+              <mxPoint x="565" y="2150" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="le21" edge="1" parent="1" source="s_200" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#16A34A;strokeWidth=2;endArrow=block;endFill=1;fontFamily=Helvetica;fontSize=12;fontColor=#334155;labelBackgroundColor=#FFFFFF;exitX=0;exitY=0.75;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="f_response" value="JSON response">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="le22" edge="1" parent="1" source="f_response" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#64748B;strokeWidth=2;endArrow=block;endFill=1;fontFamily=Helvetica;fontSize=12;fontColor=#334155;labelBackgroundColor=#FFFFFF;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="f_store" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="le23" edge="1" parent="1" source="f_store" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#16A34A;strokeWidth=2;endArrow=block;endFill=1;fontFamily=Helvetica;fontSize=12;fontColor=#334155;labelBackgroundColor=#FFFFFF;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="b_dashboard" value="Login sukses">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="api-request-web" name="02 Request API">
+    <mxGraphModel grid="1" page="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" pageScale="1" pageWidth="2260" pageHeight="2540" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="page_title" parent="1" style="text;html=1;align=left;verticalAlign=middle;fontFamily=Helvetica;fontSize=23;fontStyle=1;fontColor=#111827;spacingLeft=4;" value="02&amp;nbsp; REQUEST API" vertex="1">
+          <mxGeometry height="42" width="1500" x="30" y="12" as="geometry" />
+        </mxCell>
+        <mxCell id="header_browser" parent="1" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#E0F2FE;strokeColor=#0284C7;strokeWidth=2;fontColor=#0C4A6E;fontFamily=Helvetica;fontSize=17;align=center;verticalAlign=middle;" value="&lt;b&gt;BROWSER&lt;/b&gt;" vertex="1">
+          <mxGeometry height="38" width="590" x="20" y="65" as="geometry" />
+        </mxCell>
+        <mxCell id="header_frontend" parent="1" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#EFF6FF;strokeColor=#3B82F6;strokeWidth=2;fontColor=#1E3A8A;fontFamily=Helvetica;fontSize=17;align=center;verticalAlign=middle;" value="&lt;b&gt;FRONTEND WEB&lt;/b&gt;" vertex="1">
+          <mxGeometry height="38" width="700" x="620" y="65" as="geometry" />
+        </mxCell>
+        <mxCell id="header_backend" parent="1" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#F5F3FF;strokeColor=#8B5CF6;strokeWidth=2;fontColor=#4C1D95;fontFamily=Helvetica;fontSize=17;align=center;verticalAlign=middle;" value="&lt;b&gt;BACKEND API&lt;/b&gt;" vertex="1">
+          <mxGeometry height="38" width="910" x="1330" y="65" as="geometry" />
+        </mxCell>
+        <mxCell id="ab_start" parent="1" style="ellipse;aspect=fixed;whiteSpace=wrap;html=1;fillColor=#E0F2FE;strokeColor=#0284C7;fontColor=#0C4A6E;fontFamily=Helvetica;fontSize=13;strokeWidth=2;spacing=9;shadow=1;align=center;verticalAlign=middle;fontStyle=1;" value="MULAI" vertex="1">
+          <mxGeometry height="58" width="450" x="90" y="145" as="geometry" />
+        </mxCell>
+        <mxCell id="ab_action" parent="1" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#E0F2FE;strokeColor=#0284C7;fontColor=#0C4A6E;fontFamily=Helvetica;fontSize=13;strokeWidth=2;spacing=9;shadow=1;align=center;verticalAlign=middle;" value="&lt;b&gt;User melakukan aksi di aplikasi&lt;/b&gt;&lt;br&gt;Contoh: buka daftar/detail, beli, tambah, ubah, hapus laptop" vertex="1">
+          <mxGeometry height="105" width="500" x="65" y="265" as="geometry" />
+        </mxCell>
+        <mxCell id="ab_cookie" parent="1" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#E0F2FE;strokeColor=#0284C7;fontColor=#0C4A6E;fontFamily=Helvetica;fontSize=13;strokeWidth=2;spacing=9;shadow=1;align=center;verticalAlign=middle;" value="&lt;b&gt;Browser mengirim request&lt;/b&gt;&lt;br&gt;Cookie HttpOnly dikirim otomatis sesuai aturan browser&lt;br&gt;Authorization header dikirim jika memakai JWT" vertex="1">
+          <mxGeometry height="95" width="500" x="65" y="650" as="geometry" />
+        </mxCell>
+        <mxCell id="ab_success" parent="1" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#DCFCE7;strokeColor=#16A34A;fontColor=#14532D;fontFamily=Helvetica;fontSize=13;strokeWidth=2;spacing=9;shadow=1;align=center;verticalAlign=middle;" value="&lt;b&gt;Browser menampilkan hasil terbaru&lt;/b&gt;&lt;br&gt;UI diperbarui dari response API" vertex="1">
+          <mxGeometry height="90" width="500" x="40" y="2200" as="geometry" />
+        </mxCell>
+        <mxCell id="af_prepare" parent="1" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#EFF6FF;strokeColor=#3B82F6;fontColor=#1E3A8A;fontFamily=Helvetica;fontSize=12;strokeWidth=2;spacing=9;shadow=1;align=center;verticalAlign=middle;" value="&lt;b&gt;Frontend menyiapkan request&lt;/b&gt;&lt;br&gt;GET /api/laptops dan /{id}&lt;br&gt;POST /api/laptops dan /{id}/buy&lt;br&gt;PATCH /api/laptops/{id} · DELETE /api/laptops/{id}" vertex="1">
+          <mxGeometry height="145" width="580" x="680" y="255" as="geometry" />
+        </mxCell>
+        <mxCell id="af_auth" parent="1" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#EFF6FF;strokeColor=#3B82F6;fontColor=#1E3A8A;fontFamily=Helvetica;fontSize=13;strokeWidth=2;spacing=9;shadow=1;align=center;verticalAlign=middle;" value="&lt;b&gt;Siapkan credential request&lt;/b&gt;&lt;br&gt;Authorization: Bearer access_token (jika memakai JWT)&lt;br&gt;credentials: include (agar cookie ikut terkirim)" vertex="1">
+          <mxGeometry height="105" width="580" x="680" y="430" as="geometry" />
+        </mxCell>
+        <mxCell id="af_success" parent="1" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#DCFCE7;strokeColor=#16A34A;fontColor=#14532D;fontFamily=Helvetica;fontSize=13;strokeWidth=2;spacing=9;shadow=1;align=center;verticalAlign=middle;" value="&lt;b&gt;HTTP 2xx&lt;/b&gt;&lt;br&gt;Perbarui state dan tampilkan data" vertex="1">
+          <mxGeometry height="100" width="270" x="680" y="2100" as="geometry" />
+        </mxCell>
+        <mxCell id="af_401" parent="1" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#FEE2E2;strokeColor=#DC2626;fontColor=#7F1D1D;fontFamily=Helvetica;fontSize=13;strokeWidth=2;spacing=9;shadow=1;align=center;verticalAlign=middle;" value="&lt;b&gt;HTTP 401&lt;/b&gt;&lt;br&gt;Hapus token dan Auth State&lt;br&gt;Arahkan ke login" vertex="1">
+          <mxGeometry height="100" width="280" x="980" y="1820" as="geometry" />
+        </mxCell>
+        <mxCell id="af_403" parent="1" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#FEE2E2;strokeColor=#DC2626;fontColor=#7F1D1D;fontFamily=Helvetica;fontSize=13;strokeWidth=2;spacing=9;shadow=1;align=center;verticalAlign=middle;" value="&lt;b&gt;HTTP 403&lt;/b&gt;&lt;br&gt;Tampilkan pesan akses ditolak" vertex="1">
+          <mxGeometry height="95" width="270" x="640" y="2245" as="geometry" />
+        </mxCell>
+        <mxCell id="af_other" parent="1" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#FEE2E2;strokeColor=#DC2626;fontColor=#7F1D1D;fontFamily=Helvetica;fontSize=12;strokeWidth=2;spacing=9;shadow=1;align=center;verticalAlign=middle;" value="&lt;b&gt;Error API / jaringan&lt;/b&gt;&lt;br&gt;400, 404, 409, 500 atau koneksi gagal&lt;br&gt;Tampilkan pesan yang sesuai" vertex="1">
+          <mxGeometry height="115" width="280" x="980" y="2340" as="geometry" />
+        </mxCell>
+        <mxCell id="as_receive" parent="1" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#F5F3FF;strokeColor=#8B5CF6;fontColor=#4C1D95;fontFamily=Helvetica;fontSize=13;strokeWidth=2;spacing=9;shadow=1;align=center;verticalAlign=middle;" value="&lt;b&gt;Backend menerima request API&lt;/b&gt;&lt;br&gt;Auth Middleware memeriksa Authorization header dan cookie" vertex="1">
+          <mxGeometry height="100" width="790" x="1390" y="430" as="geometry" />
+        </mxCell>
+        <mxCell id="as_jwt" parent="1" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#F5F3FF;strokeColor=#8B5CF6;fontColor=#4C1D95;fontFamily=Helvetica;fontSize=13;strokeWidth=2;spacing=9;shadow=1;align=center;verticalAlign=middle;" value="&lt;b&gt;Jika Bearer token tersedia&lt;/b&gt;&lt;br&gt;Verifikasi signature HS256, exp, dan token_version&lt;br&gt;Jika tidak ada Bearer, lanjutkan ke session cookie" vertex="1">
+          <mxGeometry height="120" width="790" x="1390" y="585" as="geometry" />
+        </mxCell>
+        <mxCell id="as_jwtvalid" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FEF3C7;strokeColor=#D97706;fontColor=#78350F;fontFamily=Helvetica;fontSize=13;strokeWidth=2;spacing=9;shadow=1;align=center;verticalAlign=middle;fontStyle=1;spacing=6;" value="&lt;b&gt;JWT valid?&lt;/b&gt;&lt;br&gt;(jika Bearer token dikirim)" vertex="1">
+          <mxGeometry height="125" width="260" x="1655" y="760" as="geometry" />
+        </mxCell>
+        <mxCell id="as_redis" parent="1" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#FFF7ED;strokeColor=#F97316;fontColor=#9A3412;fontFamily=Helvetica;fontSize=13;strokeWidth=2;spacing=9;shadow=1;align=center;verticalAlign=middle;" value="&lt;b&gt;Fallback autentikasi session&lt;/b&gt;&lt;br&gt;Hanya dijalankan jika Authorization Bearer tidak dikirim&lt;br&gt;Ambil session ID dari cookie dan cari di Redis" vertex="1">
+          <mxGeometry height="105" width="790" x="1390" y="950" as="geometry" />
+        </mxCell>
+        <mxCell id="as_sessionvalid" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FEF3C7;strokeColor=#D97706;fontColor=#78350F;fontFamily=Helvetica;fontSize=12;strokeWidth=2;spacing=9;shadow=1;align=center;verticalAlign=middle;fontStyle=1;spacing=6;" value="&lt;font style=&quot;font-size: 10px;&quot;&gt;&lt;b&gt;Session dan akun masih valid?&lt;/b&gt;&lt;br&gt;Periksa session di Redis dan status akun di PostgreSQL&lt;br&gt;&lt;/font&gt;" vertex="1">
+          <mxGeometry height="135" width="260" x="1655" y="1110" as="geometry" />
+        </mxCell>
+        <mxCell id="as_401" parent="1" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#FEE2E2;strokeColor=#DC2626;fontColor=#7F1D1D;fontFamily=Helvetica;fontSize=13;strokeWidth=2;spacing=9;shadow=1;align=center;verticalAlign=middle;" value="&lt;b&gt;HTTP 401 — Unauthorized&lt;/b&gt;&lt;br&gt;Bearer invalid/expired, atau session tidak valid" vertex="1">
+          <mxGeometry height="105" width="360" x="1390" y="1310" as="geometry" />
+        </mxCell>
+        <mxCell id="as_identity" parent="1" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#DCFCE7;strokeColor=#16A34A;fontColor=#14532D;fontFamily=Helvetica;fontSize=13;strokeWidth=2;spacing=9;shadow=1;align=center;verticalAlign=middle;" value="&lt;b&gt;Identitas pengguna terverifikasi&lt;/b&gt;&lt;br&gt;Middleware meneruskan user_id, username, role" vertex="1">
+          <mxGeometry height="100" width="380" x="1800" y="1310" as="geometry" />
+        </mxCell>
+        <mxCell id="as_rbac" parent="1" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#F5F3FF;strokeColor=#8B5CF6;fontColor=#4C1D95;fontFamily=Helvetica;fontSize=12;strokeWidth=2;spacing=9;shadow=1;align=center;verticalAlign=middle;" value="&lt;b&gt;RBAC — Role boleh mengakses endpoint?&lt;/b&gt;&lt;br&gt;Admin: semua operasi&lt;br&gt;Buyer: GET dan POST /buy&lt;br&gt;Restocker: GET dan PATCH" vertex="1">
+          <mxGeometry height="145" width="790" x="1390" y="1480" as="geometry" />
+        </mxCell>
+        <mxCell id="as_rolevalid" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FEF3C7;strokeColor=#D97706;fontColor=#78350F;fontFamily=Helvetica;fontSize=13;strokeWidth=2;spacing=9;shadow=1;align=center;verticalAlign=middle;fontStyle=1;spacing=6;" value="&lt;b&gt;Akses diizinkan?&lt;/b&gt;" vertex="1">
+          <mxGeometry height="125" width="260" x="1655" y="1685" as="geometry" />
+        </mxCell>
+        <mxCell id="as_403" parent="1" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#FEE2E2;strokeColor=#DC2626;fontColor=#7F1D1D;fontFamily=Helvetica;fontSize=13;strokeWidth=2;spacing=9;shadow=1;align=center;verticalAlign=middle;" value="&lt;b&gt;HTTP 403 — Forbidden&lt;/b&gt;&lt;br&gt;Role tidak memiliki izin" vertex="1">
+          <mxGeometry height="100" width="360" x="1390" y="1880" as="geometry" />
+        </mxCell>
+        <mxCell id="as_handler" parent="1" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#F5F3FF;strokeColor=#8B5CF6;fontColor=#4C1D95;fontFamily=Helvetica;fontSize=13;strokeWidth=2;spacing=9;shadow=1;align=center;verticalAlign=middle;" value="&lt;b&gt;Handler memproses endpoint&lt;/b&gt;&lt;br&gt;Validasi payload dan aturan bisnis" vertex="1">
+          <mxGeometry height="100" width="380" x="1800" y="1880" as="geometry" />
+        </mxCell>
+        <mxCell id="as_db" parent="1" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#ECFEFF;strokeColor=#0891B2;fontColor=#164E63;fontFamily=Helvetica;fontSize=13;strokeWidth=2;spacing=9;shadow=1;align=center;verticalAlign=middle;" value="&lt;b&gt;Repository mengakses PostgreSQL&lt;/b&gt;&lt;br&gt;Baca / tambah / ubah / hapus data laptop&lt;br&gt;Pembelian memperbarui stok" vertex="1">
+          <mxGeometry height="120" width="380" x="1800" y="2040" as="geometry" />
+        </mxCell>
+        <mxCell id="as_response" parent="1" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#F5F3FF;strokeColor=#8B5CF6;fontColor=#4C1D95;fontFamily=Helvetica;fontSize=13;strokeWidth=2;spacing=9;shadow=1;align=center;verticalAlign=middle;" value="&lt;b&gt;Backend mengirim response JSON&lt;/b&gt;&lt;br&gt;2xx sukses · 4xx kesalahan request/izin/data&lt;br&gt;5xx kesalahan server" vertex="1">
+          <mxGeometry height="110" width="790" x="1390" y="2210" as="geometry" />
+        </mxCell>
+        <mxCell id="ae1" edge="1" parent="1" source="ab_start" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#64748B;strokeWidth=2;endArrow=block;endFill=1;fontFamily=Helvetica;fontSize=12;fontColor=#334155;labelBackgroundColor=#FFFFFF;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="ab_action" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ae2" edge="1" parent="1" source="ab_action" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#0284C7;strokeWidth=2;endArrow=block;endFill=1;fontFamily=Helvetica;fontSize=12;fontColor=#334155;labelBackgroundColor=#FFFFFF;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="af_prepare" value="Aksi diteruskan ke frontend">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ae3" edge="1" parent="1" source="af_prepare" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#64748B;strokeWidth=2;endArrow=block;endFill=1;fontFamily=Helvetica;fontSize=12;fontColor=#334155;labelBackgroundColor=#FFFFFF;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="af_auth" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ae4" edge="1" parent="1" source="af_auth" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#3B82F6;strokeWidth=2;endArrow=block;endFill=1;fontFamily=Helvetica;fontSize=12;fontColor=#334155;labelBackgroundColor=#FFFFFF;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="ab_cookie" value="Browser mengirim request">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ae5" edge="1" parent="1" source="ab_cookie" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#0284C7;strokeWidth=2;endArrow=block;endFill=1;fontFamily=Helvetica;fontSize=12;fontColor=#334155;labelBackgroundColor=#FFFFFF;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="as_receive" value="Cookie + Authorization header">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="565" y="730" />
+              <mxPoint x="1280" y="730" />
+              <mxPoint x="1280" y="480" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ae6" edge="1" parent="1" source="as_receive" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#64748B;strokeWidth=2;endArrow=block;endFill=1;fontFamily=Helvetica;fontSize=12;fontColor=#334155;labelBackgroundColor=#FFFFFF;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="as_jwt" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ae7" edge="1" parent="1" source="as_jwt" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#64748B;strokeWidth=2;endArrow=block;endFill=1;fontFamily=Helvetica;fontSize=12;fontColor=#334155;labelBackgroundColor=#FFFFFF;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="as_jwtvalid" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ae8" edge="1" parent="1" source="as_jwtvalid" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#16A34A;strokeWidth=2;endArrow=block;endFill=1;fontFamily=Helvetica;fontSize=12;fontColor=#334155;labelBackgroundColor=#FFFFFF;exitX=1;exitY=0.5;exitDx=0;exitDy=0;" target="as_identity" value="YA">
+          <mxGeometry relative="1" x="0.8673" as="geometry">
+            <Array as="points">
+              <mxPoint x="2220" y="822.5" />
+              <mxPoint x="2220" y="1260" />
+              <mxPoint x="2010" y="1260" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ae9" edge="1" parent="1" source="as_jwt" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#D97706;strokeWidth=2;endArrow=block;endFill=1;fontFamily=Helvetica;fontSize=12;fontColor=#334155;labelBackgroundColor=#FFFFFF;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0.309;entryY=0.021;entryDx=0;entryDy=0;entryPerimeter=0;" target="as_redis" value="Bearer tidak dikirim">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1370" y="645" />
+              <mxPoint x="1370" y="850" />
+              <mxPoint x="1634.1" y="850" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ae10" edge="1" parent="1" source="as_redis" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#64748B;strokeWidth=2;endArrow=block;endFill=1;fontFamily=Helvetica;fontSize=12;fontColor=#334155;labelBackgroundColor=#FFFFFF;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="as_sessionvalid" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ae11" edge="1" parent="1" source="as_sessionvalid" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#DC2626;strokeWidth=2;endArrow=block;endFill=1;fontFamily=Helvetica;fontSize=12;fontColor=#334155;labelBackgroundColor=#FFFFFF;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="as_401" value="Session tidak valid">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ae12" edge="1" parent="1" source="as_sessionvalid" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#16A34A;strokeWidth=2;endArrow=block;endFill=1;fontFamily=Helvetica;fontSize=12;fontColor=#334155;labelBackgroundColor=#FFFFFF;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="as_identity" value="YA">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ae13" edge="1" parent="1" source="as_identity" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#64748B;strokeWidth=2;endArrow=block;endFill=1;fontFamily=Helvetica;fontSize=12;fontColor=#334155;labelBackgroundColor=#FFFFFF;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="as_rbac" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ae14" edge="1" parent="1" source="as_rbac" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#64748B;strokeWidth=2;endArrow=block;endFill=1;fontFamily=Helvetica;fontSize=12;fontColor=#334155;labelBackgroundColor=#FFFFFF;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="as_rolevalid" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ae15" edge="1" parent="1" source="as_rolevalid" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#DC2626;strokeWidth=2;endArrow=block;endFill=1;fontFamily=Helvetica;fontSize=12;fontColor=#334155;labelBackgroundColor=#FFFFFF;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="as_403" value="TIDAK">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ae16" edge="1" parent="1" source="as_rolevalid" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#16A34A;strokeWidth=2;endArrow=block;endFill=1;fontFamily=Helvetica;fontSize=12;fontColor=#334155;labelBackgroundColor=#FFFFFF;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="as_handler" value="YA">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ae17" edge="1" parent="1" source="as_handler" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#64748B;strokeWidth=2;endArrow=block;endFill=1;fontFamily=Helvetica;fontSize=12;fontColor=#334155;labelBackgroundColor=#FFFFFF;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="as_db" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ae18" edge="1" parent="1" source="as_db" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#64748B;strokeWidth=2;endArrow=block;endFill=1;fontFamily=Helvetica;fontSize=12;fontColor=#334155;labelBackgroundColor=#FFFFFF;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="as_response" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ae19" edge="1" parent="1" source="as_response" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#16A34A;strokeWidth=2;endArrow=block;endFill=1;fontFamily=Helvetica;fontSize=12;fontColor=#334155;labelBackgroundColor=#FFFFFF;exitX=0;exitY=0.35;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="af_success" value="2xx">
+          <mxGeometry relative="1" x="0.0046" as="geometry">
+            <Array as="points">
+              <mxPoint x="1390" y="2250" />
+              <mxPoint x="1170" y="2250" />
+              <mxPoint x="1170" y="2150" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ae20" edge="1" parent="1" source="as_response" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#DC2626;strokeWidth=2;endArrow=block;endFill=1;fontFamily=Helvetica;fontSize=12;fontColor=#334155;labelBackgroundColor=#FFFFFF;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="af_401" value="401">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ae21" edge="1" parent="1" source="as_response" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#DC2626;strokeWidth=2;endArrow=block;endFill=1;fontFamily=Helvetica;fontSize=12;fontColor=#334155;labelBackgroundColor=#FFFFFF;exitX=0;exitY=0.75;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="af_403" value="403">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ae22" edge="1" parent="1" source="as_response" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#D97706;strokeWidth=2;endArrow=block;endFill=1;fontFamily=Helvetica;fontSize=12;fontColor=#334155;labelBackgroundColor=#FFFFFF;exitX=0;exitY=0.9;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="af_other" value="4xx / 5xx">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ae23" edge="1" parent="1" source="af_success" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#16A34A;strokeWidth=2;endArrow=block;endFill=1;fontFamily=Helvetica;fontSize=12;fontColor=#334155;labelBackgroundColor=#FFFFFF;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="ab_success" value="Response diterima">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ae24" edge="1" parent="1" source="as_401" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#DC2626;strokeWidth=2;endArrow=block;endFill=1;fontFamily=Helvetica;fontSize=12;fontColor=#334155;labelBackgroundColor=#FFFFFF;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="af_401" value="HTTP 401">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ae25" edge="1" parent="1" source="as_403" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#DC2626;strokeWidth=2;endArrow=block;endFill=1;fontFamily=Helvetica;fontSize=12;fontColor=#334155;labelBackgroundColor=#FFFFFF;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="af_403" value="HTTP 403">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ae26" edge="1" parent="1" source="as_jwtvalid" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#DC2626;fontColor=#991B1B;" target="as_401" value="TIDAK">
+          <mxGeometry relative="1" x="0.5624" as="geometry">
+            <Array as="points">
+              <mxPoint x="2230" y="822.5" />
+              <mxPoint x="2230" y="1070" />
+              <mxPoint x="1570" y="1070" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

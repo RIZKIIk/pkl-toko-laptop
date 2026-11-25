@@ -1,3 +1,6 @@
 /target/
 /.env
 /cookies.txt
+/backend/target/
+/backend/.env
+/backend/cookies.txt

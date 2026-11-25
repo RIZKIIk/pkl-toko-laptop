@@ -1,0 +1,75 @@
+/* Warna dan font utama aplikasi. */
+:root {
+  color-scheme: light;
+  --ink: #18252f;
+  --muted: #77838b;
+  --soft: #f4f6f7;
+  --line: #e8ecee;
+  --paper: #fff;
+  --navy: #1e333b;
+  --navy-2: #29434c;
+  --orange: #ee8c53;
+  --orange-soft: #fff1e8;
+  --green: #3d8a68;
+  --green-soft: #eaf5ef;
+  --red: #c45950;
+  --shadow: 0 14px 40px rgba(25, 45, 54, 0.07);
+  font-family: "DM Sans", sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+/* Aturan dasar elemen halaman dan fokus keyboard. */
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background: var(--soft);
+  color: var(--ink);
+}
+button,
+input,
+select {
+  font: inherit;
+}
+button {
+  cursor: pointer;
+}
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 3px solid rgba(238, 140, 83, 0.32);
+  outline-offset: 2px;
+}
+.boot-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--muted);
+}
+.loader {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #dce2e4;
+  border-top-color: var(--orange);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+.loader-small {
+  width: 16px;
+  height: 16px;
+}
+.loader-light {
+  border-color: rgba(255, 255, 255, 0.35);
+  border-top-color: white;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

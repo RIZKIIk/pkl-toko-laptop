@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f5f6f8" />
+    <meta name="description" content="Dashboard inventaris Toko Laptop." />
+    <title>Toko Laptop</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <!-- Styles dipisah berdasarkan area supaya tiap file mudah dicari. -->
+    <link rel="stylesheet" href="/assets/css/base.css" />
+    <link rel="stylesheet" href="/assets/css/login.css" />
+    <link rel="stylesheet" href="/assets/css/dashboard.css" />
+    <link rel="stylesheet" href="/assets/css/components.css" />
+    <link rel="stylesheet" href="/assets/css/responsive.css" />
+    <!-- Entry point memuat modul JavaScript sesuai tanggung jawabnya. -->
+    <script type="module" src="/assets/js/app.js"></script>
+  </head>
+  <body>
+    <!-- JavaScript menampilkan halaman login atau dashboard di area ini. -->
+    <main id="app" aria-live="polite">
+      <div class="boot-screen">
+        <span class="loader"></span><span>Menyiapkan Toko Laptop...</span>
+      </div>
+    </main>
+    <!-- Notifikasi dan dialog dipakai ulang di semua halaman. -->
+    <div
+      id="toast-region"
+      class="toast-region"
+      aria-live="assertive"
+      aria-atomic="true"
+    ></div>
+    <dialog id="dialog" class="dialog"></dialog>
+  </body>
+</html>
