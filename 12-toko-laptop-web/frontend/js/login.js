@@ -1,20 +1,23 @@
 // Halaman login dan pengiriman kredensial ke backend.
-import { ApiError, api, app, brand, html, icons, saveToken } from "./shared.js";
+import { ApiError, api, app, brand, html, saveToken } from "./shared.js";
+import { themeToggleMarkup } from "./theme.js";
 
 // Menampilkan form login dan mengirim kredensial ke endpoint autentikasi.
 export function renderLogin() {
-  document.title = "Masuk · Ruang Laptop";
-  const expired = new URLSearchParams(location.search).has("session");
+  document.title = "Masuk · LaptopKu";
+  const query = new URLSearchParams(location.search);
+  const expired = query.has("session");
+  const registered = query.has("registered");
   app.innerHTML = html` <section class="login-page">
     <div class="login-shell">
       <aside class="login-aside">
         ${brand()}
         <div class="login-promo">
-          <p class="eyebrow">Pusat inventaris laptop</p>
-          <h1>Semua stok,<br /><span>satu tempat.</span></h1>
+          <p class="eyebrow">Toko LaptopKu</p>
+          <h1>Laptop untuk<br /><span>kerja dan belajar.</span></h1>
           <p>
-            Kelola katalog laptop, pantau persediaan, dan bantu pelanggan
-            menemukan perangkat yang tepat.
+            Lihat produk, cek harga dan stok, lalu pilih laptop yang sesuai
+            kebutuhan.
           </p>
           <div class="login-art" aria-hidden="true">
             <span class="art-spark spark-one">✳</span
@@ -23,22 +26,24 @@ export function renderLogin() {
           </div>
         </div>
         <div class="login-foot">
-          © ${new Date().getFullYear()} Ruang Laptop · Sistem inventaris
+          © ${new Date().getFullYear()} LaptopKu · Toko laptop
         </div>
       </aside>
       <section class="login-form-side">
-        ${brand("mobile-brand")}
-        <p class="eyebrow">Selamat datang kembali</p>
-        <h2>Masuk ke akun</h2>
-        <p class="form-intro">
-          Masukkan username dan password untuk melanjutkan ke dashboard.
-        </p>
+        <div class="auth-top">
+          ${brand("mobile-brand")}${themeToggleMarkup()}
+        </div>
+        <p class="eyebrow">Masuk</p>
+        <h2>Masuk ke LaptopKu</h2>
+        <p class="form-intro">Masukkan username dan password akun Anda.</p>
         <div
           id="login-error"
-          class="login-error${expired ? " visible" : ""}"
+          class="login-error${expired || registered ? " visible" : ""}${registered ? " success" : ""}"
           role="alert"
         >
-          Sesi berakhir. Silakan masuk kembali.
+          ${expired
+            ? "Sesi berakhir. Silakan masuk kembali."
+            : "Akun berhasil dibuat. Silakan masuk."}
         </div>
         <form id="login-form" novalidate>
           <div class="field">
@@ -82,10 +87,8 @@ export function renderLogin() {
           </button>
         </form>
         <p class="login-help">
-          Belum punya akun? Hubungi administrator untuk mendapatkan akses.
-        </p>
-        <p class="secure-note">
-          ${icons.lock} Koneksi login dilindungi session aman
+          Belum punya akun?
+          <a class="auth-link" href="/register">Daftar di sini</a>
         </p>
       </section>
     </div>

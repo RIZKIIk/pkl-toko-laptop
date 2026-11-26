@@ -1,5 +1,6 @@
-// Tampilan dashboard, ringkasan stok, pencarian, dan tabel inventaris.
+// Tampilan dashboard toko, ringkasan stok, pencarian, dan daftar produk.
 import { app, brand, esc, html, icons, roleName, state } from "./shared.js";
+import { themeToggleMarkup } from "./theme.js";
 
 function statCard(icon, label, value, tone) {
   return html`<article class="stat-card">
@@ -14,22 +15,45 @@ export function normalizeLaptop(row) {
     : row;
 }
 
-// Membentuk tabel inventaris dan menerapkan pencarian lokal.
+// Membentuk daftar produk dan menerapkan pencarian lokal.
 export function inventoryMarkup(laptops) {
   const query = state.search.trim().toLocaleLowerCase("id-ID");
-  const visible = laptops.filter(
+  const matching = laptops.filter(
     (item) =>
       !query ||
       `${item.nama} ${item.merek} ${item.harga}`
         .toLocaleLowerCase("id-ID")
         .includes(query),
   );
+  const visible = matching
+    .filter((item) => {
+      const stock = Number(item.stok || 0);
+      if (state.stockFilter === "available") return stock > 0;
+      if (state.stockFilter === "low") return stock > 0 && stock < 4;
+      if (state.stockFilter === "out") return stock === 0;
+      return true;
+    })
+    .sort((a, b) => {
+      if (state.productSort === "name")
+        return a.nama.localeCompare(b.nama, "id-ID");
+      if (state.productSort === "price-asc")
+        return (
+          Number(String(a.harga).replace(/[^\d]/g, "")) -
+          Number(String(b.harga).replace(/[^\d]/g, ""))
+        );
+      if (state.productSort === "price-desc")
+        return (
+          Number(String(b.harga).replace(/[^\d]/g, "")) -
+          Number(String(a.harga).replace(/[^\d]/g, ""))
+        );
+      return 0;
+    });
   if (!visible.length && !laptops.length) {
-    const canCreate = ["admin"].includes(state.user.role);
+    const canCreate = state.user.role === "admin";
     return html`<div class="empty-state">
       <div class="empty-illustration">${icons.box}</div>
-      <strong>Belum ada laptop di inventaris</strong>
-      <p>Tambahkan produk agar katalog toko mulai terisi.</p>
+      <strong role="status" aria-live="polite">Belum ada produk laptop</strong>
+      <p>Tambahkan laptop untuk mulai menjual di LaptopKu.</p>
       ${canCreate
         ? html`<button class="primary-button" data-action="create">
             ${icons.plus} Tambah laptop
@@ -40,8 +64,11 @@ export function inventoryMarkup(laptops) {
   if (!visible.length)
     return html`<div class="empty-state">
       <div class="empty-illustration">${icons.search}</div>
-      <strong>Produk tidak ditemukan</strong>
-      <p>Coba kata kunci atau merek lain.</p>
+      <strong role="status" aria-live="polite">Produk tidak ditemukan</strong>
+      <p>Coba kata kunci lain atau tampilkan semua produk.</p>
+      <button class="secondary-button" type="button" data-action="clear-filters">
+        Hapus pencarian dan filter
+      </button>
     </div>`;
   return html`<div class="table-scroll">
       <table class="inventory-table">
@@ -49,7 +76,7 @@ export function inventoryMarkup(laptops) {
           <tr>
             <th>Produk</th>
             <th>Harga</th>
-            <th>Stok tersedia</th>
+            <th>Stok</th>
             <th>ID produk</th>
             <th aria-label="Aksi"></th>
           </tr>
@@ -57,10 +84,10 @@ export function inventoryMarkup(laptops) {
         <tbody id="inventory-body">
           ${visible
             .map((item) => {
+              const stock = Number(item.stok || 0);
               const stockClass =
-                item.stok === 0 ? "out" : item.stok < 4 ? "low" : "";
-              const stockLabel =
-                item.stok === 0 ? "Habis" : `${item.stok} unit`;
+                stock === 0 ? "out" : stock < 4 ? "low" : "";
+              const stockLabel = stock === 0 ? "Habis" : `${stock} unit`;
               return html`<tr>
                 <td>
                   <div class="product-name">
@@ -94,8 +121,8 @@ export function inventoryMarkup(laptops) {
       </table>
     </div>
     <div class="table-footer">
-      <span>Menampilkan ${visible.length} dari ${laptops.length} produk</span
-      ><span>Data inventaris terkini</span>
+      <span role="status" aria-live="polite">Menampilkan ${visible.length} dari ${laptops.length} produk</span
+      ><span>Produk LaptopKu</span>
     </div>`;
 }
 
@@ -117,27 +144,46 @@ export function renderDashboard() {
     year: "numeric",
   }).format(new Date());
   const initial = (user.username || "U").trim().charAt(0).toUpperCase();
-  document.title = "Dashboard · Ruang Laptop";
+  const isMobile = window.matchMedia("(max-width: 620px)").matches;
+  const toggleLabel = isMobile
+    ? "Buka menu"
+    : state.sidebarCollapsed
+      ? "Besarkan sidebar"
+      : "Kecilkan sidebar";
+  const toggleExpanded = String(isMobile ? false : !state.sidebarCollapsed);
+  document.title = "Dashboard · LaptopKu";
   app.innerHTML = html` <div class="sidebar-shade" id="sidebar-shade"></div>
-    <div class="app-layout">
+    <div class="app-layout${state.sidebarCollapsed ? " sidebar-collapsed" : ""}">
       <aside class="sidebar" id="sidebar">
         ${brand()}
         <p class="sidebar-label">Menu utama</p>
-        <div class="nav-link active">
-          ${`<span class="nav-icon">${icons.grid}</span>`}<span>Dashboard</span>
-        </div>
-        <div class="nav-link">
-          ${`<span class="nav-icon">${icons.laptop}</span>`}<span
-            >Inventaris laptop</span
+        <nav class="sidebar-nav" aria-label="Menu utama">
+          <a
+            class="nav-link active"
+            href="#dashboard-top"
+            data-action="nav-dashboard"
+            aria-label="Dashboard"
+            aria-current="page"
+            title="Dashboard"
           >
-        </div>
+            <span class="nav-icon">${icons.grid}</span>
+            <span class="nav-label">Dashboard</span>
+          </a>
+          <a
+            class="nav-link"
+            href="#products"
+            data-action="nav-products"
+            aria-label="Produk laptop"
+            title="Produk laptop"
+          >
+            <span class="nav-icon">${icons.laptop}</span>
+            <span class="nav-label">Produk laptop</span>
+          </a>
+        </nav>
         <div class="sidebar-bottom">
           <div class="help-card">
             <strong>Butuh bantuan?</strong
-            ><span
-              >Hubungi administrator jika Anda memerlukan akses atau bantuan
-              akun.</span
-            >
+            ><span>Hubungi admin toko.</span>
           </div>
           <div class="profile-mini">
             <span class="avatar">${esc(initial)}</span>
@@ -158,28 +204,36 @@ export function renderDashboard() {
       </aside>
       <section class="main-area">
         <header class="topbar">
-          <button class="mobile-menu" data-action="menu" aria-label="Buka menu">
+          <button
+            class="sidebar-toggle"
+            type="button"
+            data-action="menu"
+            aria-label="${toggleLabel}"
+            aria-expanded="${toggleExpanded}"
+            title="${toggleLabel}"
+          >
             ${icons.menu}
           </button>
           <div class="breadcrumb">
-            <span>Ruang Laptop</span><span aria-hidden="true">/</span
+            <span>LaptopKu</span><span aria-hidden="true">/</span
             ><strong>Dashboard</strong>
           </div>
           <div class="topbar-right">
+            ${themeToggleMarkup()}
             <span class="date-chip">${esc(dateText)}</span
             ><span class="avatar top-avatar">${esc(initial)}</span>
           </div>
         </header>
-        <main class="content">
+        <main class="content" id="dashboard-top">
           <div class="welcome-row">
             <div>
               <p class="eyebrow eyebrow-compact">Ringkasan toko</p>
-              <h1>Halo, ${esc(user.username)} 👋</h1>
-              <p>Berikut kondisi inventaris laptop Anda hari ini.</p>
+              <h1>Selamat datang, ${esc(user.username)}</h1>
+              <p>Ringkasan produk dan stok LaptopKu.</p>
             </div>
             <div class="welcome-actions">
               <button class="secondary-button" data-action="refresh">
-                ${icons.trend} Perbarui data</button
+                ${icons.trend} Muat ulang</button
               >${canCreate
                 ? html`<button class="primary-button" data-action="create">
                     ${icons.plus} Tambah laptop
@@ -187,16 +241,16 @@ export function renderDashboard() {
                 : ""}
             </div>
           </div>
-          <section class="stats-grid" aria-label="Ringkasan inventaris">
-            ${statCard(icons.laptop, "Jenis laptop", state.laptops.length, "")}
-            ${statCard(icons.box, "Total unit tersedia", totalStock, "green")}
+          <section class="stats-grid" aria-label="Ringkasan toko">
+            ${statCard(icons.laptop, "Model laptop", state.laptops.length, "")}
+            ${statCard(icons.box, "Total stok", totalStock, "green")}
             ${statCard(icons.trend, "Stok menipis", lowStock, "blue")}
           </section>
-          <section class="inventory-panel">
+          <section class="inventory-panel" id="products">
             <div class="panel-heading">
               <div>
-                <h2>Inventaris laptop</h2>
-                <p>Daftar produk yang tersedia di toko Anda</p>
+                <h2>Produk laptop</h2>
+                <p>Laptop yang dijual di LaptopKu.</p>
               </div>
               <div class="panel-tools">
                 <label class="search-box"
@@ -206,7 +260,25 @@ export function renderDashboard() {
                     value="${esc(state.search)}"
                     placeholder="Cari nama atau merek..."
                     aria-label="Cari nama atau merek" /></label
-                ><span class="role-badge ${esc(user.role)}"
+                ><select
+                  class="tool-select"
+                  id="stock-filter"
+                  aria-label="Filter berdasarkan stok"
+                >
+                  <option value="all" ${state.stockFilter === "all" ? "selected" : ""}>Semua stok</option>
+                  <option value="available" ${state.stockFilter === "available" ? "selected" : ""}>Tersedia</option>
+                  <option value="low" ${state.stockFilter === "low" ? "selected" : ""}>Menipis</option>
+                  <option value="out" ${state.stockFilter === "out" ? "selected" : ""}>Habis</option>
+                </select><select
+                  class="tool-select sort-select"
+                  id="product-sort"
+                  aria-label="Urutkan produk"
+                >
+                  <option value="default" ${state.productSort === "default" ? "selected" : ""}>Urutan awal</option>
+                  <option value="name" ${state.productSort === "name" ? "selected" : ""}>Nama A–Z</option>
+                  <option value="price-asc" ${state.productSort === "price-asc" ? "selected" : ""}>Harga terendah</option>
+                  <option value="price-desc" ${state.productSort === "price-desc" ? "selected" : ""}>Harga tertinggi</option>
+                </select><span class="role-badge ${esc(user.role)}"
                   >${esc(roleName(user.role))}</span
                 >
               </div>

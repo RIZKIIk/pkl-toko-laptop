@@ -13,6 +13,7 @@ import { normalizeLaptop } from "./dashboard-view.js";
 import { refreshDashboard } from "./dashboard.js";
 
 function showDialog(title, subtitle, body, onReady) {
+  const wasOpen = dialog.open;
   dialog.innerHTML = html`<div class="dialog-head">
       <div>
         <h2>${title}</h2>
@@ -21,65 +22,72 @@ function showDialog(title, subtitle, body, onReady) {
       <button
         class="dialog-close"
         data-action="close-dialog"
+        type="button"
         aria-label="Tutup"
+        title="Tutup dialog"
       >
-        ×
+        ${icons.close}
       </button>
     </div>
     <div class="dialog-body">${body}</div>`;
-  dialog.showModal();
+  if (!wasOpen) dialog.showModal();
   if (onReady) onReady();
+  dialog
+    .querySelector("#laptop-form input, #buy-form input, .dialog-close")
+    ?.focus({ preventScroll: true });
 }
 
 function laptopForm(laptop = {}) {
   return html`<form id="laptop-form">
-    <div class="field">
-      <label for="laptop-name">Nama laptop</label
-      ><input
-        id="laptop-name"
-        name="nama"
-        required
-        maxlength="150"
-        placeholder="Contoh: ThinkPad E14"
-        value="${esc(laptop.nama || "")}"
-      />
-    </div>
-    <div class="field">
-      <label for="laptop-brand">Merek</label
-      ><input
-        id="laptop-brand"
-        name="merek"
-        required
-        maxlength="100"
-        placeholder="Contoh: Lenovo"
-        value="${esc(laptop.merek || "")}"
-      />
-    </div>
-    <div class="field">
-      <label for="laptop-price">Harga (Rupiah)</label
-      ><input
-        id="laptop-price"
-        name="harga"
-        type="number"
-        min="0"
-        step="1"
-        required
-        placeholder="12500000"
-        value="${laptop.hargaNumber ?? ""}"
-      />
-    </div>
-    <div class="field">
-      <label for="laptop-stock">Jumlah stok</label
-      ><input
-        id="laptop-stock"
-        name="stok"
-        type="number"
-        min="0"
-        step="1"
-        required
-        placeholder="5"
-        value="${laptop.stok ?? ""}"
-      />
+    <div class="form-grid">
+      <div class="field">
+        <label for="laptop-name">Nama laptop</label
+        ><input
+          id="laptop-name"
+          name="nama"
+          required
+          maxlength="150"
+          placeholder="Contoh: ThinkPad E14"
+          value="${esc(laptop.nama || "")}"
+        />
+      </div>
+      <div class="field">
+        <label for="laptop-brand">Merek</label
+        ><input
+          id="laptop-brand"
+          name="merek"
+          required
+          maxlength="100"
+          placeholder="Contoh: Lenovo"
+          value="${esc(laptop.merek || "")}"
+        />
+      </div>
+      <div class="field">
+        <label for="laptop-price">Harga (Rupiah)</label
+        ><input
+          id="laptop-price"
+          name="harga"
+          type="number"
+          min="0"
+          step="1"
+          required
+          placeholder="12500000"
+          value="${laptop.hargaNumber ?? ""}"
+        />
+      </div>
+      <div class="field">
+        <label for="laptop-stock">Jumlah stok</label
+        ><input
+          id="laptop-stock"
+          name="stok"
+          type="number"
+          min="0"
+          step="1"
+          required
+          placeholder="5"
+          value="${laptop.stok ?? ""}"
+        />
+      </div>
     </div>
     <div class="dialog-actions">
       <button class="secondary-button" type="button" data-action="close-dialog">
@@ -162,7 +170,7 @@ export async function openDetail(id) {
             <span>Harga</span><strong>${esc(laptop.harga)}</strong>
           </div>
           <div class="detail-item">
-            <span>Stok tersedia</span><strong>${laptop.stok} unit</strong>
+            <span>Stok</span><strong>${laptop.stok} unit</strong>
           </div>
           <div class="detail-item">
             <span>ID produk</span><strong>#${esc(laptop.id)}</strong>
@@ -285,7 +293,7 @@ export async function openEdit(id) {
 
 export async function deleteLaptop(id) {
   const item = state.laptops.find((laptop) => String(laptop.id) === String(id));
-  if (!window.confirm(`Hapus ${item?.nama || "laptop ini"} dari inventaris?`))
+  if (!window.confirm(`Hapus ${item?.nama || "laptop ini"} dari toko?`))
     return;
   try {
     const result = await api(`/api/laptops/${encodeURIComponent(id)}`, {

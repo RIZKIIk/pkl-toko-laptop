@@ -1,6 +1,9 @@
 // Titik masuk browser untuk memilih halaman dan menghubungkan aksi UI.
 import { api, app, dialog, reportError, saveToken, state } from "./shared.js";
 import { renderLogin } from "./login.js";
+import { renderRegister } from "./register.js";
+import { initSidebarControls } from "./sidebar.js";
+import { toggleTheme } from "./theme.js";
 import { openDashboard, refreshDashboard } from "./dashboard.js";
 import { inventoryMarkup } from "./dashboard-view.js";
 import {
@@ -23,9 +26,11 @@ async function logout() {
   location.assign("/login");
 }
 
-// Delegasi event membuat tombol dari markup dinamis tetap berfungsi.
+initSidebarControls();
 
-app.addEventListener("click", (event) => {
+// Dialog berada di luar #app, jadi seluruh aksi tombol didelegasikan ke document.
+document.addEventListener("click", (event) => {
+  if (!(event.target instanceof Element)) return;
   const control = event.target.closest("[data-action]");
   if (!control) return;
   const action = control.dataset.action;
@@ -34,13 +39,24 @@ app.addEventListener("click", (event) => {
   if (action === "edit") openEdit(control.dataset.id);
   if (action === "delete") deleteLaptop(control.dataset.id);
   if (action === "logout") logout();
+  if (action === "theme-toggle") toggleTheme();
   if (action === "refresh") refreshDashboard();
   if (action === "retry") openDashboard();
-  if (action === "close-dialog") dialog.close();
-  if (action === "menu") {
-    document.querySelector("#sidebar")?.classList.toggle("open");
-    document.querySelector("#sidebar-shade")?.classList.toggle("open");
+  if (action === "clear-filters") {
+    state.search = "";
+    state.stockFilter = "all";
+    state.productSort = "default";
+    const search = document.querySelector("#search");
+    const stockFilter = document.querySelector("#stock-filter");
+    const productSort = document.querySelector("#product-sort");
+    if (search) search.value = "";
+    if (stockFilter) stockFilter.value = "all";
+    if (productSort) productSort.value = "default";
+    const target = document.querySelector("#inventory-content");
+    if (target) target.innerHTML = inventoryMarkup(state.laptops);
+    search?.focus({ preventScroll: true });
   }
+  if (action === "close-dialog") dialog.close();
 });
 app.addEventListener("input", (event) => {
   if (event.target.id !== "search") return;
@@ -48,15 +64,20 @@ app.addEventListener("input", (event) => {
   const target = document.querySelector("#inventory-content");
   if (target) target.innerHTML = inventoryMarkup(state.laptops);
 });
-app.addEventListener("click", (event) => {
-  if (event.target.id === "sidebar-shade") {
-    document.querySelector("#sidebar")?.classList.remove("open");
-    event.target.classList.remove("open");
-  }
+app.addEventListener("change", (event) => {
+  if (event.target.id === "stock-filter")
+    state.stockFilter = event.target.value;
+  else if (event.target.id === "product-sort")
+    state.productSort = event.target.value;
+  else return;
+
+  const target = document.querySelector("#inventory-content");
+  if (target) target.innerHTML = inventoryMarkup(state.laptops);
 });
 dialog.addEventListener("click", (event) => {
   if (event.target === dialog) dialog.close();
 });
 
 if (location.pathname === "/dashboard") openDashboard();
+else if (location.pathname === "/register") renderRegister();
 else renderLogin();

@@ -1,8 +1,8 @@
-# Toko Laptop App
+# Backend LaptopKu
 
-REST API inventaris laptop yang dibuat dengan Rust, Axum, SQLx, dan PostgreSQL. Proyek ini cocok untuk belajar alur request API dari route sampai query database.
+REST API toko laptop LaptopKu yang dibuat dengan Rust, Axum, SQLx, dan PostgreSQL. Proyek ini cocok untuk belajar alur request dari route sampai query database.
 
-![Ilustrasi alur request Toko Laptop App](catatan/ilustrasi/halaman/00-readme-overview.svg "Alur request dari client ke PostgreSQL dan kembali sebagai JSON")
+![Ilustrasi alur request LaptopKu](catatan/ilustrasi/halaman/00-readme-overview.svg "Alur request dari client ke PostgreSQL dan kembali sebagai JSON")
 
 ## Mulai cepat
 
@@ -40,7 +40,7 @@ cargo run
 
 Migration diterapkan otomatis saat startup. Pada database baru, urutan migration membentuk skema final yang sama, lalu aplikasi membuat akun admin berdasarkan konfigurasi. Password lama yang masih tersimpan sebagai teks biasa akan di-hash dengan Argon2id sebelum kolom lama dihapus. Untuk memindahkan aplikasi, siapkan PostgreSQL, database kosong, dan `.env` yang sesuai di mesin tujuan, lalu jalankan `cargo run`; skema tidak bergantung pada data lokal yang perlu disalin. Jika server berhasil dimulai, periksa [http://127.0.0.1:3001/health](http://127.0.0.1:3001/health) atau ubah alamat sesuai `APP_HOST` dan `APP_PORT`.
 
-Frontend dapat dibuka di [http://127.0.0.1:3001/login](http://127.0.0.1:3001/login); alamat `/` juga mengarahkan ke halaman login. Setelah login, dashboard menampilkan inventaris dan aksi sesuai role: buyer dapat melihat detail serta membeli laptop, restocker dapat memperbarui laptop, dan admin dapat menambah, mengubah, atau menghapus laptop. Frontend memakai session cookie dan JWT yang dikembalikan API.
+Frontend dapat dibuka di [http://127.0.0.1:3001/login](http://127.0.0.1:3001/login); alamat `/` juga mengarahkan ke halaman login. Pengguna dapat membuat akun pembeli di `/register`. Dashboard menyediakan mode terang/gelap dan sidebar yang bisa diciutkan di desktop. Buyer dapat melihat detail serta membeli laptop, restocker dapat memperbarui produk, dan admin dapat menambah, mengubah, atau menghapus laptop.
 
 Data session disimpan di Redis dan dapat dipakai bersama oleh beberapa instance backend. Server membutuhkan Redis saat startup; jika koneksi gagal, aplikasi tidak mulai melayani request. Konfigurasi lokal memakai volume dan AOF melalui [compose.yaml](compose.yaml).
 

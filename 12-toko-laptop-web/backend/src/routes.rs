@@ -53,6 +53,7 @@ pub fn buat_router(
     Router::new()
         .route("/", get(|| async { Redirect::temporary("/login") }))
         .route("/login", get(halaman_frontend))
+        .route("/register", get(halaman_frontend))
         .route("/dashboard", get(halaman_frontend))
         .route("/assets/{*path}", get(aset_frontend))
         .route("/health", get(handlers::cek_kesehatan))
@@ -93,9 +94,17 @@ async fn aset_frontend(Path(path): Path<String>) -> Response {
             "text/css; charset=utf-8",
             include_str!("../../frontend/css/responsive.css"),
         ),
+        "css/theme.css" => (
+            "text/css; charset=utf-8",
+            include_str!("../../frontend/css/theme.css"),
+        ),
         "js/app.js" => (
             "text/javascript; charset=utf-8",
             include_str!("../../frontend/js/app.js"),
+        ),
+        "js/theme-init.js" => (
+            "text/javascript; charset=utf-8",
+            include_str!("../../frontend/js/theme-init.js"),
         ),
         "js/shared.js" => (
             "text/javascript; charset=utf-8",
@@ -104,6 +113,18 @@ async fn aset_frontend(Path(path): Path<String>) -> Response {
         "js/login.js" => (
             "text/javascript; charset=utf-8",
             include_str!("../../frontend/js/login.js"),
+        ),
+        "js/theme.js" => (
+            "text/javascript; charset=utf-8",
+            include_str!("../../frontend/js/theme.js"),
+        ),
+        "js/register.js" => (
+            "text/javascript; charset=utf-8",
+            include_str!("../../frontend/js/register.js"),
+        ),
+        "js/sidebar.js" => (
+            "text/javascript; charset=utf-8",
+            include_str!("../../frontend/js/sidebar.js"),
         ),
         "js/dashboard-view.js" => (
             "text/javascript; charset=utf-8",

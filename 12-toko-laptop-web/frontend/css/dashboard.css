@@ -3,6 +3,10 @@
   min-height: 100vh;
   display: grid;
   grid-template-columns: 246px minmax(0, 1fr);
+  transition: grid-template-columns 0.2s ease;
+}
+.app-layout.sidebar-collapsed {
+  grid-template-columns: 76px minmax(0, 1fr);
 }
 .sidebar {
   position: sticky;
@@ -25,6 +29,10 @@
   letter-spacing: 1.4px;
   text-transform: uppercase;
 }
+.sidebar-nav {
+  display: grid;
+  gap: 3px;
+}
 .nav-link {
   min-height: 43px;
   margin: 3px 0;
@@ -35,6 +43,14 @@
   border-radius: 8px;
   color: #c3d0d1;
   font-size: 13px;
+  text-decoration: none;
+  transition:
+    color 0.16s,
+    background 0.16s;
+}
+.nav-link:hover {
+  color: white;
+  background: rgba(255, 255, 255, 0.08);
 }
 .nav-link.active {
   color: white;
@@ -50,6 +66,37 @@
 .nav-icon svg {
   width: 17px;
   height: 17px;
+}
+.sidebar-collapsed .sidebar {
+  padding-inline: 10px;
+}
+.sidebar-collapsed .sidebar .brand {
+  justify-content: center;
+  gap: 0;
+  padding: 0;
+}
+.sidebar-collapsed .brand-name,
+.sidebar-collapsed .sidebar-label,
+.sidebar-collapsed .nav-label,
+.sidebar-collapsed .help-card,
+.sidebar-collapsed .profile-copy {
+  display: none;
+}
+.sidebar-collapsed .sidebar-nav {
+  margin-top: 45px;
+}
+.sidebar-collapsed .nav-link {
+  justify-content: center;
+  padding-inline: 0;
+}
+.sidebar-collapsed .nav-icon {
+  width: auto;
+}
+.sidebar-collapsed .profile-mini {
+  flex-direction: column;
+  justify-content: center;
+  gap: 11px;
+  padding: 13px 0 0;
 }
 .sidebar-bottom {
   margin-top: auto;
@@ -270,8 +317,9 @@
   margin-top: 25px;
   overflow: hidden;
   border: 1px solid var(--line);
-  border-radius: 13px;
+  border-radius: 15px;
   background: var(--paper);
+  box-shadow: 0 8px 28px rgba(25, 45, 54, 0.035);
 }
 .panel-heading {
   min-height: 76px;
@@ -409,16 +457,23 @@
 .row-action {
   width: 31px;
   height: 31px;
-  border: 0;
+  border: 1px solid #e7ecee;
   border-radius: 7px;
   display: inline-grid;
   place-items: center;
-  color: #65747a;
-  background: transparent;
+  color: #52666c;
+  background: white;
+  transition:
+    border-color 0.16s,
+    color 0.16s,
+    background 0.16s,
+    transform 0.16s;
 }
 .row-action:hover {
+  border-color: #cedbdd;
   color: var(--navy);
   background: #eff3f4;
+  transform: translateY(-1px);
 }
 .row-action svg {
   width: 16px;
@@ -493,4 +548,195 @@
 .role-badge.restocker {
   color: #5b836c;
   background: #edf5ef;
+}
+
+/* Polesan dashboard: ruang lebih lega, kontrol jelas, dan tabel mudah dipindai. */
+.app-layout {
+  background:
+    radial-gradient(ellipse at 100% 0, rgba(245, 201, 73, 0.07), transparent 28%),
+    var(--soft);
+}
+.sidebar {
+  background: linear-gradient(180deg, #203b40 0%, var(--navy) 74%);
+}
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: color-mix(in srgb, var(--paper) 92%, transparent);
+  backdrop-filter: blur(14px);
+}
+.content {
+  width: min(1320px, 100%);
+  padding-top: 43px;
+}
+.welcome-row h1 {
+  letter-spacing: -1.35px;
+}
+.stats-grid {
+  gap: 17px;
+  margin-top: 32px;
+}
+.stat-card {
+  position: relative;
+  min-height: 122px;
+  overflow: hidden;
+  border-radius: 15px;
+  box-shadow: 0 7px 22px rgba(25, 45, 54, 0.025);
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    border-color 0.18s ease;
+}
+.stat-card::after {
+  position: absolute;
+  right: -28px;
+  bottom: -47px;
+  width: 112px;
+  height: 112px;
+  border: 1px solid color-mix(in srgb, var(--line) 76%, transparent);
+  border-radius: 50%;
+  content: "";
+  pointer-events: none;
+}
+.stat-card:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--orange) 30%, var(--line));
+  box-shadow: 0 13px 28px rgba(25, 45, 54, 0.07);
+}
+.stat-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 13px;
+}
+.stat-copy span {
+  font-size: 12px;
+}
+.stat-copy strong {
+  font-size: 23px;
+}
+.inventory-panel {
+  margin-top: 29px;
+  border-radius: 17px;
+  box-shadow: 0 12px 32px rgba(25, 45, 54, 0.045);
+}
+.panel-heading {
+  min-height: 86px;
+  padding: 19px 22px;
+}
+.panel-heading h2 {
+  font-size: 16px;
+}
+.panel-heading p {
+  margin-top: 6px;
+  font-size: 12px;
+}
+.panel-tools {
+  gap: 8px;
+}
+.search-box {
+  display: block;
+}
+.search-box input,
+.tool-select {
+  height: 41px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  color: var(--ink);
+  background: var(--field-surface);
+  font-size: 12px;
+  transition:
+    border-color 0.16s ease,
+    box-shadow 0.16s ease;
+}
+.search-box input {
+  width: 224px;
+  padding-left: 36px;
+}
+.search-box input:focus,
+.tool-select:focus {
+  border-color: color-mix(in srgb, var(--orange) 68%, white);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(238, 140, 83, 0.12);
+}
+.search-box:focus-within svg {
+  color: var(--orange);
+}
+.tool-select {
+  min-width: 126px;
+  padding: 0 29px 0 11px;
+}
+.sort-select {
+  min-width: 142px;
+}
+.inventory-table th {
+  padding: 14px 19px;
+  font-size: 10px;
+}
+.inventory-table td {
+  padding: 16px 19px;
+  font-size: 12px;
+}
+.inventory-table tbody tr:hover {
+  background: color-mix(in srgb, var(--surface-muted) 68%, var(--paper));
+}
+.product-name {
+  gap: 13px;
+}
+.product-thumb {
+  width: 44px;
+  height: 42px;
+  border-radius: 11px;
+  color: #46646b;
+  background: linear-gradient(145deg, #f0f5f3, #e5eeea);
+}
+.product-thumb svg {
+  width: 23px;
+  height: 23px;
+}
+.product-title {
+  font-size: 12px;
+}
+.product-subtitle {
+  margin-top: 4px;
+  font-size: 11px;
+}
+.stock-pill {
+  min-height: 25px;
+  align-items: center;
+  padding-inline: 10px;
+  font-size: 11px;
+}
+.row-action {
+  width: 35px;
+  height: 35px;
+  border-radius: 9px;
+}
+.empty-state {
+  padding: 60px 20px;
+}
+.empty-state p {
+  margin-top: 7px;
+  font-size: 12px;
+}
+.empty-state .secondary-button {
+  margin-top: 17px;
+  min-height: 40px;
+  font-size: 12px;
+}
+.table-footer {
+  min-height: 53px;
+  font-size: 11px;
+}
+@media (max-width: 1050px) {
+  .panel-tools {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+  .search-box input {
+    width: 200px;
+  }
+  .sort-select {
+    min-width: 130px;
+  }
 }

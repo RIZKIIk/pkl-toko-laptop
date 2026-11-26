@@ -39,12 +39,30 @@
   }
   .panel-tools {
     width: 100%;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(130px, 0.8fr);
+    justify-content: stretch;
+    align-items: center;
   }
   .search-box {
-    flex: 1;
+    grid-column: 1 / -1;
   }
   .search-box input {
     width: 100%;
+  }
+  .panel-tools .tool-select {
+    width: 100%;
+    min-width: 0;
+  }
+  .panel-tools .role-badge {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+  .topbar {
+    backdrop-filter: blur(12px);
+  }
+  .content {
+    padding-top: 30px;
   }
 }
 @media (max-width: 620px) {
@@ -56,6 +74,7 @@
     min-height: 100vh;
     grid-template-columns: 1fr;
     border-radius: 0;
+    border: 0;
     box-shadow: none;
   }
   .login-aside {
@@ -68,7 +87,7 @@
   }
   .mobile-brand {
     display: inline-flex;
-    margin-bottom: 46px;
+    margin-bottom: 0;
   }
   .login-form-side h2 {
     font-size: 27px;
@@ -105,29 +124,74 @@
     height: 62px;
     padding: 0 17px;
   }
-  .mobile-menu {
+  .sidebar-toggle {
     width: 32px;
     height: 32px;
     margin-right: 8px;
-    border: 0;
     border-radius: 7px;
     display: grid;
     place-items: center;
     color: #596970;
     background: transparent;
   }
-  .mobile-menu svg {
+  .sidebar-toggle svg {
     width: 19px;
     height: 19px;
   }
+  .app-layout.sidebar-collapsed .sidebar {
+    padding: 25px 17px;
+  }
+  .app-layout.sidebar-collapsed .sidebar .brand {
+    justify-content: flex-start;
+    gap: 11px;
+    padding: 0 10px;
+  }
+  .app-layout.sidebar-collapsed .brand-name,
+  .app-layout.sidebar-collapsed .sidebar-label,
+  .app-layout.sidebar-collapsed .nav-label,
+  .app-layout.sidebar-collapsed .help-card,
+  .app-layout.sidebar-collapsed .profile-copy {
+    display: revert;
+  }
+  .app-layout.sidebar-collapsed .sidebar-nav {
+    margin-top: 0;
+  }
+  .app-layout.sidebar-collapsed .nav-link {
+    justify-content: flex-start;
+    padding-inline: 12px;
+  }
+  .app-layout.sidebar-collapsed .nav-icon {
+    width: 19px;
+  }
+  .app-layout.sidebar-collapsed .profile-mini {
+    flex-direction: row;
+    justify-content: flex-start;
+    padding: 13px 8px 0;
+  }
   .breadcrumb {
     margin-right: auto;
+    font-size: 11px;
+  }
+  .topbar-right {
+    gap: 8px;
+  }
+  .topbar-right .theme-toggle {
+    width: 34px;
+    min-height: 34px;
+    padding: 0;
+  }
+  .topbar-right .theme-toggle-label {
+    display: none;
   }
   .date-chip {
     display: none;
   }
   .content {
     padding: 27px 16px 42px;
+  }
+  #dashboard-top,
+  #products {
+    scroll-margin-top: 78px;
   }
   .welcome-row {
     align-items: flex-start;
@@ -161,11 +225,36 @@
   .inventory-panel {
     margin-top: 17px;
   }
+  .dialog {
+    width: calc(100% - 20px);
+    max-height: 92dvh;
+    border-radius: 15px;
+  }
+  .dialog-head {
+    padding: 17px 18px 15px;
+  }
+  .dialog-body {
+    padding: 18px;
+  }
+  .form-grid,
+  .detail-list {
+    grid-template-columns: 1fr;
+  }
+  .dialog-actions button {
+    flex: 1;
+  }
   .panel-heading {
     padding: 16px;
   }
   .panel-tools {
-    gap: 7px;
+    gap: 8px;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+  .panel-tools .search-box {
+    grid-column: 1 / -1;
+  }
+  .panel-tools .role-badge {
+    grid-column: 1 / -1;
   }
   .table-footer {
     padding: 0 13px;
