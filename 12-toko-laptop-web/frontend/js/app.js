@@ -6,6 +6,7 @@ import { initSidebarControls } from "./sidebar.js";
 import { toggleTheme } from "./theme.js";
 import { openDashboard, refreshDashboard } from "./dashboard.js";
 import { inventoryMarkup } from "./dashboard-view.js";
+import { openCreateUser } from "./user-actions.js";
 import {
   deleteLaptop,
   openCreate,
@@ -35,6 +36,7 @@ document.addEventListener("click", (event) => {
   if (!control) return;
   const action = control.dataset.action;
   if (action === "create") openCreate();
+  if (action === "create-user") openCreateUser();
   if (action === "detail") openDetail(control.dataset.id);
   if (action === "edit") openEdit(control.dataset.id);
   if (action === "delete") deleteLaptop(control.dataset.id);

@@ -13,6 +13,8 @@ File ini menjadi peta URL API. Ia menentukan method HTTP mana yang memanggil fun
 
 Tidak ada validasi, SQL, atau format response di sini. Pemisahan ini membuat daftar endpoint mudah dilihat dari satu file.
 
+Route `GET /assets/{*path}` juga menyajikan file frontend dari allowlist compile-time. Setiap path harus ditambahkan secara eksplisit pada `aset_frontend`; contoh ilustrasi SVG login ada pada `frontend/images/laptopku-hero.svg`.
+
 ## Peta route
 
 ```text
@@ -88,6 +90,7 @@ Method yang tidak didaftarkan pada URL tersebut tidak akan menuju handler ini. C
 | POST | `/api/laptops/{id}/buy` | `beli_laptop` | `State(pool)`, `Path<i64>`, dan jumlah pembelian dalam JSON. Buyer dapat mengakses endpoint ini. |
 | PATCH | `/api/laptops/{id}` | `ubah_laptop` | `State(pool)`, `Path<i64>`, dan `Json<UpdateLaptopPayload>`. |
 | DELETE | `/api/laptops/{id}` | `hapus_laptop` | `State(pool)` dan `Path<i64>`. |
+| GET | `/api/admin/roles` | `daftar_peran_admin` | Middleware membatasi endpoint ke admin; menghasilkan daftar pilihan role. |
 | POST | `/api/admin/users` | `buat_pengguna` | Dilindungi autentikasi; policy role menentukan akses. |
 | PATCH | `/api/admin/users/{username}/role` | `ubah_peran_pengguna` | Dilindungi autentikasi; username berasal dari path. |
 

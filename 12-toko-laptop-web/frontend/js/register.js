@@ -9,13 +9,17 @@ export function renderRegister() {
       <aside class="login-aside">
         ${brand()}
         <div class="login-promo">
-          <p class="eyebrow">Toko LaptopKu</p>
-          <h1>Laptop untuk<br /><span>kerja dan belajar.</span></h1>
-          <p>Lihat pilihan laptop, harga, dan stok yang tersedia.</p>
+          <p class="eyebrow">Katalog laptop</p>
+          <h1>Lihat pilihan <span>yang tersedia.</span></h1>
+          <p>Cek model, harga, dan stok sebelum memilih.</p>
           <div class="login-art" aria-hidden="true">
-            <span class="art-spark spark-one">✳</span
-            ><span class="art-spark spark-two">✦</span>
-            <div class="laptop-art"></div>
+            <img
+              class="login-illustration"
+              src="/assets/images/laptopku-hero.svg"
+              width="560"
+              height="300"
+              alt=""
+            />
           </div>
         </div>
         <div class="login-foot">
@@ -28,41 +32,91 @@ export function renderRegister() {
         </div>
         <p class="eyebrow">Daftar</p>
         <h2>Buat akun LaptopKu</h2>
-        <p class="form-intro">Akun baru dapat digunakan untuk membeli laptop.</p>
+        <p class="form-intro">
+          Daftar sebagai pembeli. Akun dengan role lain dibuat oleh admin toko.
+        </p>
         <div id="register-error" class="login-error" role="alert"></div>
         <form id="register-form" novalidate>
           <div class="field">
             <label for="register-username">Username</label
-            ><input
-              id="register-username"
-              name="username"
-              autocomplete="username"
-              placeholder="Buat username"
-              required
-              maxlength="100"
-            />
+            ><div class="input-wrap input-with-icon">
+              <span class="input-icon" aria-hidden="true">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <circle cx="12" cy="8" r="4" />
+                  <path d="M5 21v-2a7 7 0 0 1 14 0v2" />
+                </svg>
+              </span>
+              <input
+                class="icon-input"
+                id="register-username"
+                name="username"
+                autocomplete="username"
+                placeholder="Buat username"
+                required
+                maxlength="100"
+              />
+            </div>
           </div>
           <div class="field">
             <label for="register-password">Password</label
-            ><input
-              id="register-password"
-              name="password"
-              type="password"
-              autocomplete="new-password"
-              placeholder="Buat password"
-              required
-            />
+            ><div class="input-wrap input-with-icon">
+              <span class="input-icon" aria-hidden="true">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <rect x="4" y="10" width="16" height="11" rx="2" />
+                  <path d="M8 10V7a4 4 0 1 1 8 0v3" />
+                </svg>
+              </span>
+              <input
+                class="icon-input"
+                id="register-password"
+                name="password"
+                type="password"
+                autocomplete="new-password"
+                placeholder="Buat password"
+                required
+              />
+            </div>
           </div>
           <div class="field">
             <label for="register-confirm-password">Ulangi password</label
-            ><input
-              id="register-confirm-password"
-              name="confirmPassword"
-              type="password"
-              autocomplete="new-password"
-              placeholder="Masukkan password sekali lagi"
-              required
-            />
+            ><div class="input-wrap input-with-icon">
+              <span class="input-icon" aria-hidden="true">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <rect x="4" y="10" width="16" height="11" rx="2" />
+                  <path d="M8 10V7a4 4 0 1 1 8 0v3" />
+                </svg>
+              </span>
+              <input
+                class="icon-input"
+                id="register-confirm-password"
+                name="confirmPassword"
+                type="password"
+                autocomplete="new-password"
+                placeholder="Masukkan password sekali lagi"
+                required
+              />
+            </div>
           </div>
           <button
             class="primary-button login-submit"

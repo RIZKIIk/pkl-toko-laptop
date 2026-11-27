@@ -210,6 +210,25 @@ pub async fn buat_pengguna(
     }
 }
 
+/// Memberi UI admin daftar role yang dapat dipilih saat membuat akun.
+pub async fn daftar_peran_admin() -> Response {
+    let roles = UserRole::dapat_dibuat_admin()
+        .iter()
+        .map(|role| {
+            json!({
+                "value": role.sebagai_teks(),
+                "label": role.nama_tampilan(),
+                "description": role.deskripsi()
+            })
+        })
+        .collect::<Vec<_>>();
+
+    response::respons_berhasil(json!({
+        "status": "success",
+        "data": { "roles": roles }
+    }))
+}
+
 /// Mengubah role pengguna menjadi buyer/restocker tanpa membatalkan JWT aktif.
 pub async fn ubah_peran_pengguna(
     State(pool): State<PgPool>,

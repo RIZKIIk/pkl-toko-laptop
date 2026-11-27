@@ -16,7 +16,7 @@ function showDialog(title, subtitle, body, onReady) {
   const wasOpen = dialog.open;
   dialog.innerHTML = html`<div class="dialog-head">
       <div>
-        <h2>${title}</h2>
+        <h2 id="dialog-title">${title}</h2>
         <p>${subtitle}</p>
       </div>
       <button
@@ -30,6 +30,7 @@ function showDialog(title, subtitle, body, onReady) {
       </button>
     </div>
     <div class="dialog-body">${body}</div>`;
+  dialog.setAttribute("aria-labelledby", "dialog-title");
   if (!wasOpen) dialog.showModal();
   if (onReady) onReady();
   dialog

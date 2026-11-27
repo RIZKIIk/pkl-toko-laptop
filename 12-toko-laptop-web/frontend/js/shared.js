@@ -104,16 +104,6 @@ export const icons = {
     <path d="M10 17l5-5-5-5M15 12H3" />
     <path d="M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6" />
   </svg>`,
-  menu: html`<svg
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    stroke-width="1.8"
-    stroke-linecap="round"
-    aria-hidden="true"
-  >
-    <path d="M4 6h16M4 12h16M4 18h16" />
-  </svg>`,
   sun: html`<svg
     viewBox="0 0 24 24"
     fill="none"

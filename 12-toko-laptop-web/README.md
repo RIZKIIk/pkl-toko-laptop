@@ -1,6 +1,6 @@
 # LaptopKu
 
-Website toko laptop LaptopKu dengan backend Rust dan frontend web. Struktur proyek dipisah agar source, konfigurasi, database, dan catatan backend mudah ditemukan.
+Website toko laptop LaptopKu dengan backend Rust dan frontend web. Struktur proyek dipisah agar source, konfigurasi, database, dan catatan belajar mudah ditemukan.
 
 ## Struktur proyek
 
@@ -9,7 +9,9 @@ Website toko laptop LaptopKu dengan backend Rust dan frontend web. Struktur proy
 ├── backend/       # API Rust, konfigurasi, database, Postman, dan catatan backend
 ├── frontend/
 │   ├── css/       # Style halaman akun, dashboard, komponen, tema, dan responsive
-│   └── js/        # Modul API, akun, tema, sidebar, dashboard, dan aksi produk
+│   ├── images/    # Ilustrasi SVG frontend
+│   ├── js/        # Modul API, akun, tema, sidebar, dashboard, dan aksi produk
+│   └── catatan/   # Dokumentasi modular HTML, CSS, JavaScript, dan sintaks frontend
 ├── start-containers.sh  # Menyalakan Redis, PostgreSQL, dan RedisInsight
 ├── flow_toko_laptop.drawio
 └── README.md
@@ -17,10 +19,11 @@ Website toko laptop LaptopKu dengan backend Rust dan frontend web. Struktur proy
 
 - [Backend README](backend/README.md) — setup PostgreSQL, konfigurasi, endpoint, dan cara menjalankan server.
 - [Catatan backend](backend/catatan/README.md) — panduan belajar dari alur aplikasi sampai penjelasan source.
+- [Catatan frontend](frontend/catatan/README.md) — panduan modular HTML, CSS, JavaScript, dan alur UI LaptopKu.
 - [Dokumentasi endpoint](backend/endpoin.md) — request, response, dan aturan akses API.
 - [Flowchart aplikasi](flow_toko_laptop.drawio)
 
-Di dalam `frontend/js`, `shared.js` menyediakan API dan helper umum. `login.js` dan `register.js` menangani halaman akun, `theme.js` mengatur mode terang/gelap, `sidebar.js` mengatur navigasi yang bisa diciutkan, `dashboard-view.js` membentuk halaman toko, dan `laptop-actions.js` menangani produk serta pembelian.
+Di dalam `frontend/js`, `shared.js` menyediakan API dan helper umum. `login.js` dan `register.js` menangani halaman akun, `user-actions.js` menyediakan pembuatan akun ber-role untuk admin, `theme.js` mengatur mode terang/gelap, `sidebar.js` mengatur navigasi yang bisa diciutkan, `dashboard-view.js` membentuk halaman toko, dan `laptop-actions.js` menangani produk serta pembelian.
 
 Backend memakai Redis untuk session. Redis dijalankan dari `backend/compose.yaml`, sedangkan data session dan expiry-nya dikelola oleh `tower-sessions`.
 

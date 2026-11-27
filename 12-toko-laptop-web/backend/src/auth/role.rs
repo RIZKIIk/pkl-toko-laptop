@@ -12,11 +12,32 @@ pub enum UserRole {
 }
 
 impl UserRole {
+    /// Role yang boleh dipilih admin saat membuat akun pengguna baru.
+    pub fn dapat_dibuat_admin() -> &'static [Self] {
+        &[Self::Buyer, Self::Restocker]
+    }
+
     pub fn sebagai_teks(self) -> &'static str {
         match self {
             Self::Admin => "admin",
             Self::Buyer => "buyer",
             Self::Restocker => "restocker",
+        }
+    }
+
+    pub fn nama_tampilan(self) -> &'static str {
+        match self {
+            Self::Admin => "Admin",
+            Self::Buyer => "Pembeli",
+            Self::Restocker => "Petugas stok",
+        }
+    }
+
+    pub fn deskripsi(self) -> &'static str {
+        match self {
+            Self::Admin => "Mengelola seluruh data toko.",
+            Self::Buyer => "Melihat katalog dan membeli laptop.",
+            Self::Restocker => "Melihat laptop dan memperbarui stok.",
         }
     }
 

@@ -25,11 +25,9 @@
   color: var(--ink);
 }
 :root[data-theme="dark"] .login-page {
-  background-image: radial-gradient(
-    ellipse at 12% 10%,
-    rgba(245, 201, 73, 0.07),
-    transparent 32%
-  );
+  background-image:
+    radial-gradient(ellipse at 5% 4%, rgba(245, 201, 73, 0.08), transparent 31%),
+    radial-gradient(ellipse at 94% 94%, rgba(61, 138, 104, 0.06), transparent 30%);
 }
 :root[data-theme="dark"] .login-shell {
   border-color: #2a393d;
@@ -52,6 +50,12 @@
 :root[data-theme="dark"] .dialog-head h2,
 :root[data-theme="dark"] .detail-item strong {
   color: var(--ink);
+}
+:root[data-theme="dark"] .input-icon {
+  color: #9aabad;
+}
+:root[data-theme="dark"] .input-wrap:focus-within .input-icon {
+  color: #f2d36e;
 }
 :root[data-theme="dark"] .form-intro,
 :root[data-theme="dark"] .login-help,
@@ -113,6 +117,14 @@
   color: #ffc1ba;
   background: #2c1e1d;
 }
+:root[data-theme="dark"] .dialog-message {
+  border-color: #573431;
+  color: #ffc1ba;
+  background: #2c1e1d;
+}
+:root[data-theme="dark"] .role-description {
+  color: var(--muted);
+}
 :root[data-theme="dark"] .login-error.success {
   border-color: #34513e;
   color: #b7e3c4;
@@ -137,6 +149,14 @@
 :root[data-theme="dark"] .primary-button {
   color: #1b2527;
   background: #f2c546;
+}
+:root[data-theme="dark"] .login-submit {
+  color: #1b2527;
+  background: linear-gradient(135deg, #f7d365 0%, #f2bd4c 100%);
+}
+:root[data-theme="dark"] .login-submit:hover {
+  color: #151d1f;
+  background: linear-gradient(135deg, #ffdf77 0%, #f4c453 100%);
 }
 :root[data-theme="dark"] .primary-button:hover {
   color: #151d1f;
@@ -260,4 +280,14 @@
 }
 :root:not([data-theme="dark"]) .theme-icon-dark {
   display: none;
+}
+:root[data-theme="dark"] .login-submit:hover {
+  color: #151d1f;
+  background: linear-gradient(135deg, #ffdf77 0%, #f4c453 100%);
+  box-shadow: 0 11px 24px rgba(0, 0, 0, 0.22);
+}
+:root[data-theme="dark"] .login-submit:disabled {
+  color: #d6dedf;
+  background: #465357;
+  box-shadow: none;
 }

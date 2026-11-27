@@ -8,7 +8,7 @@
 
 Alamat server mengikuti `APP_HOST` dan `APP_PORT` di `.env` pada root proyek. Pada konfigurasi yang sedang berjalan, server tersedia di [http://127.0.0.1:3001](http://127.0.0.1:3001). Jika port atau host berubah, sesuaikan URL request dan variabel `baseUrl` di environment Postman. `APP_HOST` default-nya `127.0.0.1`, sedangkan `APP_PORT` wajib diatur.
 
-Endpoint laptop memerlukan login terlebih dahulu. Pendaftaran publik menghasilkan role `buyer`; akun admin berasal dari environment. Admin dapat membuat akun buyer/restocker dan mengubah role akun melalui endpoint admin. Login mengirim cookie session dan JWT untuk request selanjutnya. Route terlindungi menerima cookie session atau header `Authorization: Bearer <token>`. Contoh URL di bawah memakai server lokal pada port `3001`.
+Endpoint laptop memerlukan login terlebih dahulu. Pendaftaran publik selalu menghasilkan role `buyer`; akun admin berasal dari environment. Admin dapat membuat akun dengan role yang diizinkan backend dan mengubah role akun melalui endpoint admin. Login mengirim cookie session dan JWT untuk request selanjutnya. Route terlindungi menerima cookie session atau header `Authorization: Bearer <token>`. Contoh URL di bawah memakai server lokal pada port `3001`.
 
 Untuk seluruh contoh perintah terminal dan penjelasan opsi seperti `-X`, `-d`, `-b`, dan `-c`, lihat [panduan curl](catatan/curl.md).
 
@@ -24,7 +24,8 @@ Untuk seluruh contoh perintah terminal dan penjelasan opsi seperti `-X`, `-d`, `
 | `POST` | `/api/auth/login` | Login, membuat session, dan menerbitkan JWT | Publik | `200 OK` |
 | `GET` | `/api/auth/session` | Melihat pengguna pada session atau JWT aktif | Wajib login | `200 OK` |
 | `POST` | `/api/auth/logout` | Menghapus session yang dipakai; JWT tetap berlaku sampai kedaluwarsa | Wajib login | `200 OK` |
-| `POST` | `/api/admin/users` | Membuat akun buyer/restocker | Admin | `201 Created` |
+| `GET` | `/api/admin/roles` | Mengambil role yang dapat diberikan admin pada akun baru | Admin | `200 OK` |
+| `POST` | `/api/admin/users` | Membuat akun dengan role yang tersedia | Admin | `201 Created` |
 | `PATCH` | `/api/admin/users/{username}/role` | Mengubah role menjadi buyer/restocker | Admin | `200 OK` |
 | `GET` | [`/api/laptops`](http://127.0.0.1:3001/api/laptops) | Melihat semua laptop | Admin, buyer, restocker | `200 OK` |
 | `POST` | `/api/laptops` | Menambah laptop | Admin | `201 Created` |
@@ -68,7 +69,7 @@ Password di-hash dengan Argon2id dan tidak pernah dikembalikan dalam response. G
 
 ### Pengelolaan akun — admin
 
-Admin awal disinkronkan dari `ADMIN_USERNAME` dan `ADMIN_PASSWORD`. Setelah login sebagai admin, buat akun buyer/restocker dengan `POST /api/admin/users`:
+Admin awal disinkronkan dari `ADMIN_USERNAME` dan `ADMIN_PASSWORD`. Dashboard admin meminta daftar pilihan role dari `GET /api/admin/roles`, lalu mengirim username, password, dan role terpilih ke `POST /api/admin/users`:
 
 ```bash
 curl -i -b cookies.txt \
@@ -78,6 +79,8 @@ curl -i -b cookies.txt \
 ```
 
 Role akun yang sudah ada dapat diubah dengan `PATCH /api/admin/users/{username}/role`, memakai body `{"role":"buyer"}` atau `{"role":"restocker"}`. Role `admin` hanya dapat ditetapkan melalui konfigurasi startup, dan admin tidak dapat mengubah role akunnya sendiri. Perubahan role langsung mengubah izin request berikutnya; JWT yang sudah terbit tetap diterima sampai kedaluwarsa.
+
+`GET /api/admin/roles` mengembalikan daftar `{value, label, description}` yang digunakan langsung oleh dropdown dashboard. Pendaftaran publik tetap membuat role `buyer` dan tidak menerima pilihan role dari client. Jika role baru ditambahkan, backend dan database perlu mengenali role tersebut, menentukan izin aksesnya, label/deskripsi, constraint migration, serta apakah role itu boleh dibuat admin. Dropdown kemudian menampilkannya dari response API.
 
 Role menentukan akses endpoint laptop: buyer dapat `GET` dan membeli melalui `/api/laptops/{id}/buy`, restocker dapat `GET` dan `PATCH`, sedangkan admin dapat melakukan semua operasi. Endpoint login, session, dan logout tetap tersedia untuk semua role yang sudah login. Request terautentikasi tanpa izin mendapat `403 Forbidden`.
 

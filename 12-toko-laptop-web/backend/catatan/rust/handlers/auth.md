@@ -96,6 +96,8 @@ Registrasi publik tidak menerima pilihan role dan tidak membuat login session.
 
 Endpoint admin ini membaca `CreateUserPayload` yang berisi username, password, dan role. Ia menjalankan pemeriksaan username/password yang sama, lalu menolak `UserRole::Admin`: role admin hanya boleh diberikan melalui konfigurasi server. `daftarkan_pengguna_dengan_peran(...).await` menyimpan role buyer/restocker yang diminta. Cabang hasilnya sama seperti register: 201, 409, atau 500, dengan role pada data sukses.
 
+`daftar_peran_admin()` menyusun role dari `UserRole::dapat_dibuat_admin()` menjadi pilihan `{value, label, description}` untuk dashboard. Route-nya dilindungi middleware yang sama, sehingga hanya admin dapat membaca daftar tersebut. Role baru perlu memiliki label, deskripsi, izin akses, dan keputusan eksplisit apakah boleh diberikan saat membuat akun.
+
 ### `ubah_peran_pengguna(State(pool), Extension(identity), Path(username), Json(payload))`
 
 Middleware menyediakan `identity`; `Path(username)` mengambil nama akun dari URL dan `Json(payload)` membaca role baru. Handler menolak username yang tidak valid, perubahan role untuk akun yang sedang dipakai, dan target role admin dengan 400. Kemudian `ubah_peran_pengguna(...).await` menghasilkan 200 saat berubah, 404 bila pengguna tidak ada, atau 500 bila query gagal. Role baru langsung dipakai pada request selanjutnya, sementara JWT yang sudah diterbitkan tetap diterima hingga kedaluwarsa.
@@ -116,6 +118,7 @@ Memanggil `hapus_sesi(&session).await` untuk menghapus session aktif. Jika gagal
 | `POST /api/auth/login` | `masuk` | Publik; membuat JWT dan session. |
 | `GET /api/auth/session` | `pengguna_saat_ini` | Dilindungi; membaca identitas terverifikasi. |
 | `POST /api/auth/logout` | `keluar` | Dilindungi; menghapus session aktif tanpa membatalkan JWT. |
+| `GET /api/admin/roles` | `daftar_peran_admin` | Dilindungi; memberi pilihan role untuk form admin. |
 | `POST /api/admin/users` | `buat_pengguna` | Dilindungi; membuat akun buyer/restocker. |
 | `PATCH /api/admin/users/{username}/role` | `ubah_peran_pengguna` | Dilindungi; mengubah role target yang diizinkan. |
 

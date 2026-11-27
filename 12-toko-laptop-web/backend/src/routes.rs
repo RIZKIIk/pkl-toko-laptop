@@ -39,6 +39,7 @@ pub fn buat_router(
                 .delete(handlers::hapus_laptop),
         )
         .route("/api/laptops/{id}/buy", post(handlers::beli_laptop))
+        .route("/api/admin/roles", get(handlers::daftar_peran_admin))
         .route("/api/admin/users", post(handlers::buat_pengguna))
         .route(
             "/api/admin/users/{username}/role",
@@ -98,6 +99,10 @@ async fn aset_frontend(Path(path): Path<String>) -> Response {
             "text/css; charset=utf-8",
             include_str!("../../frontend/css/theme.css"),
         ),
+        "images/laptopku-hero.svg" => (
+            "image/svg+xml; charset=utf-8",
+            include_str!("../../frontend/images/laptopku-hero.svg"),
+        ),
         "js/app.js" => (
             "text/javascript; charset=utf-8",
             include_str!("../../frontend/js/app.js"),
@@ -137,6 +142,10 @@ async fn aset_frontend(Path(path): Path<String>) -> Response {
         "js/laptop-actions.js" => (
             "text/javascript; charset=utf-8",
             include_str!("../../frontend/js/laptop-actions.js"),
+        ),
+        "js/user-actions.js" => (
+            "text/javascript; charset=utf-8",
+            include_str!("../../frontend/js/user-actions.js"),
         ),
         _ => return StatusCode::NOT_FOUND.into_response(),
     };

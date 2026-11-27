@@ -154,8 +154,37 @@ export function renderDashboard() {
   document.title = "Dashboard · LaptopKu";
   app.innerHTML = html` <div class="sidebar-shade" id="sidebar-shade"></div>
     <div class="app-layout${state.sidebarCollapsed ? " sidebar-collapsed" : ""}">
-      <aside class="sidebar" id="sidebar">
-        ${brand()}
+      <aside
+        class="sidebar"
+        id="sidebar"
+        aria-label="Navigasi utama"
+        aria-hidden="${isMobile}"
+        ${isMobile ? "inert" : ""}
+      >
+        <div class="sidebar-header">
+          <button
+            class="sidebar-brand-toggle"
+            type="button"
+            data-action="sidebar-toggle"
+            aria-controls="sidebar"
+            aria-expanded="${toggleExpanded}"
+            aria-label="${toggleLabel}"
+            title="${toggleLabel}"
+          >
+            <span class="brand">
+              <span class="brand-mark">${icons.laptop}</span>
+              <span class="brand-name">Laptop<span class="brand-accent">Ku</span></span>
+            </span>
+          </button><button
+            class="sidebar-dismiss"
+            type="button"
+            data-action="menu-close"
+            aria-label="Tutup menu navigasi"
+            title="Tutup menu"
+          >
+            ${icons.close}
+          </button>
+        </div>
         <p class="sidebar-label">Menu utama</p>
         <nav class="sidebar-nav" aria-label="Menu utama">
           <a
@@ -208,11 +237,12 @@ export function renderDashboard() {
             class="sidebar-toggle"
             type="button"
             data-action="menu"
+            aria-controls="sidebar"
             aria-label="${toggleLabel}"
             aria-expanded="${toggleExpanded}"
             title="${toggleLabel}"
           >
-            ${icons.menu}
+            <span class="menu-toggle-label">Menu</span>
           </button>
           <div class="breadcrumb">
             <span>LaptopKu</span><span aria-hidden="true">/</span
@@ -235,7 +265,13 @@ export function renderDashboard() {
               <button class="secondary-button" data-action="refresh">
                 ${icons.trend} Muat ulang</button
               >${canCreate
-                ? html`<button class="primary-button" data-action="create">
+                ? html`<button
+                    class="secondary-button"
+                    type="button"
+                    data-action="create-user"
+                  >
+                    ${icons.plus} Tambah akun
+                  </button><button class="primary-button" data-action="create">
                     ${icons.plus} Tambah laptop
                   </button>`
                 : ""}

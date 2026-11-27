@@ -79,6 +79,32 @@
 .dialog-body .field {
   margin: 0;
 }
+.admin-user-form {
+  display: grid;
+  gap: 16px;
+}
+.admin-user-form .dialog-actions {
+  margin-top: 3px;
+}
+.role-description {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+.dialog-message {
+  display: none;
+  margin: 0;
+  padding: 11px 13px;
+  border: 1px solid #f0d4d0;
+  border-radius: 10px;
+  color: #a94840;
+  background: #fff6f4;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.dialog-message.visible {
+  display: block;
+}
 .form-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -214,10 +240,6 @@
   border-color: #e6ebed;
   color: var(--navy);
   background: white;
-}
-.sidebar-toggle svg {
-  width: 18px;
-  height: 18px;
 }
 .theme-toggle {
   min-height: 36px;
