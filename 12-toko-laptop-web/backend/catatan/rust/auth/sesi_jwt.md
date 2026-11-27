@@ -15,12 +15,12 @@ Keduanya tetap perlu dijaga sebagai kredensial. Siapa pun yang memperoleh cookie
 
 | Aspek | Session | JWT |
 | --- | --- | --- |
-| Data yang dibawa client | Cookie berisi ID session, bukan seluruh identitas. | Token berisi ID pengguna (`sub`) dan waktu kedaluwarsa (`exp`). |
-| Penyimpanan identitas | Data session berada di Redis. Browser hanya membawa ID session dalam cookie. | Claims berada di payload token yang ditandatangani. Payload dapat dibaca client, tetapi perubahan tanpa secret membuat signature tidak valid. |
+| Data yang dibawa client | Cookie berisi ID session, bukan seluruh identitas. | Token berisi ID pengguna (`sub`), waktu kedaluwarsa (`exp`), dan ID acak token (`jti`). |
+| Penyimpanan identitas | Data session berada di Redis. Browser hanya membawa ID session dalam cookie. | JWT tetap dikirim client; Redis menyimpan registry `jti` dan ID akun dengan TTL, bukan bearer token mentah. |
 | Cara dikirim | Browser mengirim cookie pada request sesuai aturan cookie. | Client mengirim `Authorization: Bearer <token>`. |
-| Pemeriksaan di aplikasi | Middleware membaca username dari session lalu mencari pengguna dan role terkini di database. | Middleware memeriksa signature dan expiry, lalu mencari pengguna dan role terkini di database. |
-| Efek restart server | Session tetap tersedia selama Redis menyimpan record dan session belum kedaluwarsa. | Token tetap tersimpan pada client dan diterima sampai kedaluwarsa selama signature valid dan akun masih ada. |
-| Perilaku saat logout | Session yang sedang dipakai dihapus dari store. Session lain tidak ikut terhapus. | JWT tidak dicabut. Token tetap berlaku sampai `exp`, termasuk setelah endpoint logout dipanggil. |
+| Pemeriksaan di aplikasi | Middleware membaca username dari session lalu mencari pengguna dan role terkini di database. | Middleware memeriksa signature, expiry, registry Redis, lalu mencari pengguna dan role terkini di database. |
+| Efek restart server | Session tetap tersedia selama Redis menyimpan record dan session belum kedaluwarsa. | Token hanya diterima jika registry Redis tetap tersedia dan ID token belum kedaluwarsa atau dicabut. |
+| Perilaku saat logout | Session yang sedang dipakai dihapus dari store. Session lain tidak ikut terhapus. | ID JWT yang dipakai dihapus dari Redis, sehingga token langsung ditolak. |
 
 > **Catatan penting:** JWT sering disebut membuat autentikasi *stateless* karena claims dibawa di token. Aplikasi ini tetap mengakses database setiap request JWT untuk memastikan pengguna masih ada dan mengambil role terkini untuk otorisasi.
 
@@ -28,9 +28,9 @@ Keduanya tetap perlu dijaga sebagai kredensial. Siapa pun yang memperoleh cookie
 
 1. Client mengirim username dan password ke endpoint login.
 2. Setelah kredensial benar, handler mengambil ID pengguna dan role dari database.
-3. Handler menerbitkan JWT satu jam dan membuat session yang menyimpan username. Session ID diganti setelah login.
+3. Handler menerbitkan JWT satu jam, mendaftarkan `jti` di Redis, dan membuat session yang menyimpan username serta ID JWT. Session ID diganti setelah login.
 4. Response login memberikan `access_token`; cookie session juga dikelola melalui mekanisme cookie.
-5. Untuk request protected, middleware mencoba JWT lebih dulu. Jika JWT tidak menghasilkan identitas valid, middleware mencoba session. Setelah identitas ditemukan, middleware memeriksa izin role untuk route yang diminta.
+5. Untuk request protected, middleware memeriksa signature, expiry, dan registry Redis JWT. Bearer JWT yang tidak valid atau sudah dicabut ditolak; tanpa bearer token, middleware dapat memakai session. Setelah identitas ditemukan, middleware memeriksa izin role untuk route yang diminta.
 
 Detail klaim, expiry, dan signature ada di [catatan JWT](jwt.md). Detail cookie dan helper session ada di [catatan session](session.md); urutan validasi request dijelaskan di [catatan middleware](middleware.md).
 
@@ -52,16 +52,16 @@ Kedua cara tersebut menuju middleware autentikasi yang sama. Setelah identitas d
 
 ## Perbedaan perilaku saat logout
 
-Logout membersihkan session yang dikirim pada request:
+Logout mencabut token yang dipakai pada request dan membersihkan session aktif:
 
-- **JWT:** tidak dicabut. Bearer token tetap dapat dipakai sampai waktu kedaluwarsanya, bahkan jika token itu dikirim pada request logout.
+- **JWT:** ID token dihapus dari Redis. Bearer token yang sama langsung ditolak, meskipun JWT belum mencapai `exp`.
 - **Session:** aplikasi menghapus session yang dipakai untuk request logout. Session di perangkat atau browser lain tidak otomatis dihapus.
 
-Karena login membuat kedua kredensial, client perlu menghapus access token lokal sendiri jika ingin berhenti mengirimkannya. Menghapus cookie session saja tidak membatalkan JWT. Role yang berubah tetap mengubah izin request berikutnya karena middleware membaca role terkini dari database.
+Client tetap perlu menghapus salinan access token lokal setelah logout. Jika logout memakai session, ID JWT yang terhubung ke session ikut dicabut. Role yang berubah tetap mengubah izin request berikutnya karena middleware membaca role terkini dari database.
 
 ## Keterbatasan penyimpanan saat ini
 
-Session menggunakan `RedisStore`, sehingga beberapa instance backend dapat memakai data session yang sama. Redis perlu tersedia saat aplikasi dimulai dan selama aplikasi berjalan. JWT juga memerlukan secret yang sama dan terjaga untuk menerbitkan maupun memverifikasi token.
+Session dan registry JWT menggunakan Redis, sehingga beberapa instance backend dapat memakai data yang sama. Redis wajib tersedia saat aplikasi dimulai dan selama request protected dijalankan. JWT juga memerlukan secret yang sama dan terjaga untuk menerbitkan maupun memverifikasi token.
 
 Lihat [konfigurasi](../config.md) untuk pengaturan secret JWT dan [routes](../routes.md) untuk pemasangan middleware serta session store.
 

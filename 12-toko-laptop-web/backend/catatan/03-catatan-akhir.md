@@ -52,8 +52,8 @@ Buyer hanya dapat membaca laptop. Restocker dapat membaca dan memperbarui laptop
 - Password disimpan sebagai hash Argon2id dengan salt acak, bukan sebagai teks asli.
 - Login menerbitkan JWT HS256 yang berlaku satu jam dan membuat session cookie.
 - Middleware mencoba JWT terlebih dahulu. Jika JWT tidak menghasilkan identitas yang valid, middleware mencoba session; role dan identitas akun diperiksa terhadap database.
-- Logout menghapus session yang dipakai pada request. JWT bearer tetap berlaku sampai `exp`; role untuk izin tetap diambil dari database pada setiap request.
-- Session memakai Redis: data session tetap dapat dibaca setelah backend dimulai ulang dan dapat dibagikan antar-instance yang memakai Redis yang sama.
+- Logout mencabut JWT yang dipakai dengan menghapus ID-nya dari Redis, lalu menghapus session aktif; role untuk izin tetap diambil dari database pada setiap request.
+- Session dan registry token memakai Redis sehingga dapat dibagikan antar-instance. Token bearer hanya berlaku selama registry tersedia dan belum kedaluwarsa.
 
 Lihat penjelasan terperinci tentang [middleware](rust/auth/middleware.md), [session](rust/auth/session.md), dan [JWT](rust/auth/jwt.md).
 

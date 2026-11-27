@@ -11,7 +11,7 @@
 
 Modul `auth` mengatur layanan autentikasi: menyiapkan akun admin, mendaftarkan akun, memeriksa username dan password, serta menyediakan middleware untuk melindungi request.
 
-Modul ini tidak menangani query SQL secara langsung. Operasi tabel `users` diteruskan ke [user repository](../repositories/user-repository.md). Middleware autentikasi/otorisasi berada di [`middleware.rs`](middleware.md), pembentukan response HTTP berada di [`response.rs`](response.md), pengelolaan session berada di [`session.rs`](session.md), dan JWT HS256 berada di [`jwt.rs`](jwt.md).
+Modul ini tidak menangani query SQL secara langsung. Operasi tabel `users` diteruskan ke [user repository](../repositories/user-repository.md). Middleware autentikasi/otorisasi berada di [`middleware.rs`](middleware.md), pembentukan response HTTP berada di [`response.rs`](response.md), pengelolaan session berada di [`session.rs`](session.md), penerbitan/verifikasi JWT HS256 berada di [`jwt.rs`](jwt.md), dan registry JWT Redis berada di [`token_store.rs`](../../../src/auth/token_store.rs).
 
 ```text
 src/auth/
@@ -22,6 +22,7 @@ src/auth/
 ├── middleware.rs  # Autentikasi JWT/session dan otorisasi role
 ├── session.rs     # Helper session
 ├── jwt.rs         # Penerbitan dan verifikasi JWT HS256
+├── token_store.rs # Registry dan pencabutan JWT di Redis
 ├── role.rs        # Jenis role dan kebijakan akses method/path
 └── response.rs    # Pembentuk response JSON auth
 ```

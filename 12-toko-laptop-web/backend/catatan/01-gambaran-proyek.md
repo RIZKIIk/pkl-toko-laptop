@@ -5,7 +5,7 @@
 ![Ilustrasi: Peta wilayah aplikasi](ilustrasi/halaman/02-01-gambaran-proyek.svg "Peta wilayah aplikasi")
 
 
-Toko Laptop App adalah REST API inventaris laptop. Kode aktif menyediakan operasi CRUD, registrasi akun, role `admin`/`buyer`/`restocker`, serta login berbasis cookie session dan JWT bearer. Migration audit memasang trigger PostgreSQL yang mencatat INSERT, UPDATE, dan DELETE laptop beserta actor terautentikasi bila perubahan datang dari backend.
+Toko Laptop App adalah REST API inventaris laptop. Kode aktif menyediakan operasi CRUD, simulasi pembelian dengan struk, registrasi akun, role `admin`/`buyer`/`restocker`, serta login berbasis cookie session dan JWT bearer. Migration audit memasang trigger PostgreSQL yang mencatat INSERT, UPDATE, dan DELETE laptop beserta actor terautentikasi bila perubahan datang dari backend.
 
 ## Teknologi yang benar-benar dipakai
 
@@ -85,6 +85,6 @@ Setiap file tetap memiliki fokus kecil:
 | `&T` | Meminjam nilai `T` tanpa memindahkan kepemilikannya. |
 | `Result<T, E>` | Mengandung `Ok(T)` saat berhasil atau `Err(E)` saat gagal; `Result` berbeda dari `Option`, yang menyatakan ada/tidaknya nilai. |
 
-Migration lama tetap menjadi baseline yang sama. Perubahan audit dan penghapusan kolom lama `token_version` dikelola oleh migration lanjutan; lihat [skema, relasi, dan trigger](rust/database/initial-schema.md) serta [DBML](../database/schema.dbml). Buat dan verifikasi backup sebelum menerapkan migration ke database lama.
+Migration lama tetap menjadi baseline yang sama. Audit, produk, pembelian, dan constraint struk dikelola oleh migration lanjutan; lihat [skema, relasi, dan trigger](rust/database/initial-schema.md) serta [DBML](../database/schema.dbml). Buat dan verifikasi backup sebelum menerapkan migration ke database lama.
 
 Lanjutkan ke [alur kerja aplikasi](02-alur-kerja-aplikasi.md) untuk melihat istilah tersebut saat request benar-benar berjalan.

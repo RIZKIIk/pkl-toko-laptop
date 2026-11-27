@@ -5,6 +5,7 @@ pub mod middleware;
 pub mod response;
 pub mod role;
 pub mod session;
+pub mod token_store;
 
 mod accounts;
 mod migration;

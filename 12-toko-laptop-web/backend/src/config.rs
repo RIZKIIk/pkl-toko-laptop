@@ -13,7 +13,7 @@ pub struct AppConfig {
     pub session_cookie_secure: bool,
     /// Secret HMAC JWT; wajib sedikitnya 32 byte dan tidak boleh dicatat ke log.
     pub jwt_secret: String,
-    /// URL koneksi Redis untuk session server-side.
+    /// URL koneksi Redis untuk session server-side dan registry JWT aktif.
     pub redis_url: String,
     /// Host server PostgreSQL.
     db_host: String,

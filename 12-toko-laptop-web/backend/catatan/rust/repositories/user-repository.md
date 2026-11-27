@@ -75,11 +75,11 @@ Migration historis perlu dipertahankan agar checksum SQLx tetap cocok. Perubahan
 
 ## Membuat dan mengubah akun
 
-Logout tidak menjalankan query pencabutan token. Handler hanya menghapus session yang dipakai, sementara JWT tetap berlaku sampai waktu `exp`.
+Pencabutan JWT tidak dijalankan oleh repository akun. Handler auth menghapus registry token di Redis saat logout; repository tetap bertanggung jawab hanya pada data akun PostgreSQL.
 
 ### `ubah_peran_pengguna`
 
-Memperbarui role berdasarkan username. `RETURNING` dan `fetch_optional` menghasilkan `Some(username)` bila akun ditemukan atau `None` bila tidak, lalu `.is_some()` mengubah hasil menjadi `bool`. Middleware memakai role terbaru dari database untuk otorisasi, tanpa membatalkan JWT yang masih aktif.
+Memperbarui role berdasarkan username. `RETURNING` dan `fetch_optional` menghasilkan `Some(username)` bila akun ditemukan atau `None` bila tidak, lalu `.is_some()` mengubah hasil menjadi `bool`. Middleware memakai role terbaru dari database untuk otorisasi; registry Redis mengatur masa aktif setiap JWT.
 
 ### `simpan_atau_perbarui_pengguna`
 
@@ -105,8 +105,8 @@ Semua hasil di atas dibungkus `Result<..., sqlx::Error>`. Untuk gambaran lengkap
 ## Ilustrasi alur akun
 
 ```text
-login → cari hash + identitas → verifikasi password → JWT memuat sub dan exp
-logout → hapus session aktif; JWT berlaku sampai exp
+login → cari hash + identitas → verifikasi password → JWT memuat sub, exp, dan jti → daftarkan jti di Redis
+logout → cabut jti di Redis dan hapus session aktif
 startup → temukan password lama → hash → simpan hash → hapus kolom lama
 register/admin → insert atau sinkronkan akun melalui parameter SQL
 ```

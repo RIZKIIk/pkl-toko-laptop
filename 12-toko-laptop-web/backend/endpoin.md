@@ -23,7 +23,7 @@ Untuk seluruh contoh perintah terminal dan penjelasan opsi seperti `-X`, `-d`, `
 | `POST` | `/api/auth/register` | Membuat akun baru | Publik | `201 Created` |
 | `POST` | `/api/auth/login` | Login, membuat session, dan menerbitkan JWT | Publik | `200 OK` |
 | `GET` | `/api/auth/session` | Melihat pengguna pada session atau JWT aktif | Wajib login | `200 OK` |
-| `POST` | `/api/auth/logout` | Menghapus session yang dipakai; JWT tetap berlaku sampai kedaluwarsa | Wajib login | `200 OK` |
+| `POST` | `/api/auth/logout` | Menghapus session aktif dan mencabut JWT yang dipakai | Wajib login | `200 OK` |
 | `GET` | `/api/admin/roles` | Mengambil role yang dapat diberikan admin pada akun baru | Admin | `200 OK` |
 | `POST` | `/api/admin/users` | Membuat akun dengan role yang tersedia | Admin | `201 Created` |
 | `PATCH` | `/api/admin/users/{username}/role` | Mengubah role menjadi buyer/restocker | Admin | `200 OK` |
@@ -78,7 +78,7 @@ curl -i -b cookies.txt \
   http://127.0.0.1:3001/api/admin/users
 ```
 
-Role akun yang sudah ada dapat diubah dengan `PATCH /api/admin/users/{username}/role`, memakai body `{"role":"buyer"}` atau `{"role":"restocker"}`. Role `admin` hanya dapat ditetapkan melalui konfigurasi startup, dan admin tidak dapat mengubah role akunnya sendiri. Perubahan role langsung mengubah izin request berikutnya; JWT yang sudah terbit tetap diterima sampai kedaluwarsa.
+Role akun yang sudah ada dapat diubah dengan `PATCH /api/admin/users/{username}/role`, memakai body `{"role":"buyer"}` atau `{"role":"restocker"}`. Role `admin` hanya dapat ditetapkan melalui konfigurasi startup, dan admin tidak dapat mengubah role akunnya sendiri. Perubahan role langsung mengubah izin request berikutnya; JWT aktif tetap diterima dengan role terbaru sampai dicabut atau kedaluwarsa.
 
 `GET /api/admin/roles` mengembalikan daftar `{value, label, description}` yang digunakan langsung oleh dropdown dashboard. Pendaftaran publik tetap membuat role `buyer` dan tidak menerima pilihan role dari client. Jika role baru ditambahkan, backend dan database perlu mengenali role tersebut, menentukan izin aksesnya, label/deskripsi, constraint migration, serta apakah role itu boleh dibuat admin. Dropdown kemudian menampilkannya dari response API.
 
@@ -111,7 +111,7 @@ curl -i -H "Authorization: Bearer $TOKEN" http://127.0.0.1:3001/api/laptops
 curl -i -H "Authorization: Bearer $TOKEN" http://127.0.0.1:3001/api/auth/session
 ```
 
-Kredensial salah, token tidak valid/kedaluwarsa, atau request terlindungi tanpa session maupun JWT menghasilkan `401 Unauthorized`. Jangan membagikan atau commit file cookie maupun token. Session disimpan di Redis sehingga tidak hilang hanya karena proses backend dimulai ulang; masa berlakunya mengikuti expiry session. Logout menghapus session yang dipakai, tetapi JWT bearer tetap berlaku sampai waktu kedaluwarsanya; client perlu menghapus token lokal bila tidak ingin menggunakannya lagi.
+Kredensial salah, token tidak valid/kedaluwarsa/tidak aktif di Redis, atau request terlindungi tanpa session maupun JWT menghasilkan `401 Unauthorized`. Jangan membagikan atau commit file cookie maupun token. Session dan registry ID JWT disimpan di Redis sehingga dapat dipakai bersama oleh beberapa instance backend. Logout menghapus session aktif dan mencabut JWT yang dipakai; client tetap perlu membuang salinan token lokal.
 
 ## Pemeriksaan Layanan
 

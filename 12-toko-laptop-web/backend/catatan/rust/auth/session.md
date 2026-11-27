@@ -15,16 +15,17 @@ File ini khusus mengelola session login melalui `tower-sessions`. Pemeriksaan JW
 | Item | Tugas |
 | --- | --- |
 | `SESSION_USERNAME_KEY` | Menyamakan nama key username dalam session. |
-| `SessionIdentity` | Membungkus username hasil pembacaan session. |
-| `mulai_sesi` | Mengganti ID session setelah login lalu menyimpan username. |
-| `identitas_sesi` | Membaca username dari session request. |
+| `SESSION_JWT_ID_KEY` | Menyimpan ID JWT yang perlu dicabut ketika session logout. |
+| `SessionIdentity` | Membungkus username dan ID JWT dari session. |
+| `mulai_sesi` | Mengganti ID session setelah login lalu menyimpan username dan ID JWT. |
+| `identitas_sesi` | Membaca username serta ID JWT dari session request. |
 | `hapus_sesi` | Menghapus data session aktif dari store. |
 
 ## Helper session
 
-### `mulai_sesi(session, username)`
+### `mulai_sesi(session, username, jwt_id)`
 
-Fungsi ini memanggil `session.cycle_id()` sebelum menyimpan username menggunakan `SESSION_USERNAME_KEY`. Mengganti ID session setelah login membantu mencegah session pra-login dipakai kembali. Error dari operasi session diteruskan sebagai `tower_sessions::session::Error`.
+Fungsi ini memanggil `session.cycle_id()` sebelum menyimpan username menggunakan `SESSION_USERNAME_KEY` dan ID JWT menggunakan `SESSION_JWT_ID_KEY`. Mengganti ID session setelah login membantu mencegah session pra-login dipakai kembali. Error dari operasi session diteruskan sebagai `tower_sessions::session::Error`.
 
 ### `identitas_sesi(session)`
 
@@ -38,11 +39,11 @@ Username dari session belum membuktikan bahwa akun masih ada. Middleware memerik
 
 ### `hapus_sesi(session)`
 
-Memanggil `session.flush()` untuk menghapus session aktif dari store. Logout tidak membatalkan JWT; bearer token yang sudah diterbitkan tetap berlaku sampai `exp`.
+Memanggil `session.flush()` untuk menghapus session aktif dari store. Handler logout membaca ID JWT yang terhubung dengan session, lalu mencabutnya melalui registry Redis sebelum session dibersihkan.
 
 ## Penyimpanan session
 
-Router memakai `RedisStore`. Session tidak bergantung pada memori proses backend dan bisa dibagikan oleh instance yang memakai Redis yang sama. Masa aktif session mengikuti expiry dari `tower-sessions` dan Redis. Logout hanya menghapus session yang dipakai pada request itu; session cookie dari perangkat lain masih aktif. JWT bearer tetap berlaku sampai kedaluwarsa.
+Router memakai `RedisStore`. Session tidak bergantung pada memori proses backend dan bisa dibagikan oleh instance yang memakai Redis yang sama. Registry JWT juga memakai koneksi Redis tersebut; ID token dan ID akun memiliki TTL sesuai waktu `exp`. Logout mencabut JWT yang dipakai dan session yang aktif. Session lain pada perangkat berbeda tetap aktif.
 
 Contoh login dan request dengan cookie tersedia di [panduan curl](../../curl.md). File cookie berisi kredensial aktif; jangan dibagikan atau dimasukkan ke version control.
 

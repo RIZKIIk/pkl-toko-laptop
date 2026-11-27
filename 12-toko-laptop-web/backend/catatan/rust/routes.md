@@ -26,7 +26,7 @@ Folder `src/endpoin/` berisi pendaftaran URL dan method HTTP. Setiap file mengel
 
 1. Router publik menggabungkan halaman frontend, aset, health check, login, dan registrasi.
 2. Router privat menggabungkan sesi, laptop, serta admin. Middleware `wajibkan_autentikasi` dipasang pada grup ini saja.
-3. Router akhir memasang `JwtService`, `SessionManagerLayer` dengan Redis, dan `PgPool` sebagai state bersama.
+3. Router akhir memasang `JwtService`, `JwtTokenStore` Redis, `SessionManagerLayer` Redis, dan `PgPool` sebagai state bersama.
 
 Dengan susunan ini, route baru cukup ditambahkan pada modul fitur yang sesuai, lalu routernya digabungkan di `mod.rs`. Handler tidak perlu dipindahkan atau dicampur dengan deklarasi URL.
 

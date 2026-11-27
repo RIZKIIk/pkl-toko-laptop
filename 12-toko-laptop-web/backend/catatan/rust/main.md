@@ -34,7 +34,7 @@ use tower_sessions_redis_store::fred::{
 - `AppConfig` adalah struktur konfigurasi dari `src/config.rs`. Struktur ini
   membaca environment variable dan membuat pool PostgreSQL.
 - `RedisConfig`, `Pool`, dan `ClientLike` berasal dari client Redis `fred` yang
-  diekspor oleh `tower-sessions-redis-store`. Pool dipakai untuk session store.
+  diekspor oleh `tower-sessions-redis-store`. Pool dipakai oleh session store dan registry ID JWT.
 - `endpoin` menyediakan `buat_router`, yaitu fungsi untuk menyusun route per
   fitur, middleware autentikasi, session, dan state database.
 
@@ -188,7 +188,7 @@ tetap hidup selama server berjalan.
 3. Membuka pool koneksi PostgreSQL dan Redis.
 4. Menjalankan migration database yang belum diterapkan.
 5. Membuat atau memperbarui akun admin dari environment.
-6. Menyusun router API, Redis session store, dan state database.
+6. Menyusun router API, Redis session store dan registry JWT, serta state database.
 7. Membuka listener TCP pada `APP_HOST:APP_PORT`.
 8. Menjalankan server Axum.
 
@@ -198,7 +198,7 @@ tetap hidup selama server berjalan.
 | Membuka koneksi PostgreSQL dan Redis | `PgPool` untuk request database dan `RedisStore` untuk session. | Server belum membuka listener HTTP. |
 | Menjalankan migration | Tabel dan skema database yang dibutuhkan aplikasi. | Startup berhenti jika migration gagal. |
 | Menyinkronkan akun admin | Akun dari `ADMIN_USERNAME` dan `ADMIN_PASSWORD`. | Startup berhenti bila query user gagal. |
-| Membuat router dan listener | Route, middleware, session store, dan socket HTTP. | Server tidak mulai menerima request. |
+| Membuat router dan listener | Route, middleware, session store, registry JWT, dan socket HTTP. | Server tidak mulai menerima request. |
 | Menjalankan Axum | Server siap menerima request sampai proses dihentikan. | Error server diteruskan dari `main`. |
 
 ## Ilustrasi startup
@@ -206,7 +206,7 @@ tetap hidup selama server berjalan.
 ```text
 .env → AppConfig → PostgreSQL + Redis → migrations → akun admin
                                               ↓
-                              router + session store + listener → Axum
+                              router + session store + registry JWT + listener → Axum
 ```
 
 ## Ownership dan alur error pada `main`

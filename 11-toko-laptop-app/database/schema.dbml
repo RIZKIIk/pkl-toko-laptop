@@ -51,16 +51,7 @@ Table public.laptop_logs {
   }
 }
 
-// Metadata internal SQLx. Tabel ini mencatat migration yang sudah dijalankan;
-// tidak memiliki relasi ke tabel bisnis.
-Table public._sqlx_migrations {
-  version bigint [pk, not null]
-  description text [not null]
-  installed_on timestamptz [not null, default: `now()`]
-  success boolean [not null]
-  checksum bytea [not null]
-  execution_time bigint [not null]
-}
-
 Ref laptop_logs_user_id_fkey: public.users.id < public.laptop_logs.user_id [delete: set null]
 Ref laptop_logs_laptop_id_fkey: public.laptops.id < public.laptop_logs.laptop_id [delete: set null]
+Ref: laptops.created_at <> laptop_logs.changed_at
+Ref: laptops.updated_at <> laptop_logs.changed_at

@@ -17,7 +17,7 @@ File `src/auth/jwt.rs` menyediakan mekanisme untuk:
 
 Algoritma tanda tangan yang digunakan adalah **HS256**, yaitu HMAC dengan SHA-256. Secret yang sama digunakan untuk menandatangani dan memverifikasi token. Token berlaku selama **3.600 detik (satu jam)**.
 
-Modul ini menangani format dan tanda tangan token. Modul ini **tidak** mencari akun ke database dan tidak menentukan izin route. Setelah JWT diverifikasi, [middleware autentikasi](middleware.md) mencocokkan klaim pengguna dengan database lalu memeriksa hak akses role.
+Modul ini menangani format dan tanda tangan token. Modul ini **tidak** mencari akun ke database maupun Redis, dan tidak menentukan izin route. Setelah JWT diverifikasi, [middleware autentikasi](middleware.md) memeriksa registry `jti` di Redis, mencocokkan klaim pengguna dengan database, lalu memeriksa hak akses role.
 
 ## 2. Gambaran JWT
 
@@ -53,24 +53,27 @@ claims yang sudah diverifikasi
 | --- | --- | --- |
 | `sub` | `i64` | ID pengguna pemilik token. Nama `sub` adalah singkatan dari *subject*. Middleware memakai nilai ini untuk mencari pengguna di database. |
 | `exp` | `u64` | Waktu kedaluwarsa dalam detik sejak Unix epoch (1 Januari 1970 UTC). Token ditolak setelah waktu ini terlewati. |
+| `jti` | `String` | ID acak unik token. Middleware mewajibkan ID ini terdaftar di Redis; logout menghapus record-nya. |
 
 Contoh payload setelah di-decode:
 
 ```json
 {
   "sub": 7,
-  "exp": 1793864943
+  "exp": 1793864943,
+  "jti": "ID-acak-unik-token"
 }
 ```
 
 Angka `exp` di atas hanya contoh timestamp; saat runtime nilainya dihitung dari waktu sekarang. `sub` dan `exp` merupakan nama klaim JWT yang lazim. Role tidak dibawa di token; middleware mengambil role terbaru dari database saat memeriksa izin.
 
-JWT yang diterbitkan sebelum perubahan ini membawa klaim tambahan `role` dan `token_version`. Klaim tambahan itu diabaikan saat dibaca sebagai `Claims`, sehingga token lama tetap diterima sampai `exp` selama secret masih sama dan akun masih ada.
+JWT lama yang tidak memiliki `jti` tidak lagi diterima. Semua token harus memiliki record aktif di Redis selain signature dan expiry yang valid.
 
 ### Role dan masa berlaku token
 
-- Role disimpan di database, bukan di JWT. Perubahan role memengaruhi izin request berikutnya tanpa membatalkan token.
-- Tidak ada pencabutan JWT saat logout atau perubahan password. Token dengan signature valid tetap berlaku sampai `exp`, selama akun pemiliknya masih ada.
+- Role disimpan di database, bukan di JWT. Perubahan role memengaruhi izin request berikutnya tanpa mengubah token.
+- Logout mencabut JWT aktif dengan menghapus `jti` dari Redis. Registry juga memiliki TTL yang mengikuti `exp`.
+- Redis menyimpan `jti` dan ID akun, bukan bearer token mentah. Client tetap membawa JWT untuk request.
 
 Middleware tetap melihat database untuk memastikan akun masih ada dan mendapatkan role terkini. Karena itu, penghapusan akun membuat JWT tidak dapat dipakai lagi.
 
@@ -87,11 +90,11 @@ Di dalam `terbitkan_token`, prosesnya adalah:
 1. `SystemTime::now()` mengambil waktu sistem saat ini.
 2. `duration_since(UNIX_EPOCH)?` mengubahnya menjadi durasi sejak Unix epoch. Operator `?` meneruskan error jika perhitungan gagal.
 3. `.as_secs()` mengambil durasi sebagai jumlah detik.
-4. `Claims { ... }` membentuk payload. Nilai expiry dihitung sebagai waktu sekarang ditambah `TOKEN_EXPIRED_SECONDS`.
+4. `Claims { ... }` membentuk payload dengan `sub`, `exp`, dan ID acak `jti`. Nilai expiry dihitung sebagai waktu sekarang ditambah `TOKEN_EXPIRED_SECONDS`.
 5. `EncodingKey::from_secret(...)` membuat key encoding dari bytes secret.
 6. `Header::new(Algorithm::HS256)` memilih algoritma tanda tangan.
 7. `encode(...)` menserialisasi dan menandatangani claims.
-8. Token yang berhasil dibentuk dibungkus menjadi `Ok(String)`.
+8. Token dan claims yang berhasil dibentuk dibungkus menjadi `IssuedToken` agar handler dapat menyimpan `jti` di Redis dan session.
 
 Handler login mengembalikan token tersebut pada `data.access_token`, bersama tipe token dan masa berlaku. Rincian proses login ada di [handler auth](../handlers/auth.md).
 
@@ -105,7 +108,7 @@ Ketika middleware menerima request, ia mencoba mengambil bearer token dari heade
 4. Memanggil `decode::<Claims>(...)`. Library memeriksa token sesuai konfigurasi, lalu mengubah payload ke `Claims`.
 5. Mengembalikan klaim jika valid atau error jika token tidak dapat diverifikasi.
 
-Validnya signature belum cukup untuk memastikan pengguna masih boleh mengakses endpoint. Middleware memastikan pengguna masih ada, mengambil role terkini dari database, lalu memeriksa izin role. Lihat [catatan middleware](middleware.md).
+Validnya signature belum cukup untuk memastikan pengguna masih boleh mengakses endpoint. Middleware juga memastikan `jti` masih aktif di Redis dan pengguna masih ada, mengambil role terkini dari database, lalu memeriksa izin role. Lihat [catatan middleware](middleware.md).
 
 ## 6. Mengambil bearer token dari header
 
@@ -124,7 +127,7 @@ Authorization: Bearer <access-token>
 5. Token harus tidak kosong dan tidak boleh berisi whitespace tambahan.
 6. Jika semua kondisi lolos, fungsi mengembalikan `Some(token)`; selain itu `None`.
 
-Fungsi `ambil_klaim_dari_header` menghubungkan ekstraksi header dengan verifikasi. Ia mengembalikan `Some(Claims)` jika keduanya berhasil dan `None` jika header tidak dapat dipakai atau token gagal diverifikasi. Bentuk ini memungkinkan middleware mencoba session sebagai jalur autentikasi berikutnya.
+Fungsi `ambil_klaim_dari_header` menghubungkan ekstraksi header dengan verifikasi. Ia mengembalikan `Some(Claims)` jika keduanya berhasil dan `None` jika header tidak dapat dipakai atau token gagal diverifikasi. Middleware memakai langkah langsung karena pencarian Redis bersifat asinkron; bearer yang tidak valid ditolak tanpa fallback ke cookie.
 
 ## 7. Pembahasan sintaks Rust di source
 
@@ -224,10 +227,11 @@ pub fn new(secret: String) -> Self {
 pub struct Claims {
     pub sub: i64,
     pub exp: u64,
+    pub jti: String,
 }
 ```
 
-`Claims` mempunyai dua field publik. Tipe `i64` adalah bilangan bulat bertanda 64-bit; `u64` adalah bilangan bulat tanpa tanda 64-bit. `Serialize` diperlukan saat claims dikodekan menjadi payload token, sedangkan `Deserialize` diperlukan untuk membaca payload kembali sebagai `Claims`. `Debug` membantu inspeksi saat debugging dan `Clone` memungkinkan nilai claims disalin bila diperlukan.
+`Claims` mempunyai tiga field publik. Tipe `i64` adalah bilangan bulat bertanda 64-bit; `u64` adalah bilangan bulat tanpa tanda 64-bit; `String` menyimpan ID token acak. `Serialize` diperlukan saat claims dikodekan menjadi payload token, sedangkan `Deserialize` diperlukan untuk membaca payload kembali sebagai `Claims`. `Debug` membantu inspeksi saat debugging dan `Clone` memungkinkan nilai claims disalin bila diperlukan.
 
 ### 7.5 `impl`, fungsi, method, dan `Self`
 
@@ -284,6 +288,7 @@ pub fn verifikasi_token(
 let claims = Claims {
     sub: user_id,
     exp: now + TOKEN_EXPIRED_SECONDS,
+    jti: "id-acak-unik".to_owned(),
 };
 ```
 
@@ -292,6 +297,7 @@ let claims = Claims {
 - `Claims { ... }` membangun instance struct.
 - `sub: user_id` menyatakan field `sub` diisi dari variable `user_id`.
 - `now + TOKEN_EXPIRED_SECONDS` menjumlahkan timestamp sekarang dengan durasi berlaku.
+- `jti` menerima ID acak baru untuk token tersebut.
 - Koma memisahkan field; titik koma mengakhiri statement.
 
 Variable lokal immutable secara default. Kata `mut` hanya dibutuhkan bila binding itu sendiri akan diubah.
@@ -414,7 +420,7 @@ pub fn ambil_klaim_dari_header(
 - Jika token ada, `verifikasi_token(...)` menghasilkan `Result<Claims, Error>`.
 - `.ok()` mengubah `Ok(claims)` menjadi `Some(claims)` dan `Err(error)` menjadi `None`.
 
-Dengan demikian, pemanggil fungsi ini tidak menerima detail penyebab kegagalan JWT. Pada alur aplikasi, middleware dapat melanjutkan pemeriksaan melalui session. Perbedaan umum tipe hasil:
+Dengan demikian, pemanggil fungsi ini tidak menerima detail penyebab kegagalan JWT. Middleware autentikasi saat ini memanggil verifier langsung agar bearer yang invalid dapat ditolak dan pencarian Redis dapat ditangani secara asinkron. Perbedaan umum tipe hasil:
 
 | Tipe | Varian | Makna |
 | --- | --- | --- |
@@ -500,13 +506,13 @@ curl -i \
   http://127.0.0.1:3001/api/laptops
 ```
 
-Contoh tersebut menunjukkan header request, bukan kode Rust. Jangan menaruh token sungguhan ke catatan, repository, atau log. Cookie session dapat menjadi metode autentikasi alternatif; middleware mencoba session jika JWT tidak menghasilkan identitas yang valid.
+Contoh tersebut menunjukkan header request, bukan kode Rust. Jangan menaruh token sungguhan ke catatan, repository, atau log. Cookie session dapat dipakai tanpa header bearer; jika header bearer dikirim tetapi token tidak valid, middleware menolak request.
 
 ## 10. Kondisi JWT tidak diterima
 
 `verifikasi_token` dapat mengembalikan error, antara lain ketika token tidak dapat di-decode, signature tidak cocok, algoritma tidak sesuai, atau token kedaluwarsa. `ambil_klaim_dari_header` juga mengembalikan `None` jika header hilang atau format bearer tidak cocok.
 
-Setelah JWT tidak menghasilkan identitas, middleware mencoba session. Jika session valid, request dapat tetap terautentikasi melalui session. Jika session juga tidak memberi identitas, middleware mengembalikan `401 Unauthorized`. Bila JWT lolos verifikasi, middleware masih memastikan pengguna ada dan mengambil role terbaru dari database untuk otorisasi. Untuk detail hasil HTTP dan otorisasi, lihat [middleware](middleware.md).
+JWT ditolak jika signature/expiry invalid atau `jti` tidak terdaftar di Redis. Jika Redis tidak dapat dihubungi, middleware mengembalikan `500` dan tidak menerima token secara stateless. Tanpa header bearer, middleware dapat memakai session. Bila JWT lolos verifikasi, middleware juga memastikan pengguna ada dan mengambil role terbaru dari database untuk otorisasi. Untuk detail hasil HTTP dan otorisasi, lihat [middleware](middleware.md).
 
 ## 11. Secret dan batas keamanan
 

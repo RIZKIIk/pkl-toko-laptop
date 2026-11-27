@@ -84,8 +84,9 @@ Fungsi bersama di `shared.rs` meminjam teks (`&str`) alih-alih mengambil kepemil
 1. Memanggil `validasi_nama_pengguna` dan memakai `match`: username valid diteruskan, sedangkan `Err(message)` langsung menjadi `400 Bad Request`. Password kosong juga menghasilkan 400.
 2. Menunggu `auth::autentikasi_pengguna(&pool, username, &payload.password).await`. Layanan memverifikasi password lalu mengambil identitas akun. `Ok(None)` menjadi `401 Unauthorized`, `Ok(Some(...))` berisi ID dan role, sedangkan error dicatat dan menjadi 500.
 3. Meminta `jwt.terbitkan_token(user_id)` membuat token. Error penerbitan dicatat dan menghasilkan 500.
-4. Memanggil `session::mulai_sesi(&session, username).await`. Jika gagal, handler mengembalikan 500.
-5. Mengembalikan response sukses berisi username, role, access token, tipe `Bearer`, dan `expires_in`. Session manager mengurus cookie; handler tidak merakit header cookie sendiri.
+4. Mendaftarkan `jti` di Redis dengan TTL sampai `exp`. Jika gagal, handler mengembalikan 500 tanpa membuat login session.
+5. Memanggil `session::mulai_sesi(&session, username, &jti).await` untuk menyimpan username dan ID token pada session Redis. Jika gagal, handler mencabut token yang baru didaftarkan lalu mengembalikan 500.
+6. Mengembalikan response sukses berisi username, role, access token, tipe `Bearer`, dan `expires_in`. Session manager mengurus cookie; handler tidak merakit header cookie sendiri.
 
 `match` dipakai untuk setiap operasi yang dapat gagal agar handler bisa memilih pesan yang sesuai untuk client sekaligus mencatat detail internal server. Kredensial dan role diperiksa/dikelola di layanan auth dan repository, bukan lewat SQL di handler.
 
@@ -109,7 +110,7 @@ Endpoint admin ini membaca `CreateUserPayload` yang berisi username, password, d
 
 ### `ubah_peran_pengguna(State(pool), Extension(identity), Path(username), Json(payload))`
 
-Middleware menyediakan `identity`; `Path(username)` mengambil nama akun dari URL dan `Json(payload)` membaca role baru. Handler menolak username yang tidak valid, perubahan role untuk akun yang sedang dipakai, dan target role admin dengan 400. Kemudian `ubah_peran_pengguna(...).await` menghasilkan 200 saat berubah, 404 bila pengguna tidak ada, atau 500 bila query gagal. Role baru langsung dipakai pada request selanjutnya, sementara JWT yang sudah diterbitkan tetap diterima hingga kedaluwarsa.
+Middleware menyediakan `identity`; `Path(username)` mengambil nama akun dari URL dan `Json(payload)` membaca role baru. Handler menolak username yang tidak valid, perubahan role untuk akun yang sedang dipakai, dan target role admin dengan 400. Kemudian `ubah_peran_pengguna(...).await` menghasilkan 200 saat berubah, 404 bila pengguna tidak ada, atau 500 bila query gagal. Role baru langsung dipakai pada request selanjutnya; token aktif yang belum dicabut tetap diterima sampai kedaluwarsa.
 
 ### `pengguna_saat_ini(Extension(identity))`
 
@@ -117,7 +118,7 @@ Tidak mencari identitas sendiri. Middleware di [`auth/middleware.rs`](../auth/mi
 
 ### `keluar(session)`
 
-Memanggil `hapus_sesi(&session).await` untuk menghapus session aktif. Jika gagal, handler mengembalikan 500; jika berhasil, response menyatakan logout berhasil. JWT bearer yang dipakai pada request logout tetap dapat digunakan sampai waktu `exp`.
+Mencabut JWT yang terhubung ke bearer request atau session aktif melalui `JwtTokenStore`, lalu memanggil `hapus_sesi(&session).await`. Jika operasi gagal, handler mengembalikan 500; jika berhasil, response menyatakan logout berhasil dan token yang dicabut ditolak pada request berikutnya.
 
 ## Ringkasan route
 
@@ -126,7 +127,7 @@ Memanggil `hapus_sesi(&session).await` untuk menghapus session aktif. Jika gagal
 | `POST /api/auth/register` | `daftar` | Publik; membuat akun buyer. |
 | `POST /api/auth/login` | `masuk` | Publik; membuat JWT dan session. |
 | `GET /api/auth/session` | `pengguna_saat_ini` | Dilindungi; membaca identitas terverifikasi. |
-| `POST /api/auth/logout` | `keluar` | Dilindungi; menghapus session aktif tanpa membatalkan JWT. |
+| `POST /api/auth/logout` | `keluar` | Dilindungi; mencabut JWT terkait di Redis dan menghapus session aktif. |
 | `GET /api/admin/roles` | `daftar_peran_admin` | Dilindungi; memberi pilihan role untuk form admin. |
 | `POST /api/admin/users` | `buat_pengguna` | Dilindungi; membuat akun buyer/restocker. |
 | `PATCH /api/admin/users/{username}/role` | `ubah_peran_pengguna` | Dilindungi; mengubah role target yang diizinkan. |

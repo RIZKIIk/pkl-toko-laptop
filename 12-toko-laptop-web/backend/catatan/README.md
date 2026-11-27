@@ -82,8 +82,8 @@ Centang setiap misi yang sudah bisa dijelaskan:
 
 ## Database dan autentikasi
 
-SQLx menerapkan baseline dan migration lanjutan saat startup. Migration audit menghubungkan `laptop_logs` ke actor dan laptop dengan foreign key yang mempertahankan log ketika parent dihapus; migration berikutnya menghapus kolom `token_version` yang sudah tidak dipakai. Buat backup sebelum menerapkan migration baru pada database lama. Lihat [skema dan aturan migration](rust/database/initial-schema.md) dan [DBML](../database/schema.dbml).
+SQLx menerapkan baseline dan migration lanjutan saat startup. Relasi audit dan pembelian mempertahankan snapshot ketika akun atau laptop dihapus; migration terbaru juga mengindeks FK pembelian dan memvalidasi total struk. Buat backup sebelum menerapkan migration baru pada database lama. Lihat [skema dan aturan migration](rust/database/initial-schema.md) dan [DBML](../database/schema.dbml).
 
 ## Batasan yang perlu diingat
 
-Catatan membahas pengalaman client API dan source backend. Password disimpan sebagai hash Argon2id dan session berada di Redis. Jalankan Redis sebelum server; logout menghapus session yang dipakai, sedangkan JWT tetap berlaku sampai waktu kedaluwarsanya.
+Catatan membahas pengalaman client API dan source backend. Password disimpan sebagai hash Argon2id, session dan registry JWT berada di Redis. Jalankan Redis sebelum server; logout mencabut JWT yang dipakai dan menghapus session aktif.

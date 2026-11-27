@@ -23,7 +23,7 @@ Dari root proyek, siapkan konfigurasi dan jalankan backend dari folder `backend`
 | `APP_PORT` | Ya | Port HTTP, misalnya `3001`. |
 | `SESSION_COOKIE_SECURE` | Tidak | `true` jika cookie hanya dikirim melalui HTTPS; default `false`. |
 | `JWT_SECRET` | Ya | Secret HMAC minimal 32 byte untuk menandatangani JWT. |
-| `REDIS_URL` | Ya | URL server Redis untuk penyimpanan session, misalnya `redis://127.0.0.1:6379/0`. |
+| `REDIS_URL` | Ya | URL server Redis untuk session dan registry JWT aktif, misalnya `redis://127.0.0.1:6379/0`. |
 | `DB_HOST`, `DB_PORT` | Ya | Alamat dan port PostgreSQL. |
 | `DB_NAME`, `DB_USER`, `DB_PASSWORD` | Ya | Database dan kredensial koneksi PostgreSQL. |
 | `ADMIN_USERNAME`, `ADMIN_PASSWORD` | Ya | Akun latihan yang disinkronkan ketika server mulai. |
@@ -42,11 +42,11 @@ Migration diterapkan otomatis saat startup. Pada database baru, urutan migration
 
 Frontend dapat dibuka di [http://127.0.0.1:3001/login](http://127.0.0.1:3001/login); alamat `/` juga mengarahkan ke halaman login. Pengguna dapat membuat akun pembeli di `/register`. Dashboard menyediakan mode terang/gelap dan sidebar yang bisa diciutkan di desktop. Buyer dapat melihat detail serta membeli laptop, restocker dapat memperbarui produk, dan admin dapat menambah, mengubah, atau menghapus laptop.
 
-Data session disimpan di Redis dan dapat dipakai bersama oleh beberapa instance backend. Server membutuhkan Redis saat startup; jika koneksi gagal, aplikasi tidak mulai melayani request. Konfigurasi lokal memakai volume dan AOF melalui [compose.yaml](compose.yaml).
+Data session dan registry token JWT aktif disimpan di Redis dan dapat dipakai bersama oleh beberapa instance backend. JWT hanya diterima jika ID tokennya terdaftar; registry kedaluwarsa otomatis sesuai `exp`, dan logout mencabut token. Redis wajib tersedia saat startup dan request; konfigurasi lokal memakai volume dan AOF melalui [compose.yaml](compose.yaml).
 
 Source frontend ada di folder [`../frontend`](../frontend/). File HTML, CSS, dan JavaScript disertakan langsung oleh router backend, jadi keduanya dijalankan pada origin dan port yang sama.
 
-Baseline [0001_final_schema.sql](database/migrations/0001_final_schema.sql) membentuk tabel akun dan inventaris. Migration [0002_laptop_audit.sql](database/migrations/0002_laptop_audit.sql) menambahkan audit log untuk setiap perubahan laptop, termasuk actor dari autentikasi aplikasi. Sebelum startup pertama yang menerapkan migration baru pada database lama, buat dan verifikasi backup PostgreSQL. Migration lama tidak diubah; skema target dan DBML ada di [catatan database](catatan/rust/database/initial-schema.md) dan [schema.dbml](database/schema.dbml).
+Baseline [0001_final_schema.sql](database/migrations/0001_final_schema.sql) membentuk tabel akun dan inventaris. Migration lanjutan menambah audit log, deskripsi dan pembelian laptop, lalu constraint aritmetika struk serta indeks FK yang dibutuhkan. Sebelum startup pertama yang menerapkan migration baru pada database lama, buat dan verifikasi backup PostgreSQL. Migration yang sudah ada tidak diubah; skema target dan DBML ada di [catatan database](catatan/rust/database/initial-schema.md) dan [schema.dbml](database/schema.dbml).
 
 ## Coba API
 
@@ -58,7 +58,7 @@ Login melalui Postman atau `curl` untuk memperoleh session cookie dan JWT. Opera
 | `POST` | `/api/auth/register` | Mendaftarkan akun. | Publik |
 | `POST` | `/api/auth/login` | Login dan menerbitkan session serta JWT. | Publik |
 | `GET` | `/api/auth/session` | Melihat identitas pengguna aktif. | Login |
-| `POST` | `/api/auth/logout` | Menghapus session yang dipakai. JWT tetap berlaku sampai kedaluwarsa. | Login |
+| `POST` | `/api/auth/logout` | Menghapus session dan mencabut JWT yang dipakai. | Login |
 | `POST` | `/api/admin/users` | Membuat akun buyer/restocker. | Admin |
 | `PATCH` | `/api/admin/users/{username}/role` | Mengubah role menjadi buyer/restocker. | Admin |
 | `GET` | `/api/laptops` | Melihat daftar laptop. | Admin, buyer, restocker |
@@ -72,7 +72,7 @@ Login melalui Postman atau `curl` untuk memperoleh session cookie dan JWT. Opera
 - Salin perintah terminal dari [panduan curl](catatan/curl.md).
 - Ikuti [panduan Postman](catatan/postman.md) untuk mencoba login, CRUD laptop, dan pembelian memakai collection di folder `postman/`.
 
-Login memberi JWT yang berlaku satu jam. Logout menghapus session yang dipakai; JWT tetap dapat digunakan sampai kedaluwarsa. Hapus token lokal setelah logout jika client tidak ingin menggunakannya lagi.
+Login memberi JWT yang berlaku satu jam dan mendaftarkan ID tokennya di Redis dengan TTL yang sama. Logout menghapus session aktif serta mencabut token terkait; request berikutnya dengan token itu akan ditolak. Redis hanya menyimpan ID acak token dan ID akun, bukan bearer JWT mentah.
 
 Password akun disimpan sebagai hash Argon2id dengan salt acak, bukan sebagai teks asli. Setelah update pertama kali, migration dan proses startup meng-upgrade password lama otomatis; akun yang sudah terdaftar tetap bisa login dengan password yang sama.
 

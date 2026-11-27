@@ -15,7 +15,7 @@ Halaman ini menghubungkan file-file backend. Penjelasan isi setiap fungsi ada di
 
 1. [main.rs](rust/main.md) mencoba memuat `.env` dengan `dotenvy::dotenv().ok()`.
 2. `AppConfig::baca_dari_env()` di [config.rs](rust/config.md) membaca host, port, kredensial PostgreSQL/admin, URL Redis, dan secret JWT.
-3. Startup membuka `PgPool` dan koneksi Redis. Redis dipakai sebagai session store dan harus tersedia sebelum server mulai menerima request.
+3. Startup membuka `PgPool` dan koneksi Redis. Redis dipakai sebagai session store serta registry token JWT, dan harus tersedia sebelum server mulai menerima request.
 4. SQLx menjalankan migration yang belum tercatat di `_sqlx_migrations`. Migration audit membuat/menyesuaikan `laptop_logs` dan memasang trigger pada `laptops`; lihat [catatan skema database](rust/database/initial-schema.md). Buat backup sebelum startup menerapkan perubahan pada database lama.
 5. `migrasikan_kata_sandi_lama()` meng-hash password lama dengan Argon2id dan menghapus nilai lama; `siapkan_pengguna_admin()` menyimpan hash password akun dari environment.
 6. `endpoin::buat_router(...)` di folder [`src/endpoin/`](rust/routes.md) menggabungkan route per fitur, memasang middleware session/JWT, `RedisStore`, dan pool PostgreSQL sebagai state router.
@@ -62,16 +62,16 @@ POST /api/auth/login + username/password
   -> handler login memeriksa input
   -> auth service mencari password username di users
   -> password cocok: buat session baru dan JWT HS256 (berlaku satu jam)
+  -> simpan ID JWT dan user ID di Redis dengan TTL sampai exp
   -> SessionManagerLayer mengirim cookie session ke client
   -> client mengirim cookie session atau Authorization: Bearer <JWT>
-  -> middleware wajibkan_autentikasi memverifikasi JWT/session dan role pengguna di database
-  -> logout menghapus session aktif
-  -> JWT tetap berlaku sampai waktu kedaluwarsanya
+  -> middleware wajibkan_autentikasi memverifikasi JWT, registry Redis/session, dan role pengguna di database
+  -> logout mencabut ID JWT di Redis dan menghapus session aktif
 ```
 
 Password di database berupa hash Argon2id dengan salt unik. Server-side session berarti browser atau `curl` membawa cookie sebagai penunjuk session; username disimpan di Redis, bukan dipercayakan dari body request pada setiap endpoint.
 
-JWT berlaku satu jam sejak login dan diterima sampai waktu `exp` selama signature valid dan akun masih ada. Middleware mengambil role terkini dari database untuk memeriksa izin. Logout hanya menghapus session yang dipakai pada request; JWT bearer tidak dicabut dan tetap berlaku sampai kedaluwarsa.
+JWT berlaku satu jam sejak login dan diterima selama signature, expiry, dan registry Redis valid serta akun masih ada. Middleware mengambil role terkini dari database untuk memeriksa izin. Logout mencabut JWT terkait di Redis dan menghapus session yang dipakai pada request.
 
 ## Jalur error
 

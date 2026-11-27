@@ -18,12 +18,12 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let config = AppConfig::baca_dari_env()?;
     let pool = config.hubungkan_ke_database().await?;
 
-    // Sambungkan Redis lebih dulu agar aplikasi tidak menerima request tanpa session store.
+    // Redis wajib tersedia untuk session dan pemeriksaan registry JWT.
     let redis_config = RedisConfig::from_url(&config.redis_url)?;
     let redis_pool = Pool::new(redis_config, None, None, None, 6)?;
     let redis_connection = redis_pool.connect();
     redis_pool.wait_for_connect().await?;
-    println!("Redis session store berhasil terhubung.");
+    println!("Redis session store dan registry JWT berhasil terhubung.");
 
     // Terapkan skema, upgrade hash password, dan pastikan akun admin tersedia.
     database::jalankan_migrasi(&pool).await?;

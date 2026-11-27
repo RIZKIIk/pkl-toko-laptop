@@ -33,7 +33,7 @@ curl -i \
   "http://127.0.0.1:3001/api/auth/login"
 ```
 
-Response sukses login berstatus `200 OK`, mengatur cookie session, dan mengembalikan JWT pada `data.access_token` yang berlaku satu jam. Setelah request lain, cek identitas dengan `GET /api/auth/session`. Logout menghapus session yang dipakai; JWT bearer tetap berlaku sampai kedaluwarsa, jadi hapus token lokal jika tidak ingin menggunakannya lagi.
+Response sukses login berstatus `200 OK`, mengatur cookie session, dan mengembalikan JWT pada `data.access_token` yang berlaku satu jam. ID JWT didaftarkan di Redis sampai token kedaluwarsa. Setelah request lain, cek identitas dengan `GET /api/auth/session`. Logout mencabut JWT dan menghapus session aktif; buang juga salinan token lokal.
 
 Untuk memakai JWT alih-alih cookie, salin `data.access_token` dari response login ke shell variable. Header `Authorization` memakai skema `Bearer`; tanda kutip ganda memungkinkan Bash mengganti `$TOKEN` dengan isi variable:
 
@@ -299,7 +299,7 @@ JWT digunakan untuk autentikasi. Server mengambil role terbaru pengguna dari dat
 
 ### 12. Logout — `POST /api/auth/logout`
 
-Wajib memakai cookie session atau JWT bearer yang valid. Tidak ada body, maka metode ditentukan eksplisit memakai `-X POST`. Logout menghapus session aktif. Bila request memakai JWT bearer, token itu tetap dapat dipakai sampai kedaluwarsa; client harus menghapusnya sendiri bila ingin berhenti mengirimkannya.
+Wajib memakai cookie session atau JWT bearer yang aktif. Tidak ada body, maka metode ditentukan eksplisit memakai `-X POST`. Logout mencabut token JWT yang dipakai dan menghapus session aktif. Request berikutnya dengan token yang dicabut akan mendapat `401 Unauthorized`.
 
 ```bash
 curl -i \
@@ -318,7 +318,7 @@ Contoh response `200 OK`:
 }
 ```
 
-Sesudah logout dengan cookie, request yang hanya mengirim cookie tersebut menghasilkan `401` sampai login lagi. JWT bearer yang sama tetap diterima sampai kedaluwarsa.
+Sesudah logout, request dengan cookie session atau JWT bearer yang dicabut menghasilkan `401` sampai login lagi.
 
 ## Penjelasan opsi curl
 

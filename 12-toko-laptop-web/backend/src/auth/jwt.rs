@@ -7,6 +7,7 @@ use std::{
 
 use axum::http::{HeaderMap, header::AUTHORIZATION};
 use jsonwebtoken::{Algorithm, DecodingKey, EncodingKey, Header, Validation, decode, encode};
+use rand_core::{OsRng, RngCore};
 use serde::{Deserialize, Serialize};
 
 /// Masa berlaku access token dalam detik (satu jam).
@@ -25,6 +26,14 @@ pub struct Claims {
     pub sub: i64,
     /// Waktu kedaluwarsa token dalam detik sejak Unix epoch (`exp`).
     pub exp: u64,
+    /// ID acak unik token untuk pencatatan dan pencabutan di Redis.
+    pub jti: String,
+}
+
+/// JWT dan claims yang dipakai untuk mendaftarkan token di Redis.
+pub struct IssuedToken {
+    pub token: String,
+    pub claims: Claims,
 }
 
 impl JwtService {
@@ -39,16 +48,24 @@ impl JwtService {
     pub fn terbitkan_token(
         &self,
         user_id: i64,
-    ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+    ) -> Result<IssuedToken, Box<dyn std::error::Error + Send + Sync>> {
         // JWT memakai detik sejak Unix epoch untuk mengisi klaim expiry standar.
         let now = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
+        let mut random_id = [0_u8; 32];
+        OsRng.try_fill_bytes(&mut random_id)?;
+        let jti = random_id
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect::<String>();
         let claims = Claims {
             sub: user_id,
             exp: now + TOKEN_EXPIRED_SECONDS,
+            jti,
         };
         let key = EncodingKey::from_secret(self.secret.as_bytes());
 
-        Ok(encode(&Header::new(Algorithm::HS256), &claims, &key)?)
+        let token = encode(&Header::new(Algorithm::HS256), &claims, &key)?;
+        Ok(IssuedToken { token, claims })
     }
 
     /// Memverifikasi signature dan expiry, lalu mengembalikan claims pengguna.

@@ -19,7 +19,7 @@ environment / .env
     AppConfig
       ├─ APP_HOST + APP_PORT → listener HTTP
       ├─ DB_* → PgPool → repositories
-      ├─ REDIS_URL → Redis session store
+      ├─ REDIS_URL → Redis session store + registry JWT
       ├─ ADMIN_* → users table saat startup
       └─ JWT_SECRET → JwtService pada router
 ```
@@ -50,7 +50,7 @@ environment / .env
 | `app_port` | `u16` | `APP_PORT` | Port server, misalnya `3000`. `u16` cocok karena port selalu bilangan positif dalam rentang kecil. Bersifat `pub`. |
 | `session_cookie_secure` | `bool` | `SESSION_COOKIE_SECURE` | Mengaktifkan atribut `Secure` pada cookie; default `false` untuk HTTP lokal, wajib `true` bila memakai HTTPS. |
 | `jwt_secret` | `String` | `JWT_SECRET` | Secret HMAC JWT; wajib minimal 32 byte dan tidak boleh dicatat ke log. |
-| `redis_url` | `String` | `REDIS_URL` | URL koneksi Redis untuk session server-side. |
+| `redis_url` | `String` | `REDIS_URL` | URL koneksi Redis untuk session server-side dan registry JWT aktif. |
 | `db_host` | `String` | `DB_HOST` | Host PostgreSQL. Privat agar detail koneksi tetap dikelola file ini. |
 | `db_port` | `u16` | `DB_PORT` | Port PostgreSQL. |
 | `db_name` | `String` | `DB_NAME` | Nama database. |

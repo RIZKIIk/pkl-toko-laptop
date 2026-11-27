@@ -47,7 +47,7 @@ repositories/
 
 Nilai hasil tersebut tetap dibungkus `Result`, sehingga error query dibedakan dari hasil normal seperti `None` atau `false`.
 
-Untuk akun, `Option` juga menandai hasil pencarian yang tidak ditemukan. JWT tidak memiliki mekanisme pencabutan individual; server menerima token sampai `exp` jika signature valid dan akun masih ada. Riwayat migration SQLx berurutan dan tidak boleh ditulis ulang setelah diterapkan; lihat [skema database dan panduan migration](database/initial-schema.md).
+Untuk akun, `Option` juga menandai hasil pencarian yang tidak ditemukan. JWT hanya diterima selama signature dan expiry valid, `jti` masih terdaftar di Redis, dan akun masih ada. Riwayat migration SQLx berurutan dan tidak boleh ditulis ulang setelah diterapkan; lihat [skema database dan panduan migration](database/initial-schema.md).
 
 ## Alur umum
 

@@ -6,11 +6,13 @@
 
 ## Tujuan
 
-Skema target terdiri dari `users`, `laptops`, `laptop_logs`, `purchases`, dan tabel internal SQLx `_sqlx_migrations`. Baseline [0001_final_schema.sql](../../../database/migrations/0001_final_schema.sql) membuat akun dan inventaris. Migration [0002_laptop_audit.sql](../../../database/migrations/0002_laptop_audit.sql) membuat atau menyesuaikan tabel audit dan memasang trigger. Migration [0003_remove_token_version.sql](../../../database/migrations/0003_remove_token_version.sql) menghapus kolom `token_version` yang tidak lagi dipakai. Migration [0004_product_details_and_purchases.sql](../../../database/migrations/0004_product_details_and_purchases.sql) menambah deskripsi laptop, produk contoh, dan penyimpanan struk simulasi. DBML target tersedia di [schema.dbml](../../../database/schema.dbml).
+Skema target terdiri dari `users`, `laptops`, `laptop_logs`, `purchases`, dan tabel internal SQLx `_sqlx_migrations`. Baseline [0001_final_schema.sql](../../../database/migrations/0001_final_schema.sql) membuat akun dan inventaris. Migration [0002_laptop_audit.sql](../../../database/migrations/0002_laptop_audit.sql) membuat atau menyesuaikan tabel audit dan memasang trigger. Migration [0003_remove_token_version.sql](../../../database/migrations/0003_remove_token_version.sql) menghapus kolom `token_version` yang tidak lagi dipakai. Migration [0004_product_details_and_purchases.sql](../../../database/migrations/0004_product_details_and_purchases.sql) menambah deskripsi laptop, produk contoh, dan penyimpanan struk simulasi. Migration [0005_purchase_integrity.sql](../../../database/migrations/0005_purchase_integrity.sql) menambah indeks FK laptop dan memastikan total struk cocok dengan harga satuan dikali jumlah. DBML target tersedia di [schema.dbml](../../../database/schema.dbml).
 
 Audit read-only pada database yang sudah ada menemukan `laptop_logs` berisi data tetapi tidak dikelola oleh baseline dan tidak memiliki trigger/function. Foreign key lama memakai aksi default `NO ACTION`, sehingga log dapat menghalangi penghapusan laptop. Migration baru tidak mengubah file baseline; ia menambahkan `user_id`, mengganti FK laptop menjadi `ON DELETE SET NULL`, dan mengaktifkan pencatatan otomatis. Sebelum startup menerapkan migration pada database lama, ambil dan verifikasi backup.
 
 Migration memeriksa data lama sebelum membuat FK. Referensi yang tidak valid tidak dihapus: nilainya dipindahkan ke metadata `_migration_orphaned_laptop_id` atau `_migration_orphaned_user_id` dalam `old_data`, lalu kolom FK dibuat `NULL`. Rollback manual tersedia di [database/rollbacks/0002_laptop_audit.sql](../../../database/rollbacks/0002_laptop_audit.sql); script menolak rollback jika ada actor ID atau tautan laptop yang perlu dipertahankan. Rollback ini harus disertai deploy kode yang tidak memuat migration v2, karena startup aplikasi saat ini menerapkan migration secara otomatis. SQLx 0.9 tidak mengizinkan migration simple lama dicampur dengan format up/down reversible, jadi rollback tersebut sengaja berada di luar folder migration.
+
+Rollback untuk migration 0005 tersedia di [database/rollbacks/0005_purchase_integrity.sql](../../../database/rollbacks/0005_purchase_integrity.sql). Script hanya melepas constraint dan indeks tambahan, tidak menghapus baris pembelian. Hentikan aplikasi dan sesuaikan ledger SQLx sebelum menjalankannya; jika aplikasi aktif kembali dengan migration v5 masih tersedia, startup akan menerapkannya lagi.
 
 ## Tabel `laptops`
 
@@ -27,7 +29,19 @@ Validasi di database menjadi lapisan perlindungan tambahan bagi [validasi Rust](
 
 ## Tabel `purchases`
 
-Setiap pembelian simulasi menyimpan nama laptop, merek, harga satuan, jumlah, dan total saat transaksi dibuat. Snapshot ini menjaga struk tetap konsisten jika data katalog berubah atau laptop dihapus. Metode yang diterima adalah QRIS, tunai, transfer bank, dan kartu debit; semua metode hanya simulasi dan tidak memproses uang sungguhan.
+Setiap pembelian simulasi menyimpan snapshot sehingga struk tetap konsisten jika akun atau laptop dihapus atau data katalog berubah.
+
+| Kolom | Constraint / kegunaan |
+| --- | --- |
+| `id` | Primary key identity; menjadi nomor struk. |
+| `user_id` | Nullable FK ke `users.id`, `ON DELETE SET NULL`; relasi akun tetap ada selama akun tersimpan. |
+| `username` | Snapshot nama akun saat transaksi, tetap tersedia setelah akun dihapus. |
+| `laptop_id` | Nullable FK ke `laptops.id`, `ON DELETE SET NULL`; relasi produk tetap ada selama produk tersimpan. |
+| `laptop_name`, `laptop_brand` | Snapshot identitas laptop saat transaksi. |
+| `unit_price`, `quantity`, `total_price` | Harga dan jumlah snapshot; constraint memastikan nilai non-negatif, jumlah positif, dan `total_price = unit_price * quantity`. |
+| `payment_method` | `CHECK` membatasi `qris`, `cash`, `bank_transfer`, atau `debit_card`. Semua metode hanya simulasi dan tidak memproses uang sungguhan. |
+| `payment_status` | Saat ini hanya `simulated_paid`, sesuai alur simulasi pembayaran. |
+| `created_at` | Waktu transaksi; indeks descending mendukung daftar transaksi terbaru. |
 
 ## Tabel `users`
 
@@ -39,7 +53,7 @@ Setiap pembelian simulasi menyimpan nama laptop, merek, harga satuan, jumlah, da
 | `role` | `VARCHAR(20)` | Role `admin`, `buyer`, atau `restocker`; default `buyer`. |
 | `created_at` | `TIMESTAMPTZ` | Waktu akun dibuat. |
 
-Migration 0003 menghapus kolom `token_version` dari database lama tanpa mengubah migration baseline yang telah diterapkan. Akun dan hash password tetap dipertahankan. Logout tidak mencabut JWT; token bearer tetap berlaku sampai `exp`, selama signature valid dan akun masih ada.
+Migration 0003 menghapus kolom `token_version` dari database lama tanpa mengubah migration baseline yang telah diterapkan. Akun dan hash password tetap dipertahankan. JWT sekarang memakai registry Redis terpisah dari database PostgreSQL; token dicabut dengan menghapus registry saat logout.
 
 ## Tabel `laptop_logs`
 
@@ -62,6 +76,8 @@ Trigger `laptops_capture_audit_log` memanggil function `public.capture_laptop_lo
 | --- | --- | --- | --- |
 | `users.id` → `laptop_logs.user_id` | Satu user ke nol atau banyak log; setiap log punya nol atau satu actor. | `SET NULL` | Menyimpan actor perubahan tanpa menghapus audit saat akun dihapus. |
 | `laptops.id` → `laptop_logs.laptop_id` | Satu laptop ke nol atau banyak log; setiap log punya nol atau satu laptop aktif. | `SET NULL` | Menjaga referensi untuk laptop aktif; log dan snapshot tetap ada ketika laptop dihapus. |
+| `users.id` → `purchases.user_id` | Satu user ke nol atau banyak pembelian; setiap pembelian punya nol atau satu akun aktif. | `SET NULL` | Snapshot `username` menjaga informasi pembeli pada struk setelah akun dihapus. |
+| `laptops.id` → `purchases.laptop_id` | Satu laptop ke nol atau banyak pembelian; setiap pembelian punya nol atau satu laptop aktif. | `SET NULL` | Snapshot nama, merek, dan harga menjaga isi struk setelah laptop dihapus atau diubah. |
 | `_sqlx_migrations` → tabel bisnis | Tidak ada relasi. | — | Ledger internal SQLx, bukan data bisnis. |
 
 Tidak ada foreign key kepemilikan langsung antara `users` dan `laptops`. Relasi actor perubahan melalui `laptop_logs`, sedangkan snapshot pembelian menghubungkan akun dan laptop melalui `purchases`.
@@ -70,8 +86,9 @@ Tidak ada foreign key kepemilikan langsung antara `users` dan `laptops`. Relasi 
 
 - Primary key: `users.id`, `laptops.id`, `laptop_logs.id`, dan `_sqlx_migrations.version`.
 - Unique: `users.username`.
-- Check: nama/merek/username tidak kosong setelah trim; harga/stok tidak negatif; role serta operation memakai daftar nilai yang didukung.
-- Index tambahan: `laptop_logs.laptop_id` dan `laptop_logs.user_id` untuk pencarian audit serta aksi referensial `SET NULL`.
+- Check: nama/merek/username tidak kosong setelah trim; harga/stok tidak negatif; role, operation, metode/status pembayaran, dan aritmetika total struk dibatasi.
+- Index tambahan: FK `laptop_logs` dan `purchases` diindeks agar pencarian serta aksi referensial tidak perlu memindai seluruh tabel.
+- Index `purchases_created_at_idx` mengurutkan waktu secara descending untuk daftar transaksi terbaru.
 - Tidak ada stored procedure; hanya function trigger `capture_laptop_log`.
 - DBML mendeskripsikan kolom, checks, indexes, kardinalitas, dan aksi `ON DELETE`. Pengaturan PostgreSQL `NOT DEFERRABLE` tidak tersedia dalam sintaks relationship DBML, jadi file DBML dipakai untuk ERD; migration SQL tetap menjadi sumber DDL yang dijalankan.
 

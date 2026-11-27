@@ -89,7 +89,7 @@ Sebaliknya, sebagian handler auth mengembalikan `Response` langsung. Bentuk ini 
 | `POST /api/auth/register` | 201 | Username dan role buyer akun yang dibuat. |
 | `POST /api/auth/login` | 200 | Username, role, access token, dan masa berlaku; session cookie juga dikelola middleware session. |
 | `GET /api/auth/session` | 200 | Username dan role dari identitas JWT atau session yang diverifikasi. |
-| `POST /api/auth/logout` | 200 | Pesan sukses; session aktif dihapus, JWT tetap berlaku sampai kedaluwarsa. |
+| `POST /api/auth/logout` | 200 | Pesan sukses; JWT terkait dicabut di Redis dan session aktif dihapus. |
 | `POST /api/admin/users` | 201 | Akun dengan role buyer atau restocker. |
 | `PATCH /api/admin/users/{username}/role` | 200 | Role pengguna yang berhasil diperbarui. |
 | `GET /api/laptops` | 200 | `data` berupa daftar array laptop. |
