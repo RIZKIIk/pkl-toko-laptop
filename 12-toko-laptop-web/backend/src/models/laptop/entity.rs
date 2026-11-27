@@ -11,6 +11,8 @@ pub struct Laptop {
     pub nama: String,
     /// Merek pembuat laptop.
     pub merek: String,
+    /// Deskripsi singkat dan kegunaan laptop.
+    pub deskripsi: String,
     /// Harga dalam rupiah utuh.
     pub harga: i64,
     /// Jumlah unit yang tersedia.

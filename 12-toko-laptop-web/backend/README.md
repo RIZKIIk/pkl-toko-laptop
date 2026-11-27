@@ -93,7 +93,8 @@ Presenter → Response JSON
 | Bagian | Tugas |
 | --- | --- |
 | `src/main.rs` | Menyiapkan konfigurasi, database, migration, router, dan server. |
-| `src/routes.rs` | Menghubungkan URL dan method ke handler serta middleware. |
+| `src/endpoin/` | Mendaftarkan endpoint per fitur: login, session, laptop, admin, health, halaman, dan aset. |
+| `src/routes.rs` | Jalur kompatibilitas yang meneruskan ke `endpoin::buat_router`. |
 | `src/handlers/` | Mengatur alur request dan response per endpoint. |
 | `src/validation/` | Memeriksa dan membersihkan input sebelum query. |
 | `src/repositories/` | Menjalankan query PostgreSQL. |
@@ -112,7 +113,7 @@ Untuk memahami proyek atau menyiapkan presentasi, mulai dari [indeks catatan bel
 - Harga adalah bilangan bulat Rupiah dan stok adalah bilangan bulat; keduanya tidak boleh negatif.
 - Request `PATCH` boleh mengirim sebagian field, tetapi minimal satu field harus disertakan.
 - Nilai harga disimpan sebagai angka di database dan ditampilkan sebagai teks, misalnya `Rp 12.500.000`.
-- Daftar, detail, dan update mengembalikan laptop sebagai array berurutan `[id, nama, merek, harga, stok]`; create mengembalikan object bernama.
+- Daftar, detail, dan update mengembalikan laptop sebagai array berurutan `[id, nama, merek, harga, stok, deskripsi]`; create mengembalikan object bernama.
 
 ## Pemeriksaan lokal
 

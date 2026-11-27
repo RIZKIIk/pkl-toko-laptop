@@ -4,6 +4,7 @@ pub mod auth;
 pub mod laptops;
 pub mod system;
 
+// Jalur lama dipertahankan agar pemakai crate tidak perlu bermigrasi sekaligus.
 pub use auth::{
     buat_pengguna, daftar, daftar_peran_admin, keluar, masuk, pengguna_saat_ini,
     ubah_peran_pengguna,

@@ -47,4 +47,4 @@ Pemeriksaan koneksi PostgreSQL dilakukan saat startup. Jika dibutuhkan health ch
 
 ## Route
 
-Fungsi ini dipasang sebagai `GET /health` di [routes.rs](../routes.md).
+Fungsi ini dipasang sebagai `GET /health` di [`endpoin/health.rs`](../../../src/endpoin/health.rs).

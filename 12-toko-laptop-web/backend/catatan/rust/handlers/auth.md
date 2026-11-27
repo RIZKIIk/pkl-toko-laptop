@@ -8,7 +8,17 @@
 
 ## Tanggung jawab dan alur request
 
-Handler ini menerima request akun, memeriksa input, memanggil layanan/repository auth, dan menyusun response HTTP. Query database, penerbitan JWT, verifikasi identitas, dan pengelolaan session berada di modul lain.
+`auth.rs` menjadi facade handler akun yang memisahkan alur login, registrasi, session, dan admin. Masing-masing handler membaca payload, menjalankan validasi input, memanggil layanan/repository, lalu menyusun response HTTP.
+
+```text
+handlers/auth.rs
+├── login.rs     → POST /api/auth/login
+├── register.rs  → POST /api/auth/register
+├── session.rs   → GET session dan POST logout
+├── admin.rs     → kelola akun dan role
+├── payload.rs   → DTO request
+└── shared.rs    → validasi username bersama
+```
 
 ```text
 public register/login ──→ validasi input ──→ auth/repository ──→ response
@@ -45,7 +55,7 @@ Jika body tidak cocok dengan tipe payload, extractor `Json` menolak request sebe
 
 ### Payload dan `derive`
 
-`LoginPayload` mempunyai field `username: String` dan `password: String`; `CreateUserPayload` juga mempunyai `role: UserRole`; `UpdateUserRolePayload` hanya mempunyai `role`. Atribut `#[derive(Deserialize)]` meminta Serde menghasilkan kode untuk membaca field JSON ke struct. `#[serde(deny_unknown_fields)]` membuat field JSON yang tidak dikenal ditolak. Field payload bersifat privat pada modul, tetapi fungsi handler di file yang sama dapat membacanya.
+`LoginPayload` dan `RegisterPayload` memakai `CredentialsPayload` dengan field `username: String` dan `password: String`; `CreateUserPayload` juga mempunyai `role: UserRole`; `UpdateUserRolePayload` hanya mempunyai `role`. Atribut `#[derive(Deserialize)]` meminta Serde menghasilkan kode untuk membaca field JSON ke struct. `#[serde(deny_unknown_fields)]` membuat field JSON yang tidak dikenal ditolak. Field hanya dibuka ke modul handler akun yang memerlukannya.
 
 Deserialize hanya memeriksa bentuk dan tipe JSON. Aturan seperti username tidak kosong, batas 100 karakter, password tidak kosong, dan larangan menetapkan role admin diperiksa oleh handler.
 
@@ -59,7 +69,7 @@ Fungsi `validasi_nama_pengguna` memakai `Result<&str, &'static str>`: `Ok(&str)`
 
 ### `validasi_nama_pengguna(username: &str) -> Result<&str, &'static str>`
 
-Fungsi privat ini meminjam teks (`&str`) alih-alih mengambil kepemilikan `String`. `trim()` menghasilkan potongan teks tanpa whitespace pinggir, lalu `chars().count()` menghitung karakter Unicode. Fungsi menolak username kosong dan yang panjangnya lebih dari 100 karakter; batas 100 diterima. Nilai `Ok(username)` mengembalikan potongan yang telah dibersihkan untuk digunakan handler.
+Fungsi bersama di `shared.rs` meminjam teks (`&str`) alih-alih mengambil kepemilikan `String`. `trim()` menghasilkan potongan teks tanpa whitespace pinggir, lalu `chars().count()` menghitung karakter Unicode. Fungsi menolak username kosong dan yang panjangnya lebih dari 100 karakter; batas 100 diterima. Nilai `Ok(username)` mengembalikan potongan yang telah dibersihkan untuk digunakan handler.
 
 ```text
 "  rizki  " → trim → Ok("rizki")
@@ -72,17 +82,16 @@ Fungsi privat ini meminjam teks (`&str`) alih-alih mengambil kepemilikan `String
 ### `masuk(State(pool), Extension(jwt), session, Json(payload))`
 
 1. Memanggil `validasi_nama_pengguna` dan memakai `match`: username valid diteruskan, sedangkan `Err(message)` langsung menjadi `400 Bad Request`. Password kosong juga menghasilkan 400.
-2. Menunggu `auth::verifikasi_kredensial(&pool, username, &payload.password).await`. Hasil `Ok(false)` menjadi `401 Unauthorized`; `Err(error)` dicatat di log server dan menjadi 500. Username/password yang tidak cocok memakai pesan umum yang sama.
-3. Jika kredensial cocok, mencari tuple identitas dengan `cari_identitas_pengguna_untuk_login(...).await`: nilai `Ok(Some(...))` berisi ID dan role; `Ok(None)` tetap menghasilkan 401; error menjadi 500.
-4. Meminta `jwt.terbitkan_token(user_id)` membuat token. Error penerbitan dicatat dan menghasilkan 500.
-5. Memanggil `session::mulai_sesi(&session, username).await`. Jika gagal, handler mengembalikan 500.
-6. Mengembalikan response sukses berisi username, role, access token, tipe `Bearer`, dan `expires_in`. Session manager mengurus cookie; handler tidak merakit header cookie sendiri.
+2. Menunggu `auth::autentikasi_pengguna(&pool, username, &payload.password).await`. Layanan memverifikasi password lalu mengambil identitas akun. `Ok(None)` menjadi `401 Unauthorized`, `Ok(Some(...))` berisi ID dan role, sedangkan error dicatat dan menjadi 500.
+3. Meminta `jwt.terbitkan_token(user_id)` membuat token. Error penerbitan dicatat dan menghasilkan 500.
+4. Memanggil `session::mulai_sesi(&session, username).await`. Jika gagal, handler mengembalikan 500.
+5. Mengembalikan response sukses berisi username, role, access token, tipe `Bearer`, dan `expires_in`. Session manager mengurus cookie; handler tidak merakit header cookie sendiri.
 
 `match` dipakai untuk setiap operasi yang dapat gagal agar handler bisa memilih pesan yang sesuai untuk client sekaligus mencatat detail internal server. Kredensial dan role diperiksa/dikelola di layanan auth dan repository, bukan lewat SQL di handler.
 
 ### `daftar(State(pool), Json(payload))`
 
-Menggunakan `LoginPayload` (username dan password), memangkas serta memeriksa username, dan menolak password kosong dengan 400. Lalu `auth::daftarkan_pengguna(...).await` menghasilkan:
+Menggunakan `RegisterPayload` (username dan password), memangkas serta memeriksa username, dan menolak password kosong dengan 400. Lalu `auth::daftarkan_pengguna(...).await` menghasilkan:
 
 | Hasil | Arti | Response |
 | --- | --- | --- |
@@ -104,7 +113,7 @@ Middleware menyediakan `identity`; `Path(username)` mengambil nama akun dari URL
 
 ### `pengguna_saat_ini(Extension(identity))`
 
-Tidak mencari identitas sendiri. Middleware di [`auth/middleware.rs`](../auth/middleware.md) sudah memverifikasi JWT atau session dan menyisipkan `AuthIdentity`; fungsi ini mengembalikan username dan role dari nilai tersebut dalam response sukses.
+Tidak mencari identitas sendiri. Middleware di [`auth/middleware.rs`](../auth/middleware.md) sudah memverifikasi JWT atau session dan menyisipkan `AuthIdentity`; fungsi ini mengembalikan ID pengguna, username, dan role dari nilai tersebut dalam response sukses.
 
 ### `keluar(session)`
 

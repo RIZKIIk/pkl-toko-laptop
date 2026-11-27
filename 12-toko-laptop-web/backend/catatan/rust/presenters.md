@@ -37,7 +37,7 @@ presenters/
 | `PATCH /api/laptops/{id}` | `laptop_ke_array`. | Array laptop terbaru. |
 | `POST /api/laptops` | `laptop_ke_objek`. | Object dengan nama field. |
 
-Array laptop selalu berurutan `[id, nama, merek, harga, stok]`. Nilai `harga` pada response berupa string Rupiah, walaupun model, database, dan request create menggunakan angka. Karena array dibaca berdasarkan posisi, client harus memakai urutan yang sama.
+Array laptop selalu berurutan `[id, nama, merek, harga, stok, deskripsi]`. Nilai `harga` pada response berupa string Rupiah, walaupun model, database, dan request create menggunakan angka. Karena array dibaca berdasarkan posisi, client harus memakai urutan yang sama.
 
 Perbedaan bentuk response tersebut adalah kontrak API yang sudah ada, bukan pilihan yang dibuat oleh presenter secara otomatis.
 

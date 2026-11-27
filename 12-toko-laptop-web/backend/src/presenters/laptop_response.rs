@@ -5,14 +5,15 @@ use serde_json::{Value, json};
 
 use super::rupiah::formatkan_rupiah;
 
-/// Membentuk array dengan urutan `[id, nama, merek, harga, stok]`.
+/// Membentuk array dengan urutan `[id, nama, merek, harga, stok, deskripsi]`.
 pub fn laptop_ke_array(laptop: &Laptop) -> Value {
     json!([
         laptop.id,
         laptop.nama,
         laptop.merek,
         formatkan_rupiah(laptop.harga),
-        laptop.stok
+        laptop.stok,
+        laptop.deskripsi
     ])
 }
 
@@ -22,6 +23,7 @@ pub fn laptop_ke_objek(laptop: &Laptop) -> Value {
         "id": laptop.id,
         "nama": laptop.nama,
         "merek": laptop.merek,
+        "deskripsi": laptop.deskripsi,
         "harga": formatkan_rupiah(laptop.harga),
         "stok": laptop.stok
     })

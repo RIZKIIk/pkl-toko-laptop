@@ -6,7 +6,7 @@
 
 ## Tujuan
 
-Skema target terdiri dari `users`, `laptops`, `laptop_logs`, dan tabel internal SQLx `_sqlx_migrations`. Baseline [0001_final_schema.sql](../../../database/migrations/0001_final_schema.sql) membuat akun dan inventaris. Migration [0002_laptop_audit.sql](../../../database/migrations/0002_laptop_audit.sql) membuat atau menyesuaikan tabel audit dan memasang trigger. Migration [0003_remove_token_version.sql](../../../database/migrations/0003_remove_token_version.sql) menghapus kolom `token_version` yang tidak lagi dipakai. DBML target tersedia di [schema.dbml](../../../database/schema.dbml).
+Skema target terdiri dari `users`, `laptops`, `laptop_logs`, `purchases`, dan tabel internal SQLx `_sqlx_migrations`. Baseline [0001_final_schema.sql](../../../database/migrations/0001_final_schema.sql) membuat akun dan inventaris. Migration [0002_laptop_audit.sql](../../../database/migrations/0002_laptop_audit.sql) membuat atau menyesuaikan tabel audit dan memasang trigger. Migration [0003_remove_token_version.sql](../../../database/migrations/0003_remove_token_version.sql) menghapus kolom `token_version` yang tidak lagi dipakai. Migration [0004_product_details_and_purchases.sql](../../../database/migrations/0004_product_details_and_purchases.sql) menambah deskripsi laptop, produk contoh, dan penyimpanan struk simulasi. DBML target tersedia di [schema.dbml](../../../database/schema.dbml).
 
 Audit read-only pada database yang sudah ada menemukan `laptop_logs` berisi data tetapi tidak dikelola oleh baseline dan tidak memiliki trigger/function. Foreign key lama memakai aksi default `NO ACTION`, sehingga log dapat menghalangi penghapusan laptop. Migration baru tidak mengubah file baseline; ia menambahkan `user_id`, mengganti FK laptop menjadi `ON DELETE SET NULL`, dan mengaktifkan pencatatan otomatis. Sebelum startup menerapkan migration pada database lama, ambil dan verifikasi backup.
 
@@ -18,11 +18,16 @@ Migration memeriksa data lama sebelum membuat FK. Referensi yang tidak valid tid
 | --- | --- | --- |
 | `id` | `BIGINT` identity | Primary key. |
 | `nama`, `merek` | `VARCHAR` | Nama dan merek wajib; nilai kosong ditolak. |
+| `deskripsi` | `TEXT` | Deskripsi laptop untuk katalog; migration mengisi deskripsi untuk data lama. |
 | `harga` | `BIGINT` | Harga rupiah, tidak boleh negatif. |
 | `stok` | `INTEGER` | Jumlah stok, tidak boleh negatif. |
 | `created_at`, `updated_at` | `TIMESTAMPTZ` | Waktu pembuatan dan perubahan. |
 
 Validasi di database menjadi lapisan perlindungan tambahan bagi [validasi Rust](../validation.md). Query PATCH memperbarui `updated_at`.
+
+## Tabel `purchases`
+
+Setiap pembelian simulasi menyimpan nama laptop, merek, harga satuan, jumlah, dan total saat transaksi dibuat. Snapshot ini menjaga struk tetap konsisten jika data katalog berubah atau laptop dihapus. Metode yang diterima adalah QRIS, tunai, transfer bank, dan kartu debit; semua metode hanya simulasi dan tidak memproses uang sungguhan.
 
 ## Tabel `users`
 
@@ -59,7 +64,7 @@ Trigger `laptops_capture_audit_log` memanggil function `public.capture_laptop_lo
 | `laptops.id` → `laptop_logs.laptop_id` | Satu laptop ke nol atau banyak log; setiap log punya nol atau satu laptop aktif. | `SET NULL` | Menjaga referensi untuk laptop aktif; log dan snapshot tetap ada ketika laptop dihapus. |
 | `_sqlx_migrations` → tabel bisnis | Tidak ada relasi. | — | Ledger internal SQLx, bukan data bisnis. |
 
-Tidak ada foreign key langsung antara `users` dan `laptops`: aplikasi tidak memiliki kebutuhan kepemilikan laptop. Relasi actor hanya melalui `laptop_logs`.
+Tidak ada foreign key kepemilikan langsung antara `users` dan `laptops`. Relasi actor perubahan melalui `laptop_logs`, sedangkan snapshot pembelian menghubungkan akun dan laptop melalui `purchases`.
 
 ## Index dan constraint
 

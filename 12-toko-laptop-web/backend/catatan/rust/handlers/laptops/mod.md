@@ -52,7 +52,7 @@ Ketiga fungsi sinkron (`fn`, bukan `async fn`), karena hanya menyusun nilai di m
 ## Alur pemanggilan
 
 ```text
-routes.rs → handler operasi → helper bersama (jika dibutuhkan) → JSON/ApiError
+endpoin/laptops.rs → handler operasi → helper bersama (jika dibutuhkan) → JSON/ApiError
 ```
 
 Handler tetap menentukan urutan validasi dan query. Hasil query opsional biasanya dipetakan menjadi `Option<Laptop>`; bila tidak ada, handler memakai `laptop_tidak_ditemukan` untuk menghasilkan `ApiError::NotFound`. Helper di file ini hanya menyamakan bentuk response dan pesan not-found. Untuk alur tiap method, buka halaman [handlers](../../handlers.md) atau halaman operasi di tabel atas.

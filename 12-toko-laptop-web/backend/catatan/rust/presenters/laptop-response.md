@@ -41,7 +41,7 @@ pub fn laptop_ke_array(laptop: &Laptop) -> Value {
 - `pub` membuat fungsi terlihat lewat modul yang menampungnya. Di aplikasi ini fungsi dipakai handler melalui jalur `presenters::laptop_response`.
 - `laptop: &Laptop` meminjam model; presenter tidak mengambil alih kepemilikan atau mengubah field-nya.
 - `-> Value` menyatakan bahwa fungsi menghasilkan nilai JSON.
-- `json!([ ... ])` membuat array JSON. Urutan nilai menjadi kontrak response: `[id, nama, merek, harga, stok]`.
+- `json!([ ... ])` membuat array JSON. Urutan nilai menjadi kontrak response: `[id, nama, merek, harga, stok, deskripsi]`.
 - `formatkan_rupiah(laptop.harga)` mengubah angka harga menjadi teks Rupiah sebelum memasukkannya ke array.
 
 GET daftar, GET detail, dan PATCH menggunakan format array ini. Client bergantung pada posisi field, jadi urutannya harus tetap konsisten.
@@ -67,7 +67,7 @@ Fungsi ini juga meminjam `&Laptop` dan mengembalikan `Value`. Bedanya, `json!({ 
 Untuk laptop dengan harga angka `12_500_000`, array yang dihasilkan:
 
 ```json
-[12, "ThinkPad E14", "Lenovo", "Rp 12.500.000", 5]
+[12, "ThinkPad E14", "Lenovo", "Rp 12.500.000", 5, "Laptop ringkas untuk kerja dan belajar."]
 ```
 
 Object yang dihasilkan:
@@ -89,7 +89,7 @@ Harga menjadi string Rupiah, walaupun model dan database menyimpannya sebagai an
 | Operasi | Presenter | Bentuk `data` |
 | --- | --- | --- |
 | GET daftar | `laptop_ke_array` untuk setiap baris. | Array berisi array laptop. |
-| GET detail | `laptop_ke_array`. | Satu array `[id, nama, merek, harga, stok]`. |
+| GET detail | `laptop_ke_array`. | Satu array `[id, nama, merek, harga, stok, deskripsi]`. |
 | PATCH | `laptop_ke_array`. | Array laptop setelah perubahan. |
 | POST | `laptop_ke_objek`. | Object dengan key bernama. |
 
@@ -103,7 +103,7 @@ Harga menjadi string Rupiah, walaupun model dan database menyimpannya sebagai an
 
 ```text
 Laptop
-  ├─ GET / PATCH → [id, nama, merek, harga, stok]
+  ├─ GET / PATCH → [id, nama, merek, harga, stok, deskripsi]
   └─ POST         → object bernama
                        harga menjadi string Rupiah
 ```

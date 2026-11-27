@@ -44,12 +44,12 @@ ID positif yang tidak ada menghasilkan `404 Not Found`; ID nol/negatif menghasil
 
 ## Bentuk response
 
-Kedua handler mengirim laptop sebagai array berurutan `[id, nama, merek, harga, stok]`. Harga telah diformat menjadi string Rupiah.
+Kedua handler mengirim laptop sebagai array berurutan `[id, nama, merek, harga, stok, deskripsi]`. Harga telah diformat menjadi string Rupiah.
 
 ```json
 {
   "status": "success",
-  "data": [1, "ThinkPad E14", "Lenovo", "Rp 12.500.000", 5]
+  "data": [1, "ThinkPad E14", "Lenovo", "Rp 12.500.000", 5, "Laptop untuk kerja dan belajar."]
 }
 ```
 

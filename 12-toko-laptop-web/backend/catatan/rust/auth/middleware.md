@@ -83,7 +83,7 @@ Dengan demikian, `buyer` dapat membaca laptop dan membeli stok yang tersedia, te
 
 ## Integrasi dengan route dan handler
 
-`routes.rs` memasang middleware melalui `middleware::from_fn_with_state(pool.clone(), auth::wajibkan_autentikasi)` pada grup protected. `State` membawa pool database; router juga memasang `JwtService` sebagai `Extension` dan `SessionManagerLayer` untuk menyediakan session. `auth::wajibkan_autentikasi` diekspor ulang dari `auth/mod.rs`, sehingga router tidak perlu mengimpor jalur modul internal.
+`endpoin/mod.rs` memasang middleware melalui `middleware::from_fn_with_state(pool.clone(), auth::wajibkan_autentikasi)` pada grup endpoint privat. `State` membawa pool database; router juga memasang `JwtService` sebagai `Extension` dan `SessionManagerLayer` untuk menyediakan session. `auth::wajibkan_autentikasi` diekspor ulang dari `auth/mod.rs`, sehingga router tidak perlu mengimpor jalur modul internal.
 
 Setelah lolos, handler dapat mengambil `AuthIdentity` dari request extensions untuk mengetahui pengguna yang sudah diverifikasi. Handler tidak perlu memeriksa ulang header JWT atau cookie session. Kegagalan terjadi sebelum handler dijalankan, sehingga handler protected hanya menerima request yang telah melewati autentikasi dan otorisasi.
 

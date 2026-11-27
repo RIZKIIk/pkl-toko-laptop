@@ -54,7 +54,7 @@ pub async fn wajibkan_autentikasi(
         Some(identity) => identity,
         None => match identitas_sesi(&session).await {
             Ok(Some(identity)) => {
-                match crate::repositories::user_repository::cari_pengguna_berdasarkan_nama(
+                match crate::repositories::user_repository::cari_identitas_pengguna_berdasarkan_nama(
                     &pool,
                     &identity.username,
                 )

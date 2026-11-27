@@ -157,24 +157,6 @@
   font-size: 10px;
   text-transform: capitalize;
 }
-.logout-button {
-  width: 30px;
-  height: 30px;
-  display: grid;
-  place-items: center;
-  border: 0;
-  border-radius: 7px;
-  color: #a9babb;
-  background: transparent;
-}
-.logout-button:hover {
-  color: white;
-  background: rgba(255, 255, 255, 0.1);
-}
-.logout-button svg {
-  width: 17px;
-  height: 17px;
-}
 .main-area {
   min-width: 0;
 }
@@ -212,6 +194,140 @@
   height: 33px;
   font-size: 12px;
 }
+.account-menu {
+  position: relative;
+}
+.account-trigger {
+  min-height: 40px;
+  max-width: 220px;
+  padding: 3px 10px 3px 4px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  color: var(--ink);
+  background: var(--paper);
+  text-align: left;
+  transition: border-color 0.16s, background 0.16s;
+}
+.account-trigger:hover,
+.account-trigger[aria-expanded="true"] {
+  border-color: #c6d2d3;
+  background: var(--surface-muted);
+}
+.account-trigger:focus-visible,
+.account-menu-link:focus-visible,
+.account-menu-logout:focus-visible {
+  outline: 3px solid rgba(245, 201, 73, 0.5);
+  outline-offset: 2px;
+}
+.account-trigger-copy,
+.account-popover-copy {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+.account-trigger-copy strong,
+.account-popover-copy strong {
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 750;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.account-trigger-copy small,
+.account-popover-copy small {
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.35;
+}
+.account-trigger-chevron {
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+}
+.account-trigger-chevron svg {
+  width: 15px;
+  height: 15px;
+}
+.account-popover {
+  width: min(290px, calc(100vw - 28px));
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 10px);
+  right: 0;
+  padding: 9px;
+  display: grid;
+  gap: 4px;
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  color: var(--ink);
+  background: var(--paper);
+  box-shadow: 0 16px 42px rgba(20, 38, 43, 0.16);
+}
+.account-popover[hidden] {
+  display: none;
+}
+.account-popover-summary {
+  min-width: 0;
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  border-radius: 10px;
+  background: var(--surface-muted);
+}
+.account-popover-avatar {
+  width: 40px;
+  height: 40px;
+  font-size: 14px;
+}
+.account-popover-copy {
+  flex: 1;
+}
+.account-popover-copy strong {
+  font-size: 12px;
+}
+.account-popover-id {
+  padding: 7px 10px 5px;
+  color: var(--muted);
+  font-size: 10px;
+}
+.account-menu-link,
+.account-menu-logout {
+  min-height: 40px;
+  padding: 0 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 0;
+  border-radius: 9px;
+  color: var(--ink);
+  background: transparent;
+  font: 650 11px "DM Sans", sans-serif;
+  text-align: left;
+  text-decoration: none;
+  transition: background 0.15s, color 0.15s;
+}
+.account-menu-link:hover {
+  color: var(--navy);
+  background: var(--surface-muted);
+}
+.account-menu-logout {
+  color: var(--red);
+  cursor: pointer;
+}
+.account-menu-logout:hover {
+  background: #fff0ee;
+}
+.account-menu-link svg,
+.account-menu-logout svg {
+  width: 17px;
+  height: 17px;
+  flex: 0 0 auto;
+}
 .content {
   width: min(1240px, 100%);
   margin: 0 auto;
@@ -222,6 +338,103 @@
   align-items: flex-end;
   justify-content: space-between;
   gap: 20px;
+}
+.profile-welcome {
+  margin-bottom: 22px;
+}
+.profile-overview {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--paper);
+  box-shadow: var(--shadow);
+}
+.profile-overview-head {
+  min-height: 145px;
+  padding: 27px 30px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  background:
+    radial-gradient(ellipse at 100% 0, rgba(245, 201, 73, 0.13), transparent 34%),
+    linear-gradient(120deg, var(--surface-muted), var(--paper));
+}
+.profile-avatar {
+  width: 66px;
+  height: 66px;
+  border: 3px solid var(--paper);
+  box-shadow: 0 4px 15px rgba(20, 38, 43, 0.12);
+  font-size: 23px;
+}
+.profile-identity {
+  min-width: 0;
+}
+.profile-kicker {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.profile-identity h2 {
+  overflow-wrap: anywhere;
+  margin: 4px 0 2px;
+  color: var(--ink);
+  font: 800 clamp(20px, 2.5vw, 27px) / 1.2 Manrope, sans-serif;
+  letter-spacing: -0.7px;
+}
+.profile-identity-note {
+  color: var(--muted);
+  font-size: 11px;
+}
+.profile-overview-head .role-badge {
+  margin-left: auto;
+  flex: 0 0 auto;
+}
+.profile-details-grid {
+  padding: 20px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 11px;
+}
+.profile-detail {
+  min-width: 0;
+  padding: 15px 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface-muted);
+}
+.profile-detail > span {
+  display: block;
+  margin-bottom: 7px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.profile-detail > strong {
+  display: block;
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+.profile-detail .profile-session-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #28774e;
+}
+.profile-session-status i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #45a66e;
+  box-shadow: 0 0 0 4px rgba(69, 166, 110, 0.13);
+}
+.profile-access-detail {
+  grid-column: 1 / -1;
 }
 .welcome-row h1 {
   margin: 0;
@@ -390,6 +603,9 @@
   text-transform: uppercase;
   white-space: nowrap;
 }
+.inventory-table th:last-child {
+  text-align: right;
+}
 .inventory-table td {
   padding: 14px 17px;
   border-top: 1px solid #f0f2f3;
@@ -407,6 +623,10 @@
   display: flex;
   align-items: center;
   gap: 11px;
+}
+.product-name > div {
+  min-width: 0;
+  flex: 1;
 }
 .product-thumb {
   width: 40px;
@@ -430,6 +650,18 @@
   margin-top: 3px;
   color: #98a2a5;
   font-size: 10px;
+}
+.product-description-preview {
+  max-width: 290px;
+  margin-top: 5px;
+  overflow: hidden;
+  color: #748388;
+  font-size: 10px;
+  line-height: 1.45;
+  white-space: normal;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 .price-cell {
   color: #26363d !important;
@@ -455,6 +687,7 @@
   background: #fff0ee;
 }
 .row-action {
+  position: relative;
   width: 31px;
   height: 31px;
   border: 1px solid #e7ecee;
@@ -478,6 +711,53 @@
 .row-action svg {
   width: 16px;
   height: 16px;
+}
+.row-action-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  clip-path: inset(50%);
+}
+.inventory-actions-cell {
+  width: 1%;
+  text-align: right;
+}
+.inventory-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+.row-action-edit {
+  color: #4e6872;
+}
+.row-action-buy {
+  border-color: #e8c95f;
+  color: #473812;
+  background: #f7d35f;
+}
+.row-action-buy:hover {
+  border-color: #e8c95f;
+  color: #30240b;
+  background: #ffdf72;
+}
+.row-action-buy:disabled {
+  border-color: #e7ecee;
+  color: #a3afb2;
+  background: #f2f5f5;
+  cursor: not-allowed;
+  transform: none;
+}
+.row-action-delete {
+  color: #a64d47;
+}
+.row-action-delete:hover {
+  border-color: #ebcfcc;
+  color: #9c3d37;
+  background: #fff2f0;
 }
 .empty-state,
 .error-state {
@@ -910,22 +1190,6 @@
 .profile-mini .avatar {
   box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.08);
 }
-.logout-button {
-  width: 36px;
-  height: 36px;
-  flex: 0 0 auto;
-  border: 1px solid transparent;
-  border-radius: 10px;
-  transition:
-    color 0.16s ease,
-    background 0.16s ease,
-    border-color 0.16s ease;
-}
-.logout-button:hover {
-  border-color: rgba(255, 255, 255, 0.12);
-  color: #fff2c3;
-  background: rgba(255, 255, 255, 0.09);
-}
 .sidebar-shade {
   border: 0;
   padding: 0;
@@ -934,4 +1198,163 @@
 body.sidebar-open {
   overflow: hidden;
   overscroll-behavior: none;
+}
+
+/* Ringkasan dashboard dibuat sebagai fokus utama sebelum kartu metrik. */
+#products {
+  scroll-margin-top: 98px;
+}
+.dashboard-hero {
+  position: relative;
+  isolation: isolate;
+  min-height: 226px;
+  padding: clamp(25px, 3.5vw, 40px);
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 30px;
+  border: 1px solid rgba(245, 201, 73, 0.2);
+  border-radius: 22px;
+  color: #f7fbfb;
+  background:
+    radial-gradient(ellipse at 85% 12%, rgba(245, 201, 73, 0.2), transparent 31%),
+    linear-gradient(118deg, #25464b 0%, #1b373d 57%, #142d33 100%);
+  box-shadow: 0 18px 42px rgba(24, 50, 56, 0.15);
+}
+.dashboard-hero::after {
+  position: absolute;
+  z-index: -1;
+  top: -90px;
+  right: 20%;
+  width: 260px;
+  height: 260px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 50%;
+  content: "";
+  box-shadow:
+    0 0 0 28px rgba(255, 255, 255, 0.025),
+    0 0 0 60px rgba(255, 255, 255, 0.018);
+  pointer-events: none;
+}
+.dashboard-hero-copy {
+  position: relative;
+  z-index: 1;
+  max-width: 670px;
+}
+.dashboard-hero-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.dashboard-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #f8d76e;
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+.dashboard-kicker-mark {
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
+  background: #f5c849;
+  box-shadow: 0 0 0 4px rgba(245, 201, 73, 0.13);
+  transform: rotate(45deg);
+}
+.dashboard-hero .role-badge {
+  padding: 6px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.17);
+  color: #eff6f6;
+  background: rgba(255, 255, 255, 0.09);
+  font-size: 10px;
+}
+.dashboard-hero h1 {
+  margin: 19px 0 0;
+  color: #f7fbfb;
+  font: 800 clamp(27px, 3.1vw, 38px) / 1.15 Manrope, sans-serif;
+  letter-spacing: -1.35px;
+}
+.dashboard-hero p {
+  max-width: 530px;
+  margin: 10px 0 0;
+  color: #c0d0d1;
+  font-size: 13px;
+  line-height: 1.65;
+}
+.dashboard-hero-actions {
+  position: relative;
+  z-index: 1;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+.hero-link-button,
+.hero-refresh-button,
+.hero-primary-button {
+  min-height: 43px;
+  padding: 0 13px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 11px;
+  color: #f2f7f7;
+  background: rgba(255, 255, 255, 0.08);
+  font: 700 11px "DM Sans", sans-serif;
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    transform 0.16s ease,
+    border-color 0.16s ease,
+    background 0.16s ease;
+}
+.hero-link-button:hover,
+.hero-refresh-button:hover {
+  border-color: rgba(255, 255, 255, 0.34);
+  background: rgba(255, 255, 255, 0.14);
+  transform: translateY(-1px);
+}
+.hero-primary-button {
+  border-color: #f5cf58;
+  color: #27383a;
+  background: linear-gradient(135deg, #ffe17c, #f4c64f);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+.hero-primary-button:hover {
+  border-color: #ffe58e;
+  background: linear-gradient(135deg, #ffe895, #ffd35e);
+  transform: translateY(-1px);
+}
+.hero-link-button:focus-visible,
+.hero-refresh-button:focus-visible,
+.hero-primary-button:focus-visible {
+  outline: 3px solid rgba(255, 225, 124, 0.6);
+  outline-offset: 3px;
+}
+.hero-link-button svg,
+.hero-refresh-button svg,
+.hero-primary-button svg {
+  width: 16px;
+  height: 16px;
+}
+.dashboard-hero + .stats-grid {
+  margin-top: 19px;
+}
+.stat-copy {
+  min-width: 0;
+}
+.stat-copy small {
+  display: block;
+  margin-top: 7px;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.35;
 }

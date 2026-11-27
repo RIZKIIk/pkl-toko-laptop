@@ -17,6 +17,7 @@ Table public.laptops {
   id bigint [pk, increment]
   nama varchar(150) [not null]
   merek varchar(100) [not null]
+  deskripsi text [not null, default: '']
   harga bigint [not null]
   stok integer [not null]
   created_at timestamptz [not null, default: `CURRENT_TIMESTAMP`]
@@ -64,3 +65,35 @@ Table public._sqlx_migrations {
 
 Ref laptop_logs_user_id_fkey: public.users.id < public.laptop_logs.user_id [delete: set null]
 Ref laptop_logs_laptop_id_fkey: public.laptops.id < public.laptop_logs.laptop_id [delete: set null]
+
+// Struk pembelian simulasi menyimpan snapshot agar tetap dapat dicetak jika produk berubah.
+Table public.purchases {
+  id bigint [pk, increment]
+  user_id bigint [null]
+  username varchar(100) [not null]
+  laptop_id bigint [null]
+  laptop_name varchar(150) [not null]
+  laptop_brand varchar(100) [not null]
+  unit_price bigint [not null]
+  quantity integer [not null]
+  total_price bigint [not null]
+  payment_method varchar(24) [not null]
+  payment_status varchar(24) [not null, default: 'simulated_paid']
+  created_at timestamptz [not null, default: `CURRENT_TIMESTAMP`]
+
+  indexes {
+    (user_id) [name: 'purchases_user_id_idx']
+    (created_at) [name: 'purchases_created_at_idx']
+  }
+
+  checks {
+    `unit_price >= 0` [name: 'purchases_unit_price_check']
+    `quantity > 0` [name: 'purchases_quantity_check']
+    `total_price >= 0` [name: 'purchases_total_price_check']
+    `payment_method in ('qris', 'cash', 'bank_transfer', 'debit_card')` [name: 'purchases_payment_method_check']
+    `payment_status in ('simulated_paid')` [name: 'purchases_payment_status_check']
+  }
+}
+
+Ref purchases_user_id_fkey: public.users.id < public.purchases.user_id [delete: set null]
+Ref purchases_laptop_id_fkey: public.laptops.id < public.purchases.laptop_id [delete: set null]

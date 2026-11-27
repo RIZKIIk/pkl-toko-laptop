@@ -15,7 +15,10 @@ Modul ini tidak menangani query SQL secara langsung. Operasi tabel `users` diter
 
 ```text
 src/auth/
-├── mod.rs         # Layanan akun dan pemeriksaan kredensial
+├── mod.rs         # Deklarasi modul dan re-export layanan akun
+├── accounts.rs    # Registrasi, verifikasi, dan sinkronisasi akun
+├── migration.rs   # Upgrade hash password lama
+├── password.rs    # Hash dan verifikasi Argon2id
 ├── middleware.rs  # Autentikasi JWT/session dan otorisasi role
 ├── session.rs     # Helper session
 ├── jwt.rs         # Penerbitan dan verifikasi JWT HS256
@@ -27,6 +30,8 @@ src/auth/
 
 [Modul](#1-deklarasi-modul) · [Re-export](#2-import-dan-re-export) · [Seed akun](#3-siapkan_pengguna_admin) · [Registrasi](#4-daftarkan_pengguna) · [Verifikasi](#5-verifikasi_kredensial) · [Hash password](#6-hash-password) · [Alur ringkas](#ringkasan-alur)
 
+Use case akun, upgrade data lama, dan hash password dipisahkan per file. Modul ini mempertahankan jalur publik yang sudah dipakai startup dan handler, sedangkan implementasi query tetap berada di repository.
+
 ## 1. Deklarasi modul
 
 Di awal file:
@@ -37,6 +42,9 @@ pub mod jwt;
 pub mod role;
 pub mod response;
 pub mod session;
+mod accounts;
+mod migration;
+mod password;
 ```
 
 - `mod middleware;` mendaftarkan autentikasi request dan pemeriksaan izin role.
@@ -44,6 +52,7 @@ pub mod session;
 - `mod role;` mendaftarkan tipe `UserRole` dan aturan `boleh_mengakses`.
 - `mod session;` memberi tahu Rust bahwa isi modul `session` ada di file `session.rs`.
 - `mod response;` mendaftarkan helper response JSON yang digunakan handler dan middleware.
+- `mod accounts;`, `mod migration;`, dan `mod password;` memisahkan use case akun, upgrade password lama, serta pekerjaan Argon2id.
 - `pub` membuat nama modul dapat diakses melalui jalur publik, misalnya `auth::response`.
 
 Setiap modul memiliki tanggung jawab berbeda. Lihat [catatan middleware](middleware.md), [catatan response](response.md), [catatan `jwt.rs`](jwt.md) untuk access token, dan [catatan `session.rs`](session.md) untuk helper session.
@@ -51,19 +60,24 @@ Setiap modul memiliki tanggung jawab berbeda. Lihat [catatan middleware](middlew
 ## 2. Import dan re-export
 
 ```rust
-use std::error::Error;
-use sqlx::PgPool;
-use crate::repositories::user_repository;
+mod accounts;
+mod migration;
+mod password;
 
+pub use accounts::{
+    autentikasi_pengguna, daftarkan_pengguna, daftarkan_pengguna_dengan_peran,
+    siapkan_pengguna_admin, ubah_peran_pengguna, verifikasi_kredensial,
+};
+pub use migration::migrasikan_kata_sandi_lama;
 pub use middleware::wajibkan_autentikasi;
 ```
 
 | Sintaks | Kegunaan |
 | --- | --- |
-| `use std::error::Error;` | Mengimpor trait `Error` dari pustaka standar Rust untuk menuliskan tipe error umum. |
-| `use sqlx::PgPool;` | Mengimpor pool koneksi PostgreSQL yang dipakai untuk mengakses database. Pool mengelola koneksi agar dapat digunakan kembali. |
-| `use crate::repositories::user_repository;` | Mengimpor modul repository user dari crate aplikasi ini. Modul tersebut menjalankan query ke tabel `users`. |
-| `pub use middleware::wajibkan_autentikasi;` | Mengimpor sekaligus mengekspor ulang `wajibkan_autentikasi` dari modul `middleware`. Kode lain tetap dapat mengaksesnya melalui `auth::wajibkan_autentikasi`. |
+| `mod accounts;`, `mod migration;`, `mod password;` | Mendaftarkan implementasi use case akun, migrasi password lama, dan fungsi Argon2id yang dipakai secara internal. |
+| `pub use accounts::{...};` | Menjaga fungsi layanan akun tersedia melalui path stabil `auth::...` tanpa menaruh implementasi di `mod.rs`. |
+| `pub use migration::migrasikan_kata_sandi_lama;` | Mengekspos langkah upgrade password lama untuk startup. |
+| `pub use middleware::wajibkan_autentikasi;` | Mengekspos middleware pada path `auth::wajibkan_autentikasi`. |
 
 `crate::` berarti jalur dimulai dari akar crate aplikasi ini. `use` membuat nama yang sering dipakai lebih ringkas. `pub use` juga menjadikan nama yang diimpor tersedia bagi pemanggil dari luar modul, sesuai batas visibilitas modul.
 
@@ -71,7 +85,7 @@ pub use middleware::wajibkan_autentikasi;
 
 ## 3. `siapkan_pengguna_admin`
 
-Kode:
+Implementasi berada di `accounts.rs`:
 
 ```rust
 pub async fn siapkan_pengguna_admin(
@@ -196,7 +210,7 @@ Helper privat `migrasikan_kata_sandi_lama_dengan_lock(pool)` menjalankan langkah
 
 ## 6. Hash password
 
-`buat_hash_kata_sandi(password: &str) -> Result<String, ...>` menghasilkan salt acak baru untuk tiap password dan menggunakan `Argon2::default()` (Argon2id). `verifikasi_kata_sandi(password_hash: String, password: &str) -> Result<bool, ...>` menolak password kosong, mem-parsing hash, lalu membandingkan password menggunakan verifier Argon2. Keduanya menggunakan `spawn_blocking` agar kerja CPU tidak menghambat runtime async. `password.to_owned()` membuat `String` milik sendiri agar data dapat dipindahkan ke closure; `move` memindahkan nilai tersebut ke closure. `.await??` berarti menunggu task lalu meneruskan dua kemungkinan error: error join task dan error Argon2.
+`buat_hash_kata_sandi` dan `verifikasi_kata_sandi` berada di `password.rs`. Hashing menghasilkan salt acak baru untuk tiap password dan menggunakan `Argon2::default()` (Argon2id). Verifikasi menolak password kosong, mem-parsing hash, lalu membandingkan password. Keduanya menggunakan `spawn_blocking` agar kerja CPU tidak menghambat runtime async. `password.to_owned()` membuat `String` milik sendiri agar data dapat dipindahkan ke closure; `move` memindahkan nilai tersebut ke closure. `.await??` berarti menunggu task lalu meneruskan dua kemungkinan error: error join task dan error Argon2.
 
 Attribute `#[cfg(test)]` menyertakan modul test hanya saat `cargo test`; `#[tokio::test]` menyediakan runtime async untuk test fungsi `async`. `AuthIdentity` berada di middleware, sedangkan `SessionIdentity` berada di session; keduanya meminta compiler membuat trait `Clone` dan `Debug`.
 

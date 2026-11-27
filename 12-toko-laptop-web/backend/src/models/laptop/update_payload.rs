@@ -9,6 +9,8 @@ pub struct UpdateLaptopPayload {
     pub nama: Option<String>,
     /// Merek baru; `None` berarti nilai lama dipertahankan.
     pub merek: Option<String>,
+    /// Deskripsi baru; `None` berarti nilai lama dipertahankan.
+    pub deskripsi: Option<String>,
     /// Harga baru; `None` berarti nilai lama dipertahankan.
     pub harga: Option<i64>,
     /// Stok baru; `None` berarti nilai lama dipertahankan.

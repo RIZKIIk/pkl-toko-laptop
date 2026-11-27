@@ -62,7 +62,7 @@ Response `200 OK` berisi semua nilai terbaru. Field merek dan stok tetap sama, d
 {
   "status": "success",
   "message": "Laptop berhasil diperbarui",
-  "data": [1, "ThinkPad E14 Gen 5", "Lenovo", "Rp 13.500.000", 5]
+  "data": [1, "ThinkPad E14 Gen 5", "Lenovo", "Rp 13.500.000", 5, "Laptop ringkas untuk kerja dan belajar."]
 }
 ```
 

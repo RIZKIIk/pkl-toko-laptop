@@ -9,6 +9,8 @@ pub struct CreateLaptopPayload {
     pub nama: String,
     /// Merek pembuat laptop.
     pub merek: String,
+    /// Deskripsi laptop yang ditampilkan di katalog.
+    pub deskripsi: String,
     /// Harga dalam rupiah utuh.
     pub harga: i64,
     /// Jumlah stok awal.

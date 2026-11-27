@@ -9,9 +9,9 @@ export function renderRegister() {
       <aside class="login-aside">
         ${brand()}
         <div class="login-promo">
-          <p class="eyebrow">Katalog laptop</p>
-          <h1>Lihat pilihan <span>yang tersedia.</span></h1>
-          <p>Cek model, harga, dan stok sebelum memilih.</p>
+          <p class="eyebrow">Katalog LaptopKu</p>
+          <h1>Mau cari laptop? Cari di Laptop<span>Ku</span>.</h1>
+          <p>Daftar untuk melihat laptop yang tersedia di katalog.</p>
           <div class="login-art" aria-hidden="true">
             <img
               class="login-illustration"
@@ -30,10 +30,10 @@ export function renderRegister() {
         <div class="auth-top">
           ${brand("mobile-brand")}${themeToggleMarkup()}
         </div>
-        <p class="eyebrow">Daftar</p>
-        <h2>Buat akun LaptopKu</h2>
+        <p class="eyebrow">Akun LaptopKu</p>
+        <h2>Buat akun pembeli</h2>
         <p class="form-intro">
-          Daftar sebagai pembeli. Akun dengan role lain dibuat oleh admin toko.
+          Daftar untuk melihat katalog. Akun staf dibuat oleh admin toko.
         </p>
         <div id="register-error" class="login-error" role="alert"></div>
         <form id="register-form" novalidate>

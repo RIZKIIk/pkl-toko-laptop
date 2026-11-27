@@ -14,6 +14,8 @@
     </linearGradient>
   </defs>
 
+  <path d="M0 231C103 190 157 197 239 227s166 43 321-26" stroke="#B9D1C7" stroke-opacity=".08" stroke-width="1.2"/>
+  <path d="M0 249C116 210 172 218 253 244s168 37 307-18" stroke="#B9D1C7" stroke-opacity=".055" stroke-width="1.2"/>
   <circle cx="424" cy="72" r="49" fill="#F5C849" fill-opacity=".09"/>
   <circle cx="424" cy="72" r="34" stroke="#F5C849" stroke-opacity=".2"/>
   <circle cx="126" cy="208" r="4" fill="#F5C849"/>

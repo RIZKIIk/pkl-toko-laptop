@@ -143,12 +143,12 @@ Contoh response `200 OK`:
 {
   "status": "success",
   "data": [
-    [1, "ThinkPad E14", "Lenovo", "Rp 12.500.000", 5]
+    [1, "ThinkPad E14", "Lenovo", "Rp 12.500.000", 5, "Laptop untuk kerja dan belajar."]
   ]
 }
 ```
 
-Jika belum ada laptop, `data` adalah array kosong. Setiap item berbentuk `[id, nama, merek, harga, stok]`.
+Jika belum ada laptop, `data` adalah array kosong. Setiap item berbentuk `[id, nama, merek, harga, stok, deskripsi]`.
 
 ### 6. Tambah laptop — `POST /api/laptops`
 
@@ -158,7 +158,7 @@ Wajib login. `-H` menyatakan bahwa body yang dikirim adalah JSON. `-d` mengirim 
 curl -i \
   -b cookies.txt \
   -H 'Content-Type: application/json' \
-  -d '{"nama":"ThinkPad E14","merek":"Lenovo","harga":12500000,"stok":5}' \
+  -d '{"nama":"ThinkPad E14","merek":"Lenovo","deskripsi":"Laptop ringkas untuk kerja dan belajar.","harga":12500000,"stok":5}' \
   "http://127.0.0.1:3001/api/laptops"
 ```
 
@@ -193,7 +193,7 @@ Contoh response `200 OK`:
 ```json
 {
   "status": "success",
-  "data": [1, "ThinkPad E14", "Lenovo", "Rp 12.500.000", 5]
+  "data": [1, "ThinkPad E14", "Lenovo", "Rp 12.500.000", 5, "Laptop untuk kerja dan belajar."]
 }
 ```
 
@@ -209,11 +209,11 @@ BUYER_TOKEN='JWT_DARI_LOGIN_BUYER'
 curl -i \
   -H "Authorization: Bearer $BUYER_TOKEN" \
   -H 'Content-Type: application/json' \
-  -d '{"jumlah":1}' \
+  -d '{"jumlah":1,"metode_pembayaran":"qris"}' \
   "http://127.0.0.1:3001/api/laptops/1/buy"
 ```
 
-Response sukses `200 OK` menyertakan jumlah pembelian dan laptop dengan stok terbaru.
+Response sukses `200 OK` menyertakan jumlah pembelian, laptop dengan stok terbaru, dan snapshot struk. Semua metode pembayaran hanya simulasi dan tidak menagih uang.
 
 ### 9. Update sebagian field — `PATCH /api/laptops/{id}`
 
@@ -234,7 +234,7 @@ Contoh response `200 OK`:
 {
   "status": "success",
   "message": "Laptop berhasil diperbarui",
-  "data": [1, "ThinkPad E14 Gen 5", "Lenovo", "Rp 13.500.000", 5]
+  "data": [1, "ThinkPad E14 Gen 5", "Lenovo", "Rp 13.500.000", 5, "Laptop ringkas untuk kerja dan belajar."]
 }
 ```
 

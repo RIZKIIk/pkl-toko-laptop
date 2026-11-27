@@ -4,6 +4,12 @@ use sqlx::PgPool;
 
 use crate::auth::role::UserRole;
 
+fn decode_role(role: String) -> Result<UserRole, sqlx::Error> {
+    role.parse::<UserRole>().map_err(|error| {
+        sqlx::Error::Decode(std::io::Error::new(std::io::ErrorKind::InvalidData, error).into())
+    })
+}
+
 /// Mengambil hash password yang tersimpan untuk username.
 pub async fn cari_hash_kata_sandi(
     pool: &PgPool,
@@ -71,7 +77,7 @@ pub async fn tuntaskan_migrasi_hash_kata_sandi(pool: &PgPool) -> Result<(), sqlx
 }
 
 /// Mengambil ID dan role aktif untuk username session.
-pub async fn cari_pengguna_berdasarkan_nama(
+pub async fn cari_identitas_pengguna_berdasarkan_nama(
     pool: &PgPool,
     username: &str,
 ) -> Result<Option<(i64, UserRole)>, sqlx::Error> {
@@ -81,40 +87,8 @@ pub async fn cari_pengguna_berdasarkan_nama(
             .fetch_optional(pool)
             .await?;
 
-    user.map(|(user_id, role)| {
-        role.parse::<UserRole>()
-            .map_err(|error| {
-                sqlx::Error::Decode(
-                    std::io::Error::new(std::io::ErrorKind::InvalidData, error).into(),
-                )
-            })
-            .map(|role| (user_id, role))
-    })
-    .transpose()
-}
-
-/// Mengambil ID dan role terbaru untuk membuat JWT saat login.
-pub async fn cari_identitas_pengguna_untuk_login(
-    pool: &PgPool,
-    username: &str,
-) -> Result<Option<(i64, UserRole)>, sqlx::Error> {
-    let user = sqlx::query_as::<_, (i64, String)>(
-        "SELECT id, role FROM public.users WHERE username = $1",
-    )
-    .bind(username)
-    .fetch_optional(pool)
-    .await?;
-
-    user.map(|(user_id, role)| {
-        role.parse::<UserRole>()
-            .map(|role| (user_id, role))
-            .map_err(|error| {
-                sqlx::Error::Decode(
-                    std::io::Error::new(std::io::ErrorKind::InvalidData, error).into(),
-                )
-            })
-    })
-    .transpose()
+    user.map(|(user_id, role)| decode_role(role).map(|role| (user_id, role)))
+        .transpose()
 }
 
 /// Mengambil username dan role terbaru berdasarkan ID pengguna.
@@ -129,16 +103,8 @@ pub async fn cari_pengguna_berdasarkan_id(
     .fetch_optional(pool)
     .await?;
 
-    user.map(|(username, role)| {
-        role.parse::<UserRole>()
-            .map(|role| (username, role))
-            .map_err(|error| {
-                sqlx::Error::Decode(
-                    std::io::Error::new(std::io::ErrorKind::InvalidData, error).into(),
-                )
-            })
-    })
-    .transpose()
+    user.map(|(username, role)| decode_role(role).map(|role| (username, role)))
+        .transpose()
 }
 
 /// Mengubah role tanpa membatalkan JWT yang sudah diterbitkan.

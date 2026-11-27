@@ -128,7 +128,11 @@ export function initSidebarControls() {
     )
       toggleSidebar();
     if (control.dataset.action === "menu-close") closeMobileSidebar();
-    if (["nav-dashboard", "nav-products"].includes(control.dataset.action))
+    if (
+      ["nav-dashboard", "nav-products", "nav-create-user", "nav-profile"].includes(
+        control.dataset.action,
+      )
+    )
       activateLink(control);
   });
 

@@ -140,12 +140,12 @@ Tidak membutuhkan request body.
 {
   "status": "success",
   "data": [
-    [1, "ThinkPad E14", "Lenovo", "Rp 12.500.000", 5]
+    [1, "ThinkPad E14", "Lenovo", "Rp 12.500.000", 5, "Laptop untuk kerja dan belajar."]
   ]
 }
 ```
 
-Setiap laptop pada `data` berbentuk array dengan urutan `[id, nama, merek, harga, stok]`. Harga response berupa string Rupiah. Jika belum ada laptop, `data` berupa array kosong.
+Setiap laptop pada `data` berbentuk array dengan urutan `[id, nama, merek, harga, stok, deskripsi]`. Harga response berupa string Rupiah. Jika belum ada laptop, `data` berupa array kosong.
 
 ### 2. Menambah laptop
 
@@ -155,12 +155,13 @@ Setiap laptop pada `data` berbentuk array dengan urutan `[id, nama, merek, harga
 {
   "nama": "ThinkPad E14",
   "merek": "Lenovo",
+  "deskripsi": "Laptop ringkas untuk kerja, belajar, dan mobilitas harian.",
   "harga": 12500000,
   "stok": 5
 }
 ```
 
-`nama` dan `merek` wajib berupa teks yang tidak kosong setelah spasi di awal/akhir dibuang. Panjang maksimum `nama` 150 karakter dan `merek` 100 karakter. `harga` wajib bilangan bulat nol atau lebih yang muat dalam `i64`; `stok` wajib bilangan bulat nol atau lebih yang muat dalam `i32`.
+`nama`, `merek`, dan `deskripsi` wajib berupa teks yang tidak kosong setelah spasi di awal/akhir dibuang. Panjang maksimum `nama` 150 karakter, `merek` 100 karakter, dan `deskripsi` 1.000 karakter. `harga` wajib bilangan bulat nol atau lebih yang muat dalam `i64`; `stok` wajib bilangan bulat nol atau lebih yang muat dalam `i32`.
 
 **Contoh response `201 Created`:**
 
@@ -172,6 +173,7 @@ Setiap laptop pada `data` berbentuk array dengan urutan `[id, nama, merek, harga
     "id": 1,
     "nama": "ThinkPad E14",
     "merek": "Lenovo",
+    "deskripsi": "Laptop ringkas untuk kerja, belajar, dan mobilitas harian.",
     "harga": "Rp 12.500.000",
     "stok": 5
   }
@@ -189,7 +191,7 @@ Ganti `1` pada [http://127.0.0.1:3001/api/laptops/1](http://127.0.0.1:3001/api/l
 ```json
 {
   "status": "success",
-  "data": [1, "ThinkPad E14", "Lenovo", "Rp 12.500.000", 5]
+  "data": [1, "ThinkPad E14", "Lenovo", "Rp 12.500.000", 5, "Laptop untuk kerja dan belajar."]
 }
 ```
 
@@ -201,11 +203,12 @@ Buyer yang sudah login dapat membeli satu atau beberapa unit. Ganti `1` dengan I
 
 ```json
 {
-  "jumlah": 1
+  "jumlah": 1,
+  "metode_pembayaran": "qris"
 }
 ```
 
-`jumlah` harus bilangan bulat lebih dari nol. PostgreSQL mengurangi stok secara atomik agar request bersamaan tidak menjual unit yang sama.
+`jumlah` harus bilangan bulat lebih dari nol. `metode_pembayaran` dapat bernilai `qris`, `cash`, `bank_transfer`, atau `debit_card`. Semuanya hanya simulasi; tidak ada pembayaran sungguhan. PostgreSQL mengurangi stok dan menyimpan snapshot struk dalam satu transaksi agar stok tidak terjual ganda.
 
 **Contoh response `200 OK`:**
 
@@ -218,15 +221,28 @@ Buyer yang sudah login dapat membeli satu atau beberapa unit. Ganti `1` dengan I
       "id": 1,
       "nama": "ThinkPad E14",
       "merek": "Lenovo",
+      "deskripsi": "Laptop ringkas untuk kerja, belajar, dan mobilitas harian.",
       "harga": "Rp 12.500.000",
       "stok": 4
     },
-    "jumlah_dibeli": 1
+    "jumlah_dibeli": 1,
+    "struk": {
+      "nomor": "LK-00000001",
+      "username": "pembeli",
+      "nama_laptop": "ThinkPad E14",
+      "merek_laptop": "Lenovo",
+      "harga_satuan": 12500000,
+      "jumlah": 1,
+      "total": 12500000,
+      "metode_pembayaran": "qris",
+      "status": "simulated_paid",
+      "dibuat_pada": 1764200000
+    }
   }
 }
 ```
 
-ID yang tidak ditemukan menghasilkan `404 Not Found`, jumlah tidak valid menghasilkan `400 Bad Request`, dan stok tidak cukup menghasilkan `409 Conflict`.
+ID yang tidak ditemukan menghasilkan `404 Not Found`, jumlah atau metode pembayaran tidak valid menghasilkan `400 Bad Request`, dan stok tidak cukup menghasilkan `409 Conflict`.
 
 ### 5. Mengubah laptop
 
@@ -247,7 +263,7 @@ Field teks yang dikirim mengikuti aturan panjang dan isi yang sama seperti reque
 {
   "status": "success",
   "message": "Laptop berhasil diperbarui",
-  "data": [1, "ThinkPad E14 Gen 5", "Lenovo", "Rp 13.500.000", 5]
+  "data": [1, "ThinkPad E14 Gen 5", "Lenovo", "Rp 13.500.000", 5, "Laptop ringkas untuk kerja dan belajar."]
 }
 ```
 

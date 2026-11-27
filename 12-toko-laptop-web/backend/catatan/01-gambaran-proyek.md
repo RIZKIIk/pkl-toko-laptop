@@ -12,7 +12,7 @@ Toko Laptop App adalah REST API inventaris laptop. Kode aktif menyediakan operas
 | Teknologi | Dipakai untuk | Contoh di kode |
 | --- | --- | --- |
 | Rust 2024 | Bahasa aplikasi. | `Cargo.toml`. |
-| Axum | Router, handler, extractor, dan response HTTP. | `routes.rs`, `handlers/`, `error.rs`. |
+| Axum | Router, handler, extractor, dan response HTTP. | `endpoin/`, `handlers/`, `error.rs`. |
 | Tokio | Runtime async dan listener TCP. | `#[tokio::main]`, `TcpListener`. |
 | SQLx | Pool dan query PostgreSQL. | `config.rs`, `repositories/`. |
 | PostgreSQL | Menyimpan akun, inventaris, dan audit log. | Baseline SQLx dan migration audit lanjutan; log memakai FK `SET NULL` agar tetap ada setelah penghapusan laptop/pengguna. |
@@ -28,7 +28,8 @@ Toko Laptop App adalah REST API inventaris laptop. Kode aktif menyediakan operas
 | `src/main.rs` | Startup program: env, config, database, router, port, server. |
 | `src/lib.rs` | Mendaftarkan semua modul aplikasi. |
 | `src/config.rs` | Membaca environment dan membuat pool PostgreSQL. |
-| `src/routes.rs` | Menghubungkan method/URL ke handler. |
+| `src/endpoin/` | Menghubungkan URL dan method ke handler per fitur. |
+| `src/routes.rs` | Jalur kompatibilitas ke router di `endpoin/`. |
 | `src/handlers/` | Handler dipisahkan menurut resource dan operasi HTTP. |
 | `src/models/` | Entity database dan payload POST/PATCH dipisah per tipe. |
 | `src/validation/` | Validasi ID, teks, create, dan update. |

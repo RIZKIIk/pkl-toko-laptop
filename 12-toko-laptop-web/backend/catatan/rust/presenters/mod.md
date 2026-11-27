@@ -40,7 +40,7 @@ serde_json::Value untuk handler
 
 `pub mod` dan `pub fn` mengatur visibilitas, sedangkan `mod rupiah` membatasi jalur modul. `use` di file lain dapat mempersingkat jalur nama, tetapi tidak mengubah visibilitasnya. Kedua fungsi presenter menerima `&Laptop` (pinjaman, bukan mengambil alih entity) dan mengembalikan `serde_json::Value`; macro `json!` menyusun array/object JSON dari field model.
 
-GET daftar, GET detail, dan PATCH memakai array berurutan `[id, nama, merek, harga, stok]`. POST memakai object dengan nama field. Perbedaan tersebut adalah kontrak API saat ini; handler menentukan kapan setiap presenter dipakai.
+GET daftar, GET detail, dan PATCH memakai array berurutan `[id, nama, merek, harga, stok, deskripsi]`. POST memakai object dengan nama field. Perbedaan tersebut adalah kontrak API saat ini; handler menentukan kapan setiap presenter dipakai.
 
 ## File terkait
 

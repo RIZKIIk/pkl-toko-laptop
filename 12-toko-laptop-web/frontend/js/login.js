@@ -1,5 +1,5 @@
 // Halaman login dan pengiriman kredensial ke backend.
-import { ApiError, api, app, brand, html, saveToken } from "./shared.js";
+import { ApiError, api, app, brand, html, icons, saveToken } from "./shared.js";
 import { themeToggleMarkup } from "./theme.js";
 
 // Menampilkan form login dan mengirim kredensial ke endpoint autentikasi.
@@ -13,9 +13,9 @@ export function renderLogin() {
       <aside class="login-aside">
         ${brand()}
         <div class="login-promo">
-          <p class="eyebrow">Katalog laptop</p>
-          <h1>Lihat pilihan <span>yang tersedia.</span></h1>
-          <p>Cek model, harga, dan stok sebelum memilih.</p>
+          <p class="eyebrow">Katalog LaptopKu</p>
+          <h1>Mau cari laptop? Cari di Laptop<span>Ku</span>.</h1>
+          <p>Masuk untuk melihat laptop yang tersedia di katalog.</p>
           <div class="login-art" aria-hidden="true">
             <img
               class="login-illustration"
@@ -34,9 +34,9 @@ export function renderLogin() {
         <div class="auth-top">
           ${brand("mobile-brand")}${themeToggleMarkup()}
         </div>
-        <p class="eyebrow">Masuk</p>
-        <h2>Selamat datang kembali</h2>
-        <p class="form-intro">Masuk untuk melihat pilihan laptop di LaptopKu.</p>
+        <p class="eyebrow">Akun LaptopKu</p>
+        <h2>Masuk ke akun</h2>
+        <p class="form-intro">Gunakan username dan password akunmu.</p>
         <div
           id="login-error"
           class="login-error${expired || registered ? " visible" : ""}${registered ? " success" : ""}"
@@ -103,8 +103,11 @@ export function renderLogin() {
                 id="password-toggle"
                 type="button"
                 aria-label="Tampilkan password"
+                aria-controls="password"
+                aria-pressed="false"
+                title="Tampilkan password"
               >
-                Lihat
+                ${icons.eye}
               </button>
             </div>
           </div>
@@ -132,11 +135,15 @@ export function renderLogin() {
       const input = document.querySelector("#password");
       const visible = input.type === "password";
       input.type = visible ? "text" : "password";
-      event.currentTarget.textContent = visible ? "Sembunyi" : "Lihat";
+      event.currentTarget.innerHTML = visible ? icons.eyeOff : icons.eye;
       event.currentTarget.setAttribute(
         "aria-label",
         visible ? "Sembunyikan password" : "Tampilkan password",
       );
+      event.currentTarget.setAttribute("aria-pressed", String(visible));
+      event.currentTarget.title = visible
+        ? "Sembunyikan password"
+        : "Tampilkan password";
     });
   form.addEventListener("submit", async (event) => {
     event.preventDefault();

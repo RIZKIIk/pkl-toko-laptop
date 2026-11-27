@@ -9,13 +9,14 @@
 
 ## Tujuan
 
-File ini mendaftarkan tiga kelompok handler dan mengekspor fungsi yang dipasang router. Ia tidak menjalankan request atau query sendiri.
+File ini mendaftarkan kelompok handler berdasarkan fitur. Implementasi request berada di modul fitur; nama flat lama tetap diekspor sebagai jalur kompatibilitas.
 
 ## Peta modul
 
 ```text
 handlers
-├── auth.rs    → akun dan login
+├── auth.rs    → facade handler akun
+├── auth/      → login, registrasi, sesi, admin, payload, validasi bersama
 ├── system.rs  → health check HTTP
 └── laptops/   → CRUD inventaris
 ```
@@ -26,18 +27,13 @@ handlers
 - `pub mod auth;` membuat registrasi, login, pemeriksaan identitas, dan logout tersedia melalui `handlers::auth`.
 - `pub mod laptops;` mengelompokkan operasi CRUD pada `handlers::laptops`.
 - `pub mod system;` menyediakan pemeriksaan server melalui `handlers::system`.
-- `pub use ...;` mengekspor ulang fungsi endpoint langsung pada `handlers::...`, sehingga [routes](../routes.md) dapat memakai satu namespace.
+- `auth.rs` mendaftarkan modul handler akun dan mengekspor fungsi per fitur melalui `handlers::auth`.
+- `pub use ...;` mempertahankan jalur lama seperti `handlers::masuk`; router endpoint memakai jalur fitur yang lebih jelas.
 
-Rust mencari `auth.rs` dan `system.rs` di folder `handlers/`, serta `laptops/mod.rs` untuk modul laptop. Ekspor ulang pada source memetakan fungsi seperti berikut:
-
-| Ekspor | Sumber | Dipakai untuk |
-| --- | --- | --- |
-| `buat_pengguna`, `pengguna_saat_ini`, `masuk`, `keluar`, `daftar`, `ubah_peran_pengguna` | `auth.rs` | Login, registrasi, pemeriksaan identitas, logout, dan pengelolaan akun. |
-| `tambah_laptop`, `hapus_laptop`, `ambil_laptop`, `daftar_laptop`, `ubah_laptop` | `laptops/` | Endpoint CRUD laptop. |
-| `cek_kesehatan` | `system.rs` | `GET /health`. |
+Rust mencari `auth.rs` dan `system.rs` di folder `handlers/`, serta `laptops/mod.rs` untuk modul laptop. Submodul `auth/` memisahkan login, registrasi, sesi, admin, payload, dan validasi username bersama.
 
 Detail fungsi ada pada [auth](auth.md), [system](system.md), dan [operasi laptop](laptops/mod.md).
 
 ## Posisi dalam alur
 
-[routes.rs](../routes.md) menghubungkan URL dan method ke fungsi yang diekspor dari modul-modul ini. `pub mod` membuka submodul, sementara `pub use` hanya menyediakan jalur nama yang lebih pendek—fungsi tetap implementasi yang sama. Endpoint di `auth.rs` memerlukan autentikasi/otorisasi sesuai role melalui middleware, bukan karena re-export modul. Setiap handler meneruskan validasi, query, dan pemformatan response ke lapisannya masing-masing.
+Folder [`endpoin/`](../../../src/endpoin/) menghubungkan URL dan method ke handler dengan jalur fitur, misalnya `handlers::auth::masuk` atau `handlers::laptops::daftar_laptop`. Ekspor flat di `handlers/mod.rs` hanya menjaga kompatibilitas pemakai lama. Endpoint privat dan admin dipasang bersama middleware autentikasi/otorisasi di router; handler meneruskan query ke repository.

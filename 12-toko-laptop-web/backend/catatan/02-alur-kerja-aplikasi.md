@@ -18,7 +18,7 @@ Halaman ini menghubungkan file-file backend. Penjelasan isi setiap fungsi ada di
 3. Startup membuka `PgPool` dan koneksi Redis. Redis dipakai sebagai session store dan harus tersedia sebelum server mulai menerima request.
 4. SQLx menjalankan migration yang belum tercatat di `_sqlx_migrations`. Migration audit membuat/menyesuaikan `laptop_logs` dan memasang trigger pada `laptops`; lihat [catatan skema database](rust/database/initial-schema.md). Buat backup sebelum startup menerapkan perubahan pada database lama.
 5. `migrasikan_kata_sandi_lama()` meng-hash password lama dengan Argon2id dan menghapus nilai lama; `siapkan_pengguna_admin()` menyimpan hash password akun dari environment.
-6. `routes::buat_router(...)` di [routes.rs](rust/routes.md) memasang endpoint, middleware session/JWT, `RedisStore`, dan pool PostgreSQL sebagai state router.
+6. `endpoin::buat_router(...)` di folder [`src/endpoin/`](rust/routes.md) menggabungkan route per fitur, memasang middleware session/JWT, `RedisStore`, dan pool PostgreSQL sebagai state router.
 7. Tokio membuat `TcpListener` pada `APP_HOST:APP_PORT`.
 8. `axum::serve(listener, app).await` menunggu koneksi HTTP.
 
@@ -31,7 +31,7 @@ Halaman ini menghubungkan file-file backend. Penjelasan isi setiap fungsi ada di
 ```text
 Postman / client
         ↓ method + URL + headers + body HTTP
-routes.rs memilih handler
+endpoin/{fitur}.rs memilih handler
         ↓
 middleware menerima session cookie atau JWT bearer untuk endpoint laptop dan endpoint session/logout
         ↓

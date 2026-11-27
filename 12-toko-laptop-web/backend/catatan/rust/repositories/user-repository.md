@@ -41,15 +41,11 @@ sqlx::query_scalar("SELECT password_hash FROM public.users WHERE username = $1")
 
 `query_scalar` mengambil satu kolom, bukan seluruh baris. Fungsi menghasilkan `Ok(Some(hash))` bila username ditemukan, `Ok(None)` bila tidak ada, atau `Err(error)` bila query gagal. Hash kemudian dipakai auth service untuk memverifikasi password.
 
-### `cari_pengguna_berdasarkan_nama`
+### `cari_identitas_pengguna_berdasarkan_nama`
 
 Mengambil `id` dan `role` dengan `query_as`, lalu mengubah teks role dari database menjadi `UserRole`. Hasil normalnya `Some((id, role))` atau `None`. Parsing role yang gagal diubah menjadi `sqlx::Error::Decode`, agar data role tak dikenal tidak dianggap identitas yang valid.
 
 `map` mengubah isi `Option`; `transpose` mengubah `Option<Result<T, E>>` menjadi `Result<Option<T>, E>`. Karena itu signature dapat menyatakan sekaligus “akun mungkin tidak ditemukan” dan “konversi/query mungkin gagal”.
-
-### `cari_identitas_pengguna_untuk_login`
-
-Membaca tuple `(id, role)` untuk login. `query_as::<_, (i64, String)>` meminta SQLx memetakan baris ke tuple tersebut; `_` membiarkan compiler menyimpulkan parameter generik pertama. Role teks diparse menjadi `UserRole`, dengan penanganan error dan `transpose` yang sama seperti pencarian username.
 
 ### `cari_pengguna_berdasarkan_id`
 
@@ -101,7 +97,7 @@ Membuat akun baru tanpa menimpa akun yang ada. `ON CONFLICT (username) DO NOTHIN
 | `cari_kata_sandi_lama` | `Vec<(i64, String)>` | Vector kosong: tidak ada password lama. |
 | `punya_kolom_kata_sandi_lama` | `bool` | `false`: kolom sudah tidak ada. |
 | `perbarui_hash_kata_sandi_lama`, `tuntaskan_migrasi_hash_kata_sandi`, `simpan_atau_perbarui_pengguna` | `()` | Tidak mengembalikan baris; error tetap dapat terjadi. |
-| `cari_pengguna_berdasarkan_nama`, `cari_identitas_pengguna_untuk_login`, `cari_pengguna_berdasarkan_id` | `Option<tuple>` | Akun tidak ditemukan. |
+| `cari_identitas_pengguna_berdasarkan_nama`, `cari_pengguna_berdasarkan_id` | `Option<tuple>` | Akun tidak ditemukan. |
 | `ubah_peran_pengguna`, `simpan_pengguna_baru` | `bool` | `false`: target tak ditemukan atau username sudah dipakai. |
 
 Semua hasil di atas dibungkus `Result<..., sqlx::Error>`. Untuk gambaran lengkap auth, lihat [layanan auth](../auth/mod.md) dan [alur JWT](../auth/jwt.md).

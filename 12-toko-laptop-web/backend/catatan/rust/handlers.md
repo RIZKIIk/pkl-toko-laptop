@@ -40,7 +40,7 @@ handlers/
 
 ## Alur request umum
 
-1. Axum memilih handler berdasarkan route dan method di [routes.rs](routes.md).
+1. Axum memilih handler berdasarkan route dan method di modul [`endpoin/`](../../src/endpoin/).
 2. Axum menjalankan extractor yang tertulis di parameter fungsi, misalnya `State<PgPool>` untuk pool, `Path<i64>` untuk ID URL, dan `Json<T>` untuk body JSON bertipe `T`.
 3. Handler memanggil [validation](validation.md) bila ada input yang perlu diperiksa. Bila validator mengembalikan `Err`, operator `?` mengakhiri handler dan meneruskan error.
 4. Handler memanggil [repository](repositories.md) untuk operasi PostgreSQL. Pemanggilan asynchronous diikuti `.await`; `?` meneruskan kegagalan query.
@@ -98,4 +98,4 @@ Sebaliknya, sebagian handler auth mengembalikan `Response` langsung. Bentuk ini 
 | `PATCH /api/laptops/{id}` | 200 | `data` berupa array laptop terbaru serta pesan. |
 | `DELETE /api/laptops/{id}` | 200 | Status, pesan, dan ID yang dihapus. |
 
-Data laptop pada array mengikuti urutan `[id, nama, merek, harga, stok]`.
+Data laptop pada array mengikuti urutan `[id, nama, merek, harga, stok, deskripsi]`.

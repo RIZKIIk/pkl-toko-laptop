@@ -22,7 +22,7 @@ menjalankan server HTTP.
 
 ```rust
 use std::error::Error;
-use toko_laptop_app::{config::AppConfig, routes};
+use toko_laptop_app::{config::AppConfig, database, endpoin};
 use tower_sessions_redis_store::fred::{
     interfaces::ClientLike,
     prelude::{Config as RedisConfig, Pool},
@@ -35,8 +35,8 @@ use tower_sessions_redis_store::fred::{
   membaca environment variable dan membuat pool PostgreSQL.
 - `RedisConfig`, `Pool`, dan `ClientLike` berasal dari client Redis `fred` yang
   diekspor oleh `tower-sessions-redis-store`. Pool dipakai untuk session store.
-- `routes` adalah modul yang menyediakan `buat_router`, yaitu fungsi untuk
-  menyusun endpoint API, middleware autentikasi, session, dan state database.
+- `endpoin` menyediakan `buat_router`, yaitu fungsi untuk menyusun route per
+  fitur, middleware autentikasi, session, dan state database.
 
 ## Runtime dan hasil fungsi `main`
 
@@ -113,15 +113,13 @@ redis_pool.wait_for_connect().await?;
 ## Menyiapkan struktur dan akun database
 
 ```rust
-sqlx::migrate!("./database/migrations").run(&pool).await?;
+database::jalankan_migrasi(&pool).await?;
 toko_laptop_app::auth::migrasikan_kata_sandi_lama(&pool).await?;
 config.siapkan_pengguna_admin(&pool).await?;
 ```
 
-- `sqlx::migrate!("./database/migrations")` memasukkan berkas migration SQL
-  dari folder tersebut ke program saat proses kompilasi.
-- `.run(&pool).await?` menerapkan migration yang belum tercatat sebagai sudah
-  dijalankan pada database yang terhubung melalui `pool`.
+- `database::jalankan_migrasi(&pool)` menjalankan migration SQLx dan menangani
+  pemeriksaan checksum baseline di `src/database.rs`.
 - `migrasikan_kata_sandi_lama(&pool)` meng-hash password lama dengan Argon2id,
   menghapus nilai password lama, dan memastikan kolom hash wajib terisi.
 - `siapkan_pengguna_admin(&pool)` menyinkronkan akun admin dari
@@ -146,7 +144,7 @@ mengembalikan nama database untuk informasi log; password tidak pernah dicetak.
 ## Membuat router dan listener TCP
 
 ```rust
-let app = routes::buat_router(
+let app = endpoin::buat_router(
     pool,
     config.session_cookie_secure,
     config.jwt_secret.clone(),

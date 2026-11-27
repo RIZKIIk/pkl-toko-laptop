@@ -8,6 +8,7 @@ use super::text::validasi_teks;
 pub fn validasi_laptop_baru(payload: CreateLaptopPayload) -> Result<CreateLaptopPayload, ApiError> {
     let nama = validasi_teks(payload.nama, "Nama laptop", 150)?;
     let merek = validasi_teks(payload.merek, "Merek laptop", 100)?;
+    let deskripsi = validasi_teks(payload.deskripsi, "Deskripsi laptop", 1000)?;
 
     if payload.harga < 0 {
         return Err(ApiError::BadRequest("Harga tidak boleh negatif".into()));
@@ -19,6 +20,7 @@ pub fn validasi_laptop_baru(payload: CreateLaptopPayload) -> Result<CreateLaptop
     Ok(CreateLaptopPayload {
         nama,
         merek,
+        deskripsi,
         harga: payload.harga,
         stok: payload.stok,
     })

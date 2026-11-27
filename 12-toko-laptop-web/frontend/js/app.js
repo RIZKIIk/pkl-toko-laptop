@@ -6,9 +6,9 @@ import { initSidebarControls } from "./sidebar.js";
 import { toggleTheme } from "./theme.js";
 import { openDashboard, refreshDashboard } from "./dashboard.js";
 import { inventoryMarkup } from "./dashboard-view.js";
-import { openCreateUser } from "./user-actions.js";
 import {
   deleteLaptop,
+  openBuy,
   openCreate,
   openDetail,
   openEdit,
@@ -27,23 +27,44 @@ async function logout() {
   location.assign("/login");
 }
 
+function closeProfileMenu(restoreFocus = false) {
+  const menu = document.querySelector("#account-menu");
+  const trigger = document.querySelector('[data-action="profile-menu-toggle"]');
+  if (!menu || menu.hidden) return;
+  menu.hidden = true;
+  trigger?.setAttribute("aria-expanded", "false");
+  if (restoreFocus) trigger?.focus({ preventScroll: true });
+}
+
 initSidebarControls();
 
 // Dialog berada di luar #app, jadi seluruh aksi tombol didelegasikan ke document.
 document.addEventListener("click", (event) => {
   if (!(event.target instanceof Element)) return;
+  const menu = document.querySelector("#account-menu");
+  const toggle = event.target.closest('[data-action="profile-menu-toggle"]');
+  if (toggle) {
+    const open = toggle.getAttribute("aria-expanded") !== "true";
+    toggle.setAttribute("aria-expanded", String(open));
+    if (menu) menu.hidden = !open;
+    return;
+  }
+  if (menu && !menu.hidden && !event.target.closest(".account-menu"))
+    closeProfileMenu();
+
   const control = event.target.closest("[data-action]");
   if (!control) return;
   const action = control.dataset.action;
   if (action === "create") openCreate();
-  if (action === "create-user") openCreateUser();
   if (action === "detail") openDetail(control.dataset.id);
+  if (action === "buy") openBuy(control.dataset.id);
   if (action === "edit") openEdit(control.dataset.id);
   if (action === "delete") deleteLaptop(control.dataset.id);
   if (action === "logout") logout();
   if (action === "theme-toggle") toggleTheme();
   if (action === "refresh") refreshDashboard();
   if (action === "retry") openDashboard();
+  if (action === "retry-account") openDashboard();
   if (action === "clear-filters") {
     state.search = "";
     state.stockFilter = "all";
@@ -59,6 +80,10 @@ document.addEventListener("click", (event) => {
     search?.focus({ preventScroll: true });
   }
   if (action === "close-dialog") dialog.close();
+  if (action === "print-receipt") window.print();
+});
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") closeProfileMenu(true);
 });
 app.addEventListener("input", (event) => {
   if (event.target.id !== "search") return;
@@ -80,6 +105,11 @@ dialog.addEventListener("click", (event) => {
   if (event.target === dialog) dialog.close();
 });
 
-if (location.pathname === "/dashboard") openDashboard();
+if (
+  ["/dashboard", "/dashboard/users/new", "/dashboard/profile"].includes(
+    location.pathname,
+  )
+)
+  openDashboard();
 else if (location.pathname === "/register") renderRegister();
 else renderLogin();

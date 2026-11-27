@@ -15,6 +15,9 @@ pub fn validasi_perubahan_laptop(
     if let Some(merek) = payload.merek.take() {
         payload.merek = Some(validasi_teks(merek, "Merek laptop", 100)?);
     }
+    if let Some(deskripsi) = payload.deskripsi.take() {
+        payload.deskripsi = Some(validasi_teks(deskripsi, "Deskripsi laptop", 1000)?);
+    }
     if payload.harga.is_some_and(|harga| harga < 0) {
         return Err(ApiError::BadRequest("Harga tidak boleh negatif".into()));
     }
@@ -23,6 +26,7 @@ pub fn validasi_perubahan_laptop(
     }
     if payload.nama.is_none()
         && payload.merek.is_none()
+        && payload.deskripsi.is_none()
         && payload.harga.is_none()
         && payload.stok.is_none()
     {

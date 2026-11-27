@@ -121,7 +121,7 @@
         "url": "{{baseUrl}}/api/laptops",
         "body": {
           "mode": "raw",
-          "raw": "{\"nama\":\"Laptop Contoh\",\"merek\":\"Test\",\"harga\":1000000,\"stok\":2}",
+          "raw": "{\"nama\":\"Laptop Contoh\",\"merek\":\"Test\",\"deskripsi\":\"Laptop contoh untuk demonstrasi.\",\"harga\":1000000,\"stok\":2}",
           "options": {
             "raw": {
               "language": "json"
@@ -208,7 +208,7 @@
         "url": "{{baseUrl}}/api/laptops/{{laptopId}}/buy",
         "body": {
           "mode": "raw",
-          "raw": "{\"jumlah\":1}",
+          "raw": "{\"jumlah\":1,\"metode_pembayaran\":\"qris\"}",
           "options": {
             "raw": {
               "language": "json"

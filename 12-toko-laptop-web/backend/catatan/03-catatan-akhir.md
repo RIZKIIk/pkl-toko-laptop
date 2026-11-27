@@ -9,7 +9,7 @@ Halaman ini merangkum cara memahami dan menjalankan Toko Laptop App setelah meng
 ## Peta tanggung jawab
 
 ```text
-main -> config/database -> routes + middleware
+main -> config/database -> endpoin + middleware
                               |
 request -> handler -> validation -> repository -> PostgreSQL
                    <- presenter <- model <-
@@ -20,7 +20,7 @@ request -> handler -> validation -> repository -> PostgreSQL
 | Lapisan | Tanggung jawab |
 | --- | --- |
 | [`main.rs`](rust/main.md) dan [`config.rs`](rust/config.md) | Memuat konfigurasi, menyambungkan database, menjalankan migration, dan memulai server. |
-| [`routes.rs`](rust/routes.md) | Menetapkan endpoint publik/terlindungi dan menghubungkan URL ke handler. |
+| [`endpoin/`](rust/routes.md) | Menetapkan endpoint publik/terlindungi dalam modul per fitur. |
 | [`handlers/`](rust/handlers.md) | Mengatur alur request dan memilih status HTTP. |
 | [`validation/`](rust/validation.md) | Membersihkan serta memvalidasi ID dan payload laptop. |
 | [`repositories/`](rust/repositories.md) | Menjalankan query PostgreSQL. |
